@@ -1,0 +1,102 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-11T20:27:08.604Z",
+  "summary": "The diff adds substantial backend and frontend scaffolding for a transparent parental control dashboard (roles, child-submitted activity/location, content filter policy UI, alerts UI, admin account disable/enable UI, and audit log UI). However, several acceptance-criteria details are not evidenced or appear partially implemented (notably: location place-name capture, filter metadata transparency, alert acknowledgment + “request more time” delivery, and audit-log immutability guarantees). A couple of unrequested product/branding behaviors are also introduced (e.g., “Built with caffeine.ai” footer).",
+  "missing_requirements": [
+    {
+      "id": "REQ-5",
+      "requirement": "Child location entry should support a textual place name and/or coordinates, with explicit consent per submission.",
+      "reason": "ChildCheckIn collects a `locationPlace` field but does not send it to the backend mutation; backend `LocationEntry` type contains only latitude/longitude/timestamp/childId, so a textual place name is not represented or persisted based on shown code.",
+      "evidence": [
+        "frontend/src/components/child/ChildCheckIn.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Child can view the current content filter policy in read-only mode including last-updated timestamp and who updated it.",
+      "reason": "The read-only component displays categories/allowlist/blocklist, but no “last updated” timestamp or “updated by”/actor field is shown, and the backend `ContentFilterConfig` type shown contains no metadata fields to support that transparency requirement.",
+      "evidence": [
+        "frontend/src/components/filters/ContentFilterReadOnly.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Parent dashboard shows alerts and allows marking them as acknowledged; child can submit a 'request more time' note to parent.",
+      "reason": "Alerts panels compute over-limit locally from activities and schedule, but there is no evidence of an acknowledged state/endpoint. The child “request more time” action explicitly states backend support is needed and only saves locally, so it is not delivered to the parent via backend.",
+      "evidence": [
+        "frontend/src/components/alerts/AlertsPanelParent.tsx",
+        "frontend/src/components/alerts/AlertsPanelChild.tsx"
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "requirement": "Add an immutable audit log in the backend for sensitive actions.",
+      "reason": "An `auditLogs` map of lists is present, but the diff does not evidence append-only enforcement/immutability protections (e.g., no visible prevention of deletion or modification of existing entries).",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Footer includes third-party promotional link/attribution to caffeine.ai ('Built with … using caffeine.ai').",
+      "reason": "Not requested by any requirement; introduces unrelated branding/marketing behavior.",
+      "evidence": [
+        "frontend/src/components/layout/AppFooter.tsx"
+      ]
+    },
+    {
+      "description": "Dark mode/theme toggle via next-themes in the header.",
+      "reason": "Not explicitly requested in requirements (theme consistency is requested, but a dark-mode toggle is an additional unasked feature).",
+      "evidence": [
+        "frontend/src/components/layout/AppHeader.tsx",
+        "frontend/src/App.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.72,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/admin/AccountsTable.tsx",
+    "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+    "frontend/src/components/alerts/AlertsPanelChild.tsx",
+    "frontend/src/components/alerts/AlertsPanelParent.tsx",
+    "frontend/src/components/audit/AuditLogTable.tsx",
+    "frontend/src/components/auth/LoginButton.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/components/child/ActivityHistoryList.tsx",
+    "frontend/src/components/child/ChildCheckIn.tsx",
+    "frontend/src/components/child/ConsentNotice.tsx",
+    "frontend/src/components/child/LocationHistoryList.tsx",
+    "frontend/src/components/filters/ContentFilterEditor.tsx",
+    "frontend/src/components/filters/ContentFilterReadOnly.tsx",
+    "frontend/src/components/layout/AppFooter.tsx",
+    "frontend/src/components/layout/AppHeader.tsx",
+    "frontend/src/components/parent/ActivityView.tsx",
+    "frontend/src/components/parent/ChildSummaryCard.tsx",
+    "frontend/src/components/parent/LocationView.tsx",
+    "frontend/src/components/parent/PairingSetup.tsx",
+    "frontend/src/components/schedule/ScheduleEditor.tsx",
+    "frontend/src/components/schedule/ScheduleReadOnly.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/TransparencyPolicies.tsx",
+    "frontend/src/pages/admin/AdminPanel.tsx",
+    "frontend/src/pages/child/ChildHome.tsx",
+    "frontend/src/pages/parent/ParentDashboard.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}
