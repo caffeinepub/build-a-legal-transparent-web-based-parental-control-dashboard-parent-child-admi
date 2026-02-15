@@ -14,7 +14,9 @@ export interface AccountDisabledDetails {
   'account' : Principal,
   'reason' : string,
 }
-export type ActionType = { 'phonePairingInitiated' : null } |
+export type ActionType = { 'pendingRequestInitiated' : null } |
+  { 'phonePairingInitiated' : null } |
+  { 'pendingRequestCompleted' : null } |
   { 'phonePairingCompleted' : null } |
   { 'pairingCreated' : null } |
   { 'filterChanged' : null } |
@@ -31,8 +33,10 @@ export type AppRole = { 'admin' : null } |
   { 'child' : null } |
   { 'parent' : null };
 export type AuditLogDetails = {
-    'phonePairingInitiated' : PhonePairingInitiatedDetails
+    'pendingRequestInitiated' : PendingRequestInitiatedDetails
   } |
+  { 'phonePairingInitiated' : PhonePairingInitiatedDetails } |
+  { 'pendingRequestCompleted' : PendingRequestCompletedDetails } |
   { 'phonePairingCompleted' : PhonePairingCompletedDetails } |
   { 'pairingCreated' : PairingDetails } |
   { 'filterChanged' : FilterChangeDetails } |
@@ -76,16 +80,34 @@ export type PairWithParentResult = { 'alreadyUsed' : null } |
   { 'notAChild' : null } |
   { 'codeExpired' : null } |
   { 'sameFamily' : null } |
+  { 'unexpectedError' : null } |
   { 'phoneVerificationInitiated' : null } |
   { 'parentNotFound' : null } |
   { 'alreadyPaired' : null } |
   { 'parentNotParent' : null } |
+  { 'pendingLinkRequest' : null } |
   { 'invalidCode' : null } |
   { 'phoneVerificationSuccess' : null } |
   { 'success' : null } |
   { 'phoneVerificationFailed' : null } |
   { 'phoneNumberAlreadyLinked' : null };
 export interface PairingDetails { 'child' : Principal, 'parent' : Principal }
+export interface PendingPairingRequest {
+  'id' : bigint,
+  'pending' : boolean,
+  'child' : Principal,
+  'parent' : Principal,
+}
+export interface PendingRequestCompletedDetails {
+  'childPrincipal' : Principal,
+  'childName' : string,
+  'successful' : boolean,
+  'parent' : Principal,
+}
+export interface PendingRequestInitiatedDetails {
+  'child' : Principal,
+  'parent' : Principal,
+}
 export interface PhonePairingCompletedDetails {
   'childId' : Principal,
   'parentId' : Principal,
@@ -119,10 +141,10 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'acceptPendingPairing' : ActorMethod<[bigint], PairWithParentResult>,
   'addActivity' : ActorMethod<[ActivityEntry], undefined>,
   'addLocation' : ActorMethod<[LocationEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'completePhonePairing' : ActorMethod<[string, string], PairWithParentResult>,
   'disableAccount' : ActorMethod<[Principal, string], undefined>,
   'enableAccount' : ActorMethod<[Principal], undefined>,
   'generateInviteCode' : ActorMethod<[], string>,
@@ -149,12 +171,14 @@ export interface _SERVICE {
   'getMyChildren' : ActorMethod<[], Array<Principal>>,
   'getMyParent' : ActorMethod<[], [] | [Principal]>,
   'getParentChildLinks' : ActorMethod<[], Array<[Principal, Array<Principal>]>>,
+  'getPendingPairingRequests' : ActorMethod<[], Array<PendingPairingRequest>>,
   'getSchedule' : ActorMethod<[Principal], [] | [ScheduleConfig]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isAccountDisabled' : ActorMethod<[Principal], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'pairWithParent' : ActorMethod<[string], PairWithParentResult>,
   'pairWithParentViaPhone' : ActorMethod<[string], PairWithParentResult>,
+  'requestPairingWithParent' : ActorMethod<[Principal], PairWithParentResult>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setAdminPassword' : ActorMethod<[string], undefined>,
   'setLiveLocationSharing' : ActorMethod<[boolean], undefined>,

@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link2, CheckCircle2, Loader2, Smartphone } from 'lucide-react';
+import { Link2, CheckCircle2, Loader2, Smartphone, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '../../hooks/useI18n';
-import { usePairWithParent, useGetMyParent, usePairWithParentViaPhone, useCompletePhonePairing } from '../../hooks/useQueries';
+import { usePairWithParent, useGetMyParent, usePairWithParentViaPhone } from '../../hooks/useQueries';
 import { PairWithParentResult } from '../../backend';
 import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber, formatPhoneNumberForBackend } from '../../utils/phoneNumber';
 
@@ -16,15 +16,15 @@ export default function PairWithParentCard() {
   const { t } = useI18n();
   const [pairingCode, setPairingCode] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
   const [validationError, setValidationError] = useState('');
-  const [phoneStep, setPhoneStep] = useState<'phone' | 'otp'>('phone');
+  const [phoneStep, setPhoneStep] = useState<'phone' | 'pending'>('phone');
   const [localSuccess, setLocalSuccess] = useState(false);
   
   const pairMutation = usePairWithParent();
   const pairViaPhoneMutation = usePairWithParentViaPhone();
-  const completePhonePairingMutation = useCompletePhonePairing();
-  const { data: parentId, isLoading: parentLoading, isFetched: parentFetched } = useGetMyParent();
+  const { data: parentId, isLoading: parentLoading, isFetched: parentFetched } = useGetMyParent({ 
+    refetchInterval: phoneStep === 'pending' ? 3000 : undefined 
+  });
 
   // Auto-populate from URL and clear parameter
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function PairWithParentCard() {
   useEffect(() => {
     if (parentId) {
       setLocalSuccess(false);
+      setPhoneStep('phone');
     }
   }, [parentId]);
 
@@ -55,12 +56,6 @@ export default function PairWithParentCard() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const parsed = parsePhoneNumberInput(e.target.value);
     setPhoneNumber(parsed);
-    setValidationError('');
-  };
-
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setOtpCode(value);
     setValidationError('');
   };
 
@@ -109,6 +104,8 @@ export default function PairWithParentCard() {
           phoneVerificationSuccess: t('pairingChildErrorGeneric'),
           phoneVerificationExpired: t('pairingChildErrorGeneric'),
           phoneNumberAlreadyLinked: t('pairingChildErrorGeneric'),
+          pendingLinkRequest: t('pairingChildErrorGeneric'),
+          unexpectedError: t('pairingChildErrorGeneric'),
         };
         
         toast.error(errorMessages[result] || t('pairingChildErrorGeneric'));
@@ -137,9 +134,9 @@ export default function PairWithParentCard() {
       const formattedPhone = formatPhoneNumberForBackend(phoneNumber);
       const result = await pairViaPhoneMutation.mutateAsync(formattedPhone);
       
-      if (result === 'phoneVerificationInitiated') {
-        setPhoneStep('otp');
-        toast.success(t('pairingPhoneOtpSent'));
+      if (result === 'pendingLinkRequest') {
+        setPhoneStep('pending');
+        toast.success(t('pendingPairingRequestSent'));
       } else {
         const errorMessages: Record<PairWithParentResult, string> = {
           success: '',
@@ -157,62 +154,11 @@ export default function PairWithParentCard() {
           alreadyUsed: t('pairingPhoneErrorGeneric'),
           parentNotParent: t('pairingPhoneErrorGeneric'),
           parentIdNotProvided: t('pairingPhoneErrorGeneric'),
+          pendingLinkRequest: '',
+          unexpectedError: t('pairingPhoneErrorGeneric'),
         };
         
         toast.error(errorMessages[result] || t('pairingPhoneErrorGeneric'));
-      }
-    } catch (error) {
-      // Error already handled by mutation
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!otpCode) {
-      setValidationError(t('pairingOtpErrorEmpty'));
-      return;
-    }
-
-    if (otpCode.length !== 6) {
-      setValidationError(t('pairingOtpError6Digits'));
-      return;
-    }
-
-    setValidationError('');
-
-    try {
-      const formattedPhone = formatPhoneNumberForBackend(phoneNumber);
-      const result = await completePhonePairingMutation.mutateAsync({
-        phoneNumber: formattedPhone,
-        verificationCode: otpCode,
-      });
-      
-      if (result === 'phoneVerificationSuccess') {
-        setLocalSuccess(true);
-        setPhoneNumber('');
-        setOtpCode('');
-        setPhoneStep('phone');
-      } else {
-        const errorMessages: Record<PairWithParentResult, string> = {
-          success: '',
-          invalidCode: t('pairingOtpErrorInvalid'),
-          phoneVerificationExpired: t('pairingOtpErrorExpired'),
-          phoneVerificationFailed: t('pairingOtpErrorInvalid'),
-          alreadyPaired: t('pairingChildErrorAlreadyPaired'),
-          notAChild: t('pairingChildErrorNotChild'),
-          phoneVerificationSuccess: '',
-          phoneVerificationInitiated: t('pairingPhoneErrorGeneric'),
-          parentNotFound: t('pairingPhoneErrorGeneric'),
-          sameFamily: t('pairingPhoneErrorGeneric'),
-          phoneNumberAlreadyLinked: t('pairingPhoneErrorGeneric'),
-          codeExpired: t('pairingPhoneErrorGeneric'),
-          alreadyUsed: t('pairingPhoneErrorGeneric'),
-          parentNotParent: t('pairingPhoneErrorGeneric'),
-          parentIdNotProvided: t('pairingPhoneErrorGeneric'),
-        };
-        
-        toast.error(errorMessages[result] || t('pairingOtpErrorGeneric'));
       }
     } catch (error) {
       // Error already handled by mutation
@@ -358,62 +304,30 @@ export default function PairWithParentCard() {
               </>
             ) : (
               <>
-                <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                  <AlertDescription className="text-green-900 dark:text-green-100 text-sm">
-                    {t('pairingOtpHelp', { phone: formatPhoneNumber(phoneNumber) })}
+                <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <AlertDescription className="text-amber-900 dark:text-amber-100">
+                    <p className="font-semibold mb-1">{t('pendingPairingWaitingTitle')}</p>
+                    <p className="text-sm">{t('pendingPairingWaitingDescription')}</p>
                   </AlertDescription>
                 </Alert>
 
-                <form onSubmit={handleOtpSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="otpCode">{t('pairingOtpLabel')}</Label>
-                    <Input
-                      id="otpCode"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="\d{6}"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={handleOtpChange}
-                      placeholder={t('pairingOtpPlaceholder')}
-                      disabled={completePhonePairingMutation.isPending}
-                      className="font-mono text-center text-2xl tracking-widest"
-                    />
-                    {validationError && (
-                      <p className="text-sm text-destructive">{validationError}</p>
-                    )}
-                  </div>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-amber-600 dark:text-amber-400" />
+                </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        setPhoneStep('phone');
-                        setOtpCode('');
-                        setValidationError('');
-                      }}
-                      disabled={completePhonePairingMutation.isPending}
-                    >
-                      {t('cancel')}
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1"
-                      disabled={completePhonePairingMutation.isPending || !otpCode.trim() || otpCode.length !== 6}
-                    >
-                      {completePhonePairingMutation.isPending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t('pairingOtpSubmitting')}
-                        </>
-                      ) : (
-                        t('pairingOtpSubmitButton')
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setPhoneStep('phone');
+                    setPhoneNumber('');
+                    setValidationError('');
+                  }}
+                >
+                  {t('cancel')}
+                </Button>
               </>
             )}
           </TabsContent>

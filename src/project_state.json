@@ -1,36 +1,28 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Projeto focado em ajustar o fluxo de verificação por código (6 dígitos) e adicionar vinculação de contas Filho ↔ Pai/Mãe via número de celular com confirmação por SMS para conectar logins.",
+  "summary": "Parent/child tracking app with live location map; planning an in-app confirmation flow where a parent is notified and can confirm when a child registers the parent phone number.",
   "architectural_notes": [
-    "Vinculação Filho ↔ Pai/Mãe baseada em número de celular com verificação por SMS; somente após confirmação o vínculo (e conexão de logins) é efetivado."
+    "Add backend-generated internal notifications and a parent-side UI alert/confirmation action triggered by child phone-number registration."
   ],
   "known_issues": [
-    "Fluxo atual de código/OTP não está correto e não aparenta ter sido ajustado para 6 dígitos."
+    "Build/deploy generation failed when attempting to implement the in-app notification confirmation flow (\"The AI couldn't complete your request\")."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-new-pairing-option-for-children-to-link-to-a-parent-guardian-by-entering-the-parent-s-phone-number-in-the-format-00-000000000-which-triggers-an-sms-verification-flow-and-then-connects-the-logins-creates-the-same-parent-child-relationship-as-the-existing-pairing-code-flow",
-      "title": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
+      "id": "feature-add-a-parent-facing-ui-alert-that-surfaces-pending-phone-confirmation-requests-and-allows-the-parent-to-confirm-with-one-click",
+      "title": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-extend-the-user-profile-setup-editing-experience-so-a-parent-guardian-can-provide-and-later-update-their-phone-number-for-phone-based-pairing-without-breaking-existing-profiles",
-      "title": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
+      "id": "feature-update-the-child-phone-pairing-ui-flow-so-that-after-the-child-submits-the-parent-phone-number-the-ui-reflects-pending-parent-confirmation-state-instead-of-or-in-addition-to-the-current-otp-based-completion-step-and-keeps-polling-refetching-until-the-request-is-confirmed",
+      "title": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-adjust-frontend-i18n-strings-english-and-pt-br-for-the-new-phone-based-pairing-flow-and-for-any-new-updated-validation-and-error-states-introduced-by-the-fixed-6-digit-pairing-backend-behavior",
-      "title": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }
@@ -38,26 +30,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Ajustar o fluxo para usar corretamente código de verificação de 6 dígitos (corrigir comportamento atual que não reflete a alteração).",
+      "summary": "Implement in-app confirmation flow: when the child enters the registered parent phone number, backend creates an internal notification; parent receives an alert and can confirm with one click.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Criar opção de vincular conta do Filho com Pai/Mãe via número de celular: Filho informa celular do Pai/Mãe, sistema envia SMS ao Pai/Mãe, e após validação do SMS as contas/logins ficam conectados.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Fix the pairing-code flow end-to-end so the backend generates a numeric code that is exactly 6 digits (as Text) and pairing only accepts exactly 6 digits, ensuring the current UI’s 6-digit constraints actually work with the backend.",
+      "summary": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix 6-digit pairing flow and add parent/child linking via phone number + SMS verification",
+  "projectName": "Add in-app parent confirmation notification when child submits parent phone number",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

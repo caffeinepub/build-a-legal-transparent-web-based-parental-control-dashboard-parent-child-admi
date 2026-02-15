@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useGetCallerUserProfile, useGetMyChildren } from '../../hooks/useQueries';
+import { useGetCallerUserProfile, useGetMyChildren, useGetPendingPairingRequests, useAcceptPendingPairing } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Info, UserPlus, Loader2 } from 'lucide-react';
 import ChildSummaryCard from '../../components/parent/ChildSummaryCard';
 import ActivityView from '../../components/parent/ActivityView';
 import LocationView from '../../components/parent/LocationView';
@@ -20,7 +21,17 @@ export default function ParentDashboard() {
   const { t } = useI18n();
   const { data: profile } = useGetCallerUserProfile();
   const { data: children = [] } = useGetMyChildren({ refetchInterval: 10000 });
+  const { data: pendingRequests = [] } = useGetPendingPairingRequests({ refetchInterval: 5000 });
+  const acceptPairingMutation = useAcceptPendingPairing();
   const [selectedChild, setSelectedChild] = useState<Principal | null>(null);
+
+  const handleAcceptPairing = async (requestId: bigint) => {
+    try {
+      await acceptPairingMutation.mutateAsync(requestId);
+    } catch (error) {
+      // Error already handled by mutation
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
@@ -30,6 +41,36 @@ export default function ParentDashboard() {
         </h1>
         <p className="text-muted-foreground">{t('parentDashboardDescription')}</p>
       </div>
+
+      {pendingRequests.length > 0 && (
+        <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <UserPlus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-blue-900 dark:text-blue-100">
+                {t('pendingPairingAlertTitle')}
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                {t('pendingPairingAlertDescription', { count: pendingRequests.length })}
+              </p>
+            </div>
+            <Button
+              onClick={() => handleAcceptPairing(pendingRequests[0].id)}
+              disabled={acceptPairingMutation.isPending}
+              className="ml-4"
+            >
+              {acceptPairingMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t('pendingPairingConfirming')}
+                </>
+              ) : (
+                t('pendingPairingConfirmButton')
+              )}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <PairingSetup />
@@ -86,23 +127,23 @@ export default function ParentDashboard() {
                       <AuditLogTable childId={selectedChild} />
                     </TabsContent>
 
-                    <TabsContent value="activity" className="space-y-4">
+                    <TabsContent value="activity">
                       <ActivityView childId={selectedChild} />
                     </TabsContent>
 
-                    <TabsContent value="location" className="space-y-4">
+                    <TabsContent value="location">
                       <LocationView childId={selectedChild} />
                     </TabsContent>
 
-                    <TabsContent value="schedule" className="space-y-4">
+                    <TabsContent value="schedule">
                       <ScheduleEditor childId={selectedChild} />
                     </TabsContent>
 
-                    <TabsContent value="filters" className="space-y-4">
+                    <TabsContent value="filters">
                       <ContentFilterEditor childId={selectedChild} />
                     </TabsContent>
 
-                    <TabsContent value="alerts" className="space-y-4">
+                    <TabsContent value="alerts">
                       <AlertsPanelParent childId={selectedChild} />
                     </TabsContent>
                   </Tabs>

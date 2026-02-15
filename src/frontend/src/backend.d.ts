@@ -7,17 +7,19 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface ScheduleChangeDetails {
-    child: Principal;
-    newConfig: ScheduleConfig;
+export interface PendingRequestCompletedDetails {
+    childPrincipal: Principal;
+    childName: string;
+    successful: boolean;
+    parent: Principal;
 }
 export interface PhonePairingInitiatedDetails {
     phoneNumber: string;
     parentId: Principal;
 }
-export interface ContentCategory {
-    name: string;
-    enabled: boolean;
+export interface ScheduleChangeDetails {
+    child: Principal;
+    newConfig: ScheduleConfig;
 }
 export type Time = bigint;
 export interface DayTimeWindow {
@@ -25,9 +27,9 @@ export interface DayTimeWindow {
     dayOfWeek: bigint;
     startHour: bigint;
 }
-export interface AccountDisabledDetails {
-    account: Principal;
-    reason: string;
+export interface ContentCategory {
+    name: string;
+    enabled: boolean;
 }
 export interface ScheduleConfig {
     allowedHours: Array<DayTimeWindow>;
@@ -44,9 +46,19 @@ export interface ContentFilterConfig {
     blocklist: Array<string>;
     allowlist: Array<string>;
 }
+export interface PendingRequestInitiatedDetails {
+    child: Principal;
+    parent: Principal;
+}
 export type AuditLogDetails = {
+    __kind__: "pendingRequestInitiated";
+    pendingRequestInitiated: PendingRequestInitiatedDetails;
+} | {
     __kind__: "phonePairingInitiated";
     phonePairingInitiated: PhonePairingInitiatedDetails;
+} | {
+    __kind__: "pendingRequestCompleted";
+    pendingRequestCompleted: PendingRequestCompletedDetails;
 } | {
     __kind__: "phonePairingCompleted";
     phonePairingCompleted: PhonePairingCompletedDetails;
@@ -84,6 +96,16 @@ export interface FilterChangeDetails {
     child: Principal;
     newConfig: ContentFilterConfig;
 }
+export interface AccountDisabledDetails {
+    account: Principal;
+    reason: string;
+}
+export interface PendingPairingRequest {
+    id: bigint;
+    pending: boolean;
+    child: Principal;
+    parent: Principal;
+}
 export interface ActivityEntry {
     appSite: string;
     childId: Principal;
@@ -105,7 +127,9 @@ export interface PhonePairingCompletedDetails {
     parentId: Principal;
 }
 export enum ActionType {
+    pendingRequestInitiated = "pendingRequestInitiated",
     phonePairingInitiated = "phonePairingInitiated",
+    pendingRequestCompleted = "pendingRequestCompleted",
     phonePairingCompleted = "phonePairingCompleted",
     pairingCreated = "pairingCreated",
     filterChanged = "filterChanged",
@@ -124,10 +148,12 @@ export enum PairWithParentResult {
     notAChild = "notAChild",
     codeExpired = "codeExpired",
     sameFamily = "sameFamily",
+    unexpectedError = "unexpectedError",
     phoneVerificationInitiated = "phoneVerificationInitiated",
     parentNotFound = "parentNotFound",
     alreadyPaired = "alreadyPaired",
     parentNotParent = "parentNotParent",
+    pendingLinkRequest = "pendingLinkRequest",
     invalidCode = "invalidCode",
     phoneVerificationSuccess = "phoneVerificationSuccess",
     success = "success",
@@ -140,10 +166,10 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    acceptPendingPairing(requestId: bigint): Promise<PairWithParentResult>;
     addActivity(entry: ActivityEntry): Promise<void>;
     addLocation(entry: LocationEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    completePhonePairing(phoneNumber: string, verificationCode: string): Promise<PairWithParentResult>;
     disableAccount(account: Principal, reason: string): Promise<void>;
     enableAccount(account: Principal): Promise<void>;
     generateInviteCode(): Promise<string>;
@@ -167,12 +193,14 @@ export interface backendInterface {
     getMyChildren(): Promise<Array<Principal>>;
     getMyParent(): Promise<Principal | null>;
     getParentChildLinks(): Promise<Array<[Principal, Array<Principal>]>>;
+    getPendingPairingRequests(): Promise<Array<PendingPairingRequest>>;
     getSchedule(childId: Principal): Promise<ScheduleConfig | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     pairWithParent(code: string): Promise<PairWithParentResult>;
     pairWithParentViaPhone(phoneNumber: string): Promise<PairWithParentResult>;
+    requestPairingWithParent(parentId: Principal): Promise<PairWithParentResult>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAdminPassword(newPassword: string): Promise<void>;
     setLiveLocationSharing(enabled: boolean): Promise<void>;

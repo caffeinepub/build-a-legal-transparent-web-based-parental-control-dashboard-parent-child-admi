@@ -1,93 +1,70 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T16:01:29.646Z",
+  "generatedAt": "2026-02-15T17:47:20.167Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the pairing-code flow end-to-end so the backend generates a numeric code that is exactly 6 digits (as Text) and pairing only accepts exactly 6 digits, ensuring the current UI’s 6-digit constraints actually work with the backend.",
+        "summary": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
+        "summary": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/child/PairWithParentCard.tsx",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/phoneNumber.ts",
-          "frontend/src/pages/child/ChildHome.tsx"
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/i18n/translations/en.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/child/PairWithParentCard.tsx",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/phoneNumber.ts"
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/i18n/translations/en.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
+        "summary": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-          "frontend/src/pages/parent/ParentDashboard.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/child/PairWithParentCard.tsx",
+          "frontend/src/i18n/translations/en.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-          "frontend/src/pages/parent/ParentDashboard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/components/child/PairWithParentCard.tsx",
-          "frontend/src/components/parent/ParentPhoneNumberCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts",
-          "frontend/src/components/child/PairWithParentCard.tsx",
-          "frontend/src/components/parent/ParentPhoneNumberCard.tsx"
+          "frontend/src/i18n/translations/en.ts"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/http-outcalls/outcall.mo",
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/child/PairWithParentCard.tsx",
-    "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
     "frontend/src/pages/parent/ParentDashboard.tsx",
-    "frontend/src/utils/phoneNumber.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

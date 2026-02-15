@@ -1,94 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fix 6-digit pairing flow and add parent/child linking via phone number + SMS verification",
+  "title": "Add in-app parent confirmation notification when child submits parent phone number",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the pairing-code flow end-to-end so the backend generates a numeric code that is exactly 6 digits (as Text) and pairing only accepts exactly 6 digits, ensuring the current UI’s 6-digit constraints actually work with the backend.",
+      "text": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "o fluxo não está correto! ainda não me parece ter sido modificado para que seja a quantidade de dídigos tenha sido ajustada."
+          "ajuste somente: Quando o FILHO cadastra o número, o backend cria uma notificação interna. • O PAI/MÃE recebe um alerta na interface. • O PAI/MÃE confirma com um clique."
         ]
       },
       "acceptanceCriteria": [
-        "Calling the existing backend method used by the parent UI (generatePairingCode) returns a string matching /^\\d{6}$/ (e.g., \"042381\").",
-        "Calling the existing backend method used by the child UI (pairWithParent) rejects any value that is not exactly 6 digits (non-numeric, shorter, longer) with a non-success result (e.g., invalidCode).",
-        "A newly generated 6-digit code can be used successfully by a child to create the parent↔child link, and the child then shows paired state (via getMyParent) without manual refresh."
+        "When a child initiates phone pairing with a valid phone number that belongs to a parent, the backend stores a new pending confirmation request tied to (parentId, childId, phoneNumber, createdAt, status).",
+        "Pending confirmation requests survive canister upgrades (if the app currently persists state, update migration accordingly per the project’s conditional migration policy).",
+        "A child cannot become paired to the parent via phone flow until the parent confirms the request.",
+        "Only the addressed parent (and admins, if applicable) can view/act on that confirmation request; other users cannot read or confirm it.",
+        "The backend exposes actor methods needed by the UI to (a) create the request (child action), (b) list pending requests for the current parent, and (c) confirm a specific request (parent action).",
+        "Confirming a request results in the parent-child link being created and the request marked as confirmed/closed, and the relevant audit log entry is recorded for traceability."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
-      "target": "both",
+      "text": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "crie uma nova opção para vincular as informações do filho com o PAI/MÃE por numero de celular, exemplo: ao filho inserir o numero de celular da PAI/MÃE (00)000000000 deve se enviar um SMS para o celular PAI/MÃE; faça com que após o filho inserir o SMS corretamente, os loguins sejam conectados"
+          "O PAI/MÃE recebe um alerta na interface. • O PAI/MÃE confirma com um clique."
         ]
       },
       "acceptanceCriteria": [
-        "Frontend: The child pairing area offers two choices: (1) pair via 6-digit code (existing), (2) pair via parent phone number (new).",
-        "Frontend: The phone input enforces digits-only normalization and validates the exact mask length implied by (00)000000000 before submission; user-facing validation messages exist in i18n (en + pt-BR).",
-        "Backend: Parents can register/save a phone number associated with their account, and phone numbers are unique across accounts (attempting to claim an existing phone number fails with a clear, handled error).",
-        "Backend: When a child submits a parent phone number, the canister creates a time-limited verification challenge tied to (child principal, parent principal resolved by phone) and generates a 6-digit numeric OTP.",
-        "Backend: The system attempts to send the OTP via an SMS-sending mechanism; if a real SMS provider is not configured, the system must still allow the flow to be tested via a safe fallback (e.g., returning a status indicating “SMS not configured” while still storing the OTP for verification in development/test tooling).",
-        "Frontend: After the child enters the OTP correctly, the backend links the child to that parent (same internal link structure used by the current pairing flow), and the child UI updates to the paired state (getMyParent reflects the parent).",
-        "Backend: Incorrect OTP, expired OTP, too many attempts, unknown/unregistered parent phone, or child already paired are all handled with explicit result codes and corresponding UI error messages."
+        "In the parent experience (e.g., ParentDashboard), if there is at least one pending phone confirmation request for the logged-in parent, the UI displays a clear alert/banner/card indicating a child is requesting to link via phone number.",
+        "The alert includes a single primary action to confirm the request; clicking it triggers the backend confirm call and shows a success toast/message on completion.",
+        "After confirmation, parent UI updates without a full refresh (React Query invalidation/refetch) and the pending alert disappears.",
+        "All new user-facing text added for this feature is in English and wired through the existing i18n system (update the English dictionary at minimum)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "...vincular ... por numero de celular... enviar um SMS ... para o celular PAI/MÃE..."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Frontend: Parents see a phone number field during profile setup or in an obvious profile/account area, with validation matching the required phone format; children do not need to provide a phone number for this feature to work.",
-        "Backend: A parent’s phone number is stored and retrievable for pairing resolution; updates replace the prior value and maintain uniqueness constraints.",
-        "Existing users without a phone number can continue using the app and the existing 6-digit pairing-code flow unchanged."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
+      "text": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
+        ],
+        "quotes": [
+          "Quando o FILHO cadastra o número, o backend cria uma notificação interna."
         ]
       },
       "acceptanceCriteria": [
-        "All new user-visible labels, button text, help text, and error messages for phone-based pairing and OTP verification are sourced from i18n keys (en.ts and pt-BR.ts).",
-        "No hard-coded Portuguese user-facing strings are introduced in React components."
+        "In the child pairing UI (PairWithParentCard), submitting a phone number that matches a parent creates a pending confirmation request and the UI indicates the request was sent and is awaiting parent confirmation.",
+        "The child UI does not require SMS/OTP entry to complete this confirmation flow.",
+        "Once the parent confirms, the child UI reflects that pairing is completed (e.g., by refetching useGetMyParent and showing the paired state card).",
+        "React Query hooks are added/updated in frontend/src/hooks/useQueries.ts to support creating the request, fetching pending status (as needed), and confirming requests; queries/mutations correctly invalidate existing keys like ['myParent'] and ['myChildren'] after confirmation."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (compose them instead).",
-    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and anything under frontend/src/components/ui.",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo if an upgrade-safe state migration is strictly necessary.",
-    "If real SMS delivery requires an external provider, implement it in a provider-agnostic way (configurable) and also provide a safe fallback suitable for development/testing when provider credentials are not available."
+    "Do not add SMS sending or any external SMS provider integration.",
+    "Do not attempt to keep the web app running after the browser is closed (no always-on background execution requirement).",
+    "Backend changes must conform to the single-actor Motoko architecture in backend/main.mo.",
+    "Do not modify files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing a Twilio-specific integration or any SMS vendor-specific UI/branding.",
-    "Adding third-party authentication methods beyond Internet Identity.",
-    "Adding real-time messaging or push notifications."
+    "Implementing real SMS delivery or OTP via SMS.",
+    "Implementing background execution when the browser/app is closed beyond existing PWA/service worker capabilities.",
+    "Adding real-time sockets/WebSocket-based notifications (use polling/refetch patterns already in use)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

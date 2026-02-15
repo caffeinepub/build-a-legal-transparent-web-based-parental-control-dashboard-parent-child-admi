@@ -1,7 +1,8 @@
 import { useGetLocations, useGetLiveLocationSharingStatus } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Radio } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Clock, Radio, Navigation } from 'lucide-react';
 import type { Principal } from '@icp-sdk/core/principal';
 import { useI18n } from '../../hooks/useI18n';
 
@@ -80,6 +81,9 @@ export default function LiveLocationMap({ childId }: LiveLocationMapProps) {
   const timeAgo = getTimeAgo(latestLocation.timestamp);
   const isStale = Number(latestLocation.timestamp) / 1_000_000 < Date.now() - 15 * 60 * 1000;
 
+  // Generate a Google Maps link for the coordinates
+  const mapsUrl = `https://www.google.com/maps?q=${latestLocation.latitude},${latestLocation.longitude}`;
+
   return (
     <Card>
       <CardHeader>
@@ -94,14 +98,14 @@ export default function LiveLocationMap({ childId }: LiveLocationMapProps) {
           {isLiveSharing && (
             <Badge variant="outline" className="flex items-center gap-1 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
               <Radio className="w-3 h-3 animate-pulse" />
-              {t('liveLocationParentStatusEnabled')}
+              Live
             </Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-lg overflow-hidden border border-blue-200 dark:border-blue-800" style={{ height: '400px' }}>
-          {/* Simple coordinate-based map visualization */}
+          {/* Placeholder map visualization */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative w-full h-full">
               {/* Grid background */}
@@ -139,7 +143,7 @@ export default function LiveLocationMap({ childId }: LiveLocationMapProps) {
               </div>
 
               {/* Coordinates overlay */}
-              <div className="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+              <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-3 shadow-lg">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">{t('locationViewLatitude')}:</span>
@@ -150,6 +154,21 @@ export default function LiveLocationMap({ childId }: LiveLocationMapProps) {
                     <span className="ml-2 font-mono font-semibold">{latestLocation.longitude.toFixed(6)}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* View in Maps button */}
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shadow-lg"
+                  asChild
+                >
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+                    <Navigation className="w-4 h-4 mr-2" />
+                    View in Maps
+                  </a>
+                </Button>
               </div>
             </div>
           </div>

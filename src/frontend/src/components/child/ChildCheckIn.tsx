@@ -1,319 +1,248 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, MapPin, Radio, Smartphone } from 'lucide-react';
-import { useAddActivity, useAddLocation, useGetLiveLocationSharingStatus, useSetLiveLocationSharing } from '../../hooks/useQueries';
+import { Switch } from '@/components/ui/switch';
+import { useAddActivity, useAddLocation, useSetLiveLocationSharing, useGetLiveLocationSharingStatus } from '../../hooks/useQueries';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useLiveLocationSharing } from '../../hooks/useLiveLocationSharing';
+import { Info, MapPin, Activity, Radio } from 'lucide-react';
 import ConsentNotice from './ConsentNotice';
+import { toast } from 'sonner';
 import { useI18n } from '../../hooks/useI18n';
-import { detectLocationCapabilities, getCapabilityMessage } from '../../utils/liveLocationCapabilities';
+import { useLiveLocationSharing } from '../../hooks/useLiveLocationSharing';
+import { detectLocationCapabilities } from '../../utils/liveLocationCapabilities';
 
 export default function ChildCheckIn() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const { identity } = useInternetIdentity();
-  const childId = identity?.getPrincipal() || null;
+  const childId = identity?.getPrincipal();
 
-  const [activityApp, setActivityApp] = useState('');
-  const [activityDuration, setActivityDuration] = useState('');
-  const [activityNotes, setActivityNotes] = useState('');
-  const [activityConsent, setActivityConsent] = useState(false);
+  // Activity form state
+  const [appSite, setAppSite] = useState('');
+  const [duration, setDuration] = useState('');
+  const [notes, setNotes] = useState('');
 
-  const [locationPlace, setLocationPlace] = useState('');
-  const [locationLat, setLocationLat] = useState('');
-  const [locationLng, setLocationLng] = useState('');
-  const [locationConsent, setLocationConsent] = useState(false);
+  // Location form state
+  const [place, setPlace] = useState('');
+  const [isSubmittingManual, setIsSubmittingManual] = useState(false);
 
-  const addActivity = useAddActivity({ silent: true });
+  const addActivity = useAddActivity();
   const addLocation = useAddLocation({ silent: true });
+  const setLiveSharing = useSetLiveLocationSharing();
+  const { data: isLiveSharing = false } = useGetLiveLocationSharingStatus(childId || null);
 
-  // Live location sharing
-  const { data: liveLocationEnabled = false } = useGetLiveLocationSharingStatus(childId);
-  const setLiveLocationSharing = useSetLiveLocationSharing();
-  const { isSharing, error: sharingError, lastUpdate } = useLiveLocationSharing({
-    enabled: liveLocationEnabled,
-    intervalMs: 30000, // 30 seconds
-  });
+  // Live location sharing hook
+  useLiveLocationSharing({ enabled: isLiveSharing });
+
+  const handleActivitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!appSite || !duration) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    await addActivity.mutateAsync({
+      appSite,
+      durationMinutes: BigInt(parseInt(duration)),
+      notes,
+    });
+
+    // Reset form
+    setAppSite('');
+    setDuration('');
+    setNotes('');
+  };
+
+  const handleManualLocationSubmit = async () => {
+    setIsSubmittingManual(true);
+    
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+
+      await addLocation.mutateAsync({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
+
+      toast.success(t('childCheckInLocationManualSuccess'));
+      setPlace('');
+    } catch (error: any) {
+      console.error('Location error:', error);
+      toast.error(t('childCheckInLocationManualError'));
+    } finally {
+      setIsSubmittingManual(false);
+    }
+  };
+
+  const handleLiveSharingToggle = async (enabled: boolean) => {
+    try {
+      await setLiveSharing.mutateAsync(enabled);
+      if (enabled) {
+        toast.success('Live location sharing enabled');
+      } else {
+        toast.success('Live location sharing disabled');
+      }
+    } catch (error: any) {
+      toast.error(`Failed to update live sharing: ${error.message}`);
+    }
+  };
 
   const capabilities = detectLocationCapabilities();
-  const capabilityMessage = getCapabilityMessage(capabilities, language as 'en' | 'pt-BR');
-
-  const handleActivitySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activityConsent) {
-      return;
-    }
-
-    addActivity.mutate(
-      {
-        appSite: activityApp,
-        durationMinutes: BigInt(parseInt(activityDuration) || 0),
-        notes: activityNotes,
-      },
-      {
-        onSuccess: () => {
-          setActivityApp('');
-          setActivityDuration('');
-          setActivityNotes('');
-          setActivityConsent(false);
-        },
-      }
-    );
-  };
-
-  const handleLocationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!locationConsent) {
-      return;
-    }
-
-    addLocation.mutate(
-      {
-        latitude: parseFloat(locationLat) || 0,
-        longitude: parseFloat(locationLng) || 0,
-      },
-      {
-        onSuccess: () => {
-          setLocationPlace('');
-          setLocationLat('');
-          setLocationLng('');
-          setLocationConsent(false);
-        },
-      }
-    );
-  };
-
-  const handleToggleLiveSharing = async () => {
-    await setLiveLocationSharing.mutateAsync(!liveLocationEnabled);
-  };
-
-  const getErrorMessage = (errorCode: string | null) => {
-    if (!errorCode) return null;
-    switch (errorCode) {
-      case 'permission_denied':
-        return t('liveLocationErrorPermissionDenied');
-      case 'position_unavailable':
-        return t('liveLocationErrorUnavailable');
-      case 'timeout':
-        return t('liveLocationErrorTimeout');
-      case 'not_supported':
-        return t('liveLocationErrorNotSupported');
-      default:
-        return t('liveLocationErrorUnknown');
-    }
-  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('checkinTitle')}</CardTitle>
-        <CardDescription>{t('checkinDescription')}</CardDescription>
+        <CardTitle>{t('childCheckInTitle')}</CardTitle>
+        <CardDescription>{t('childCheckInDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="activity">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="activity">{t('checkinTabActivity')}</TabsTrigger>
-            <TabsTrigger value="location">{t('checkinTabLocation')}</TabsTrigger>
+            <TabsTrigger value="activity">
+              <Activity className="w-4 h-4 mr-2" />
+              {t('childCheckInTabActivity')}
+            </TabsTrigger>
+            <TabsTrigger value="location">
+              <MapPin className="w-4 h-4 mr-2" />
+              {t('childCheckInTabLocation')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="activity" className="space-y-4">
-            <ConsentNotice type="activity" />
             <form onSubmit={handleActivitySubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="app">{t('checkinActivityAppLabel')}</Label>
+                <Label htmlFor="appSite">{t('childCheckInActivityAppLabel')}</Label>
                 <Input
-                  id="app"
-                  value={activityApp}
-                  onChange={(e) => setActivityApp(e.target.value)}
-                  placeholder={t('checkinActivityAppPlaceholder')}
+                  id="appSite"
+                  placeholder={t('childCheckInActivityAppPlaceholder')}
+                  value={appSite}
+                  onChange={(e) => setAppSite(e.target.value)}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">{t('checkinActivityDurationLabel')}</Label>
+                <Label htmlFor="duration">{t('childCheckInActivityDurationLabel')}</Label>
                 <Input
                   id="duration"
                   type="number"
-                  min="1"
-                  value={activityDuration}
-                  onChange={(e) => setActivityDuration(e.target.value)}
-                  placeholder={t('checkinActivityDurationPlaceholder')}
+                  placeholder={t('childCheckInActivityDurationPlaceholder')}
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
                   required
+                  min="1"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">{t('checkinActivityNotesLabel')}</Label>
+                <Label htmlFor="notes">{t('childCheckInActivityNotesLabel')}</Label>
                 <Textarea
                   id="notes"
-                  value={activityNotes}
-                  onChange={(e) => setActivityNotes(e.target.value)}
-                  placeholder={t('checkinActivityNotesPlaceholder')}
+                  placeholder={t('childCheckInActivityNotesPlaceholder')}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                 />
               </div>
 
-              <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                  <strong>{t('checkinActivityPreview')}</strong> {t('checkinActivityPreviewBody')}
-                </AlertDescription>
-              </Alert>
+              <ConsentNotice type="activity" />
 
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="activity-consent"
-                  checked={activityConsent}
-                  onCheckedChange={(checked) => setActivityConsent(checked as boolean)}
-                />
-                <Label htmlFor="activity-consent" className="text-sm leading-relaxed cursor-pointer">
-                  {t('checkinActivityConsent')}
-                </Label>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-navy-600 hover:bg-navy-700 text-white"
-                disabled={!activityConsent || addActivity.isPending}
-              >
-                {addActivity.isPending ? t('checkinActivitySubmitting') : t('checkinActivitySubmitButton')}
+              <Button type="submit" className="w-full" disabled={addActivity.isPending}>
+                {addActivity.isPending ? t('childCheckInActivitySubmitting') : t('childCheckInActivitySubmitButton')}
               </Button>
             </form>
           </TabsContent>
 
           <TabsContent value="location" className="space-y-4">
-            <ConsentNotice type="location" />
-
-            {/* Live Location Sharing Control */}
-            <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
+            {/* Live Location Sharing */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1 flex-1">
                   <div className="flex items-center gap-2">
-                    <Radio className={`w-4 h-4 ${liveLocationEnabled && isSharing ? 'text-green-600 animate-pulse' : 'text-muted-foreground'}`} />
-                    <h3 className="font-semibold text-sm">{t('liveLocationTitle')}</h3>
+                    <Radio className={`w-4 h-4 ${isLiveSharing ? 'text-green-600 animate-pulse' : 'text-muted-foreground'}`} />
+                    <Label htmlFor="live-sharing" className="font-semibold">
+                      {t('childCheckInLocationTitle')}
+                    </Label>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {liveLocationEnabled ? t('liveLocationStatusOn') : t('liveLocationStatusOff')}
+                  <p className="text-sm text-muted-foreground">
+                    {t('childCheckInLocationManualDescription')}
                   </p>
                 </div>
-                <Button
-                  onClick={handleToggleLiveSharing}
-                  disabled={setLiveLocationSharing.isPending}
-                  variant={liveLocationEnabled ? 'destructive' : 'default'}
-                  size="sm"
-                >
-                  {setLiveLocationSharing.isPending
-                    ? t('liveLocationUpdating')
-                    : liveLocationEnabled
-                    ? t('liveLocationStopButton')
-                    : t('liveLocationStartButton')}
-                </Button>
+                <Switch
+                  id="live-sharing"
+                  checked={isLiveSharing}
+                  onCheckedChange={handleLiveSharingToggle}
+                  disabled={setLiveSharing.isPending}
+                />
               </div>
 
-              {liveLocationEnabled && (
-                <div className="space-y-2">
-                  <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                    <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <AlertDescription className="text-blue-900 dark:text-blue-100 text-xs">
-                      {t('liveLocationActiveInfo')}
-                    </AlertDescription>
-                  </Alert>
-
-                  {lastUpdate && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('liveLocationLastUpdate')}: {lastUpdate.toLocaleTimeString()}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {sharingError && (
-                <Alert variant="destructive">
-                  <AlertDescription className="text-sm">{getErrorMessage(sharingError)}</AlertDescription>
+              {/* Capability warnings */}
+              {!capabilities.supportsGeolocation && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Geolocation is not supported on this device
+                  </AlertDescription>
                 </Alert>
               )}
 
-              {/* Capability message */}
-              <Alert className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
-                <Smartphone className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <AlertDescription className="text-purple-900 dark:text-purple-100 text-xs">
-                  {capabilityMessage}
-                </AlertDescription>
-              </Alert>
+              {capabilities.supportsGeolocation && !capabilities.supportsServiceWorker && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Background updates require service worker support
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {capabilities.supportsGeolocation && capabilities.supportsServiceWorker && !capabilities.supportsBackgroundSync && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Background sync is not available on this device
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isLiveSharing && (
+                <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                  <Radio className="h-4 w-4 text-green-600 animate-pulse" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    Live location sharing is active
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             {/* Manual Location Submission */}
-            <div className="pt-4 border-t">
-              <h3 className="font-semibold text-sm mb-4">{t('checkinLocationManualTitle')}</h3>
-              <form onSubmit={handleLocationSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="place">{t('checkinLocationPlaceLabel')}</Label>
-                  <Input
-                    id="place"
-                    value={locationPlace}
-                    onChange={(e) => setLocationPlace(e.target.value)}
-                    placeholder={t('checkinLocationPlacePlaceholder')}
-                  />
-                </div>
+            <div className="pt-4 border-t space-y-4">
+              <div>
+                <h3 className="font-semibold text-sm mb-1">{t('childCheckInLocationManualTitle')}</h3>
+                <p className="text-sm text-muted-foreground">{t('childCheckInLocationManualDescription')}</p>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="lat">{t('checkinLocationLatLabel')}</Label>
-                    <Input
-                      id="lat"
-                      type="number"
-                      step="any"
-                      value={locationLat}
-                      onChange={(e) => setLocationLat(e.target.value)}
-                      placeholder="0.0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lng">{t('checkinLocationLonLabel')}</Label>
-                    <Input
-                      id="lng"
-                      type="number"
-                      step="any"
-                      value={locationLng}
-                      onChange={(e) => setLocationLng(e.target.value)}
-                      placeholder="0.0"
-                    />
-                  </div>
-                </div>
+              <ConsentNotice type="location" />
 
-                <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                  <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                    <strong>{t('checkinLocationPreview')}</strong> {t('checkinLocationPreviewBody')}
-                  </AlertDescription>
-                </Alert>
-
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="location-consent"
-                    checked={locationConsent}
-                    onCheckedChange={(checked) => setLocationConsent(checked as boolean)}
-                  />
-                  <Label htmlFor="location-consent" className="text-sm leading-relaxed cursor-pointer">
-                    {t('checkinLocationConsent')}
-                  </Label>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-navy-600 hover:bg-navy-700 text-white"
-                  disabled={!locationConsent || addLocation.isPending}
-                >
-                  {addLocation.isPending ? t('checkinLocationSubmitting') : t('checkinLocationSubmitButton')}
-                </Button>
-              </form>
+              <Button
+                onClick={handleManualLocationSubmit}
+                className="w-full"
+                disabled={isSubmittingManual}
+                variant="outline"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                {isSubmittingManual ? t('childCheckInLocationManualSubmitting') : t('childCheckInLocationManualSubmit')}
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

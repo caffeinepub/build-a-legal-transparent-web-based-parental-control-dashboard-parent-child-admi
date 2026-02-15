@@ -1,92 +1,59 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Phone-based parent/child pairing UI with OTP and parent phone profile support",
+  "title": "In-app parent confirmation notifications for phone-based pairing (frontend)",
   "requirements": [
     {
       "id": "REQ-2",
-      "summary": "Add child pairing option via parent phone number with SMS OTP verification, alongside existing 6-digit code pairing, including validation and UI error handling.",
+      "summary": "Surface pending phone pairing confirmation requests to parents in the dashboard and allow one-click confirmation.",
       "acceptanceCriteria": [
-        "Frontend: The child pairing area offers two choices: (1) pair via 6-digit code (existing), (2) pair via parent phone number (new).",
-        "Frontend: The phone input enforces digits-only normalization and validates the exact mask length implied by (00)000000000 before submission; user-facing validation messages exist in i18n (en + pt-BR).",
-        "Frontend: After the child enters the OTP correctly, the backend links the child to that parent (same internal link structure used by the current pairing flow), and the child UI updates to the paired state (getMyParent reflects the parent).",
-        "Backend: Incorrect OTP, expired OTP, too many attempts, unknown/unregistered parent phone, or child already paired are all handled with explicit result codes and corresponding UI error messages."
+        "In the parent experience (e.g., ParentDashboard), if there is at least one pending phone confirmation request for the logged-in parent, the UI displays a clear alert/banner/card indicating a child is requesting to link via phone number.",
+        "The alert includes a single primary action to confirm the request; clicking it triggers the backend confirm call and shows a success toast/message on completion.",
+        "After confirmation, parent UI updates without a full refresh (React Query invalidation/refetch) and the pending alert disappears.",
+        "All new user-facing text added for this feature is in English and wired through the existing i18n system (update the English dictionary at minimum)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/child/PairWithParentCard.tsx",
-          "operation": "modify",
-          "description": "Extend the child pairing card UI to offer two selectable pairing methods (existing 6-digit code and new phone-number + OTP flow). Add a two-step phone pairing UX: (1) enter parent phone number in digits-only normalized form and submit to initiate verification, (2) enter 6-digit OTP and submit to complete verification. Keep the existing 6-digit code path intact and ensure paired state updates via existing getMyParent query behavior. Verify the component's usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add React Query mutations for phone pairing: a hook to initiate phone pairing (calling pairWithParentViaPhone) and a hook to complete OTP verification (calling completePhonePairing). On success, invalidate/refetch myParent (and relevant relationship queries) so the child UI transitions to paired state without manual refresh. Map PairWithParentResult codes related to phone verification into handled UI-consumable outcomes. Verify the component's usage instructions before implementing."
+          "description": "Add React Query hooks for the parent confirmation flow using existing backend capabilities: a query hook to fetch pending pairing requests for the current parent (via getPendingPairingRequests) and a mutation hook to confirm a request (via acceptPendingPairing). Ensure the confirm mutation invalidates/refetches relevant keys (at minimum: ['myChildren'], and the pending-requests query key), and shows success/error toasts consistent with existing patterns. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/utils/phoneNumber.ts",
-          "operation": "create",
-          "description": "Create utilities for phone-number normalization and formatting: strip non-digits, enforce exact 11-digit length for the (00)000000000 mask, and provide a formatter for display. Use these helpers in the child phone pairing UI and parent profile phone field to ensure consistent validation. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
+          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
           "operation": "modify",
-          "description": "Ensure the updated pairing UI remains properly wired into the child home experience (PairWithParentCard shown when not paired). If the phone flow introduces additional local state, confirm it resets appropriately when myParent becomes available. Verify the component's usage instructions before implementing."
+          "description": "Add a parent-facing pending confirmation alert/banner/card at the top of the dashboard content area that appears when there are one or more pending requests for the logged-in parent. The alert should include a single primary Confirm action that triggers the new confirm mutation; on success, show a success toast/message and ensure the UI updates via React Query invalidation so the alert disappears without a full refresh. Keep the feature accessible only in the parent UI path already guarded by role-based routing (authorization component already drives authenticated/role-gated access in App.tsx). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/i18n/translations/en.ts",
+          "operation": "modify",
+          "description": "Add English i18n keys for the parent pending confirmation alert (title/body), confirm button label, and success/failure toast messages for confirming a pending phone pairing request. Ensure ParentDashboard uses t(...) for all new strings. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Allow parents/guardians to provide and update a phone number in their profile for phone-based pairing, with validation and without disrupting existing users.",
+      "summary": "Update child phone pairing flow to show a pending parent-confirmation state (no OTP) and poll/refetch until pairing is completed.",
       "acceptanceCriteria": [
-        "Frontend: Parents see a phone number field during profile setup or in an obvious profile/account area, with validation matching the required phone format; children do not need to provide a phone number for this feature to work.",
-        "Existing users without a phone number can continue using the app and the existing 6-digit pairing-code flow unchanged."
+        "In the child pairing UI (PairWithParentCard), submitting a phone number that matches a parent creates a pending confirmation request and the UI indicates the request was sent and is awaiting parent confirmation.",
+        "The child UI does not require SMS/OTP entry to complete this confirmation flow.",
+        "Once the parent confirms, the child UI reflects that pairing is completed (e.g., by refetching useGetMyParent and showing the paired state card).",
+        "React Query hooks are added/updated in frontend/src/hooks/useQueries.ts to support creating the request, fetching pending status (as needed), and confirming requests; queries/mutations correctly invalidate existing keys like ['myParent'] and ['myChildren'] after confirmation."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add an optional phone number field for parent/guardian role during initial profile setup. Validate against the required (00)000000000 mask length via shared normalization (digits-only, exactly 11 digits). Do not require phone for children. Save phoneNumber into the UserProfile only when provided. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-          "operation": "create",
-          "description": "Create a parent-facing account/profile card that displays the current phone number (if any) and allows adding/updating it. Use existing shadcn/ui composed components (Card, Input, Label, Button, Alert) without modifying frontend/src/components/ui. Leverage i18n strings and shared phone normalization utilities. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Wire ParentPhoneNumberCard into the parent dashboard in an obvious location (near pairing setup), so parents can add/update their phone number after onboarding. Ensure existing flows (pairing code generation, child selection) remain unchanged. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add/adjust i18n strings (en + pt-BR) for phone-based pairing, OTP verification, and updated pairing validation/error states.",
-      "acceptanceCriteria": [
-        "All new user-visible labels, button text, help text, and error messages for phone-based pairing and OTP verification are sourced from i18n keys (en.ts and pt-BR.ts).",
-        "No hard-coded Portuguese user-facing strings are introduced in React components."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/i18n/translations/en.ts",
-          "operation": "modify",
-          "description": "Add English i18n keys for: phone pairing option labels, phone input label/placeholder/help, OTP step label/placeholder/help, submit/resend/cancel actions if present, and explicit error messages corresponding to phone pairing/OTP result codes (e.g., parentNotFound, phoneVerificationExpired, phoneVerificationFailed, too many attempts if exposed, alreadyPaired, phoneNumberAlreadyLinked). Also add parent phone profile field labels and validation messages. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/i18n/translations/pt-BR.ts",
-          "operation": "modify",
-          "description": "Add Portuguese (Brazil) equivalents for the new phone pairing + OTP + parent phone profile keys introduced in en.ts, ensuring all user-visible strings used by the new/updated UI are translated and referenced via i18n. Verify the component's usage instructions before implementing."
+          "description": "Update existing phone pairing query/mutation support to handle the new pending confirmation flow: ensure usePairWithParentViaPhone cleanly returns/propagates PairWithParentResult.pendingLinkRequest, and update useGetMyParent to optionally accept query options (e.g., refetchInterval) so the child UI can poll while awaiting confirmation. Keep existing behavior for other phone results to avoid regressions. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/child/PairWithParentCard.tsx",
           "operation": "modify",
-          "description": "Replace/extend any new user-visible strings added for the phone pairing + OTP flow with i18n keys (no hard-coded Portuguese). Ensure validation and error rendering uses i18n messages. Verify the component's usage instructions before implementing."
+          "description": "Adjust the phone-based pairing UI so that when pairWithParentViaPhone returns pendingLinkRequest, the component transitions into a new 'pending parent confirmation' state (instead of OTP entry), displays a clear waiting message, and starts polling/refetching (e.g., by enabling a refetchInterval on useGetMyParent while pending). When pairing is eventually established, the existing paired state card should render automatically. Preserve the existing OTP UI only for cases where the backend returns phoneVerificationInitiated, but do not require OTP for the pending confirmation flow. All new strings must use i18n. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+          "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Ensure the parent phone profile UI uses i18n keys for all labels, help text, and validation/errors (no hard-coded Portuguese). Verify the component's usage instructions before implementing."
+          "description": "Add English i18n keys for the child's pending-confirmation state (title/body), optional helper text (e.g., polling note), and any toasts shown after submitting the phone number when the result is pendingLinkRequest. Verify the component's usage instructions before implementing."
         }
       ]
     }

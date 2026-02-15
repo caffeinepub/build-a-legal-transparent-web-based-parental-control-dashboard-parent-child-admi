@@ -1,111 +1,114 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T16:01:29.643Z",
-  "summary": "Diff implements significant parts of phone-number-based pairing UI and introduces backend state/types for phone numbers and phone verifications, plus a migration file. However, key BuildRequest items are not evidenced in the diff summary: backend 6-digit enforcement/generation details, SMS provider-agnostic sending + safe fallback behavior, explicit handling for OTP error cases, and complete i18n coverage for new UI strings (and some user-visible toasts remain hard-coded). The diff also includes several unrelated frontend changes (polling, theme/style, broad translation work) not requested.",
+  "generatedAt": "2026-02-15T17:47:20.164Z",
+  "summary": "The diff partially implements an in-app pending pairing concept (new pendingPairings state + migration scaffolding, parent dashboard alert, and child-side “pending” polling), but key backend data/authorization requirements and parts of the frontend request/confirmation flow are not evidenced in the provided diff summary. The diff also includes numerous unrelated UI/translation/polling changes not requested.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Backend generatePairingCode returns exactly 6 digits as Text and pairWithParent rejects anything not exactly 6 digits with an explicit non-success result.",
-      "reason": "backend/main.mo is truncated and the diff summary does not show the implementation of generatePairingCode or the validation logic in pairWithParent enforcing exactly 6 numeric digits; only frontend-side 6-digit validation is clearly shown.",
+      "requirement": "Store a pending confirmation request tied to (parentId, childId, phoneNumber, createdAt, status) when child submits a phone number that matches a parent; and block completion until parent confirms.",
+      "reason": "Pending request type shown only includes {id,parent,child,pending:Bool} with no phoneNumber, createdAt, or explicit status beyond a boolean; no evidence that phone-based pairing is blocked pending confirmation.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/components/child/PairWithParentCard.tsx"
+        "backend/migration.mo",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Backend exposes actor methods for (a) create request (child), (b) list pending requests for current parent, (c) confirm a specific request (parent).",
+      "reason": "The diff summary shows new frontend hooks (names referenced) and new pendingPairings state, but does not include any concrete actor method definitions/signatures in backend/main.mo (file is truncated before any relevant methods are shown).",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Only addressed parent (and admins if applicable) can view/act on the request; other users cannot read/confirm it.",
+      "reason": "No access-control logic for listing/confirming pending requests is shown in the provided backend diff excerpt; cannot verify restriction enforcement from the truncated summary.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-1",
+      "requirement": "Confirming a request creates the parent-child link, marks the request confirmed/closed, and records an audit log entry for traceability.",
+      "reason": "Although new audit log action types (#pendingRequestInitiated/#pendingRequestCompleted) appear in types, there is no visible implementation showing that confirmation mutates links, closes the request, and appends an audit entry.",
+      "evidence": [
+        "backend/main.mo",
+        "backend/migration.mo"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Backend must send OTP via provider-agnostic SMS mechanism and provide a safe fallback when provider credentials are not available, while still storing OTP for dev/test verification.",
-      "reason": "No evidence in the diff summary of any SMS-sending abstraction/config, provider selection, environment-based configuration, or fallback behavior. Only types/result variants for phone verification appear.",
+      "requirement": "All new user-facing text is in English and wired through existing i18n system (update English dictionary at minimum).",
+      "reason": "ParentDashboard uses new i18n keys (e.g., pendingPairingAlertTitle/Description/Confirming/ConfirmButton), but the diff excerpt of en.ts does not show these keys being added (file content shown is truncated and does not evidence the new entries).",
       "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Backend must create time-limited verification challenge tied to (child principal, resolved parent principal by phone) and handle incorrect OTP, expired OTP, too many attempts, unknown/unregistered phone, or child already paired with explicit result codes and corresponding UI messages.",
-      "reason": "While backend types include PhoneVerificationData with expires/isVerified and some result variants (#phoneVerificationExpired/#phoneVerificationFailed/#phoneVerificationSuccess), the diff summary does not show implementations for: parent resolution by phone, challenge keyed by (child,parent), attempt counting/lockout, and explicit handling for unknown/unregistered phone or too many attempts. Frontend i18n/error mapping for all these cases is also not evidenced in translations.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/i18n/translations/en.ts (truncated)",
-        "frontend/src/i18n/translations/pt-BR.ts (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Frontend phone input enforces digits-only normalization and validates exact mask length implied by (00)000000000; user-facing validation messages exist in i18n (en + pt-BR).",
-      "reason": "Digits-only normalization/length limiting exists (parsePhoneNumberInput/isValidPhoneNumber), but the diff summary does not show the required new i18n keys for phone pairing/OTP validation errors and labels used by the new UI (e.g., keys referenced like parentPhoneTitle/parentPhoneErrorEmpty/etc.). The translation files shown only include profile setup phone strings, not the broader new flow keys.",
-      "evidence": [
-        "frontend/src/utils/phoneNumber.ts",
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-        "frontend/src/i18n/translations/en.ts (truncated)",
-        "frontend/src/i18n/translations/pt-BR.ts (truncated)"
+        "frontend/src/pages/parent/ParentDashboard.tsx",
+        "frontend/src/i18n/translations/en.ts"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Backend enforces uniqueness of parent phone numbers across accounts; attempting to claim an existing number fails with a clear handled error; updates replace prior value maintaining uniqueness.",
-      "reason": "backend/main.mo adds phoneNumber field and new result variant #phoneNumberAlreadyLinked, but the diff summary does not show the actual uniqueness index/check logic, update semantics, or the specific error returned by saveCallerUserProfile when a duplicate is attempted.",
+      "requirement": "Child phone pairing flow should create a pending confirmation request and show “pending parent confirmation” state; should not require SMS/OTP entry for this flow.",
+      "reason": "PairWithParentCard introduces a 'pending' step and polls useGetMyParent, but the diff excerpt does not show that submitting a phone number triggers creation of a pending request (vs initiating an OTP/verification flow) nor that OTP entry is removed/unused; code is truncated around result handling and the mutation still references usePairWithParentViaPhone.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ]
     },
     {
-      "id": "REQ-4",
-      "requirement": "All new user-visible labels, button text, help text, and error messages for phone-based pairing and OTP verification are sourced from i18n keys (en.ts and pt-BR.ts); no hard-coded Portuguese strings in React components.",
-      "reason": "New components call many new i18n keys (e.g., parentPhoneTitle/parentPhoneDescription/parentPhoneErrorInvalid, pairing phone/OTP messages), but the diff summary does not show those keys added to en.ts and pt-BR.ts. Additionally, user-visible toasts in useSaveCallerUserProfile are hard-coded English strings rather than i18n-sourced.",
+      "id": "REQ-3",
+      "requirement": "React Query hooks in frontend/src/hooks/useQueries.ts support creating the request, fetching pending status (as needed), and confirming requests; and correctly invalidate ['myParent'] and ['myChildren'] after confirmation.",
+      "reason": "The diff summary mentions new hooks for pending pairing requests and accept mutation, but the provided useQueries.ts excerpt does not show these hook implementations nor their invalidation behavior (file truncated before new hooks).",
       "evidence": [
-        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/i18n/translations/en.ts (truncated)",
-        "frontend/src/i18n/translations/pt-BR.ts (truncated)",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added broad automatic polling/refetch behavior for multiple queries/components (children list, activities, locations, etc.).",
-      "reason": "The BuildRequest focuses on pairing/phone/SMS + i18n; general polling for dashboard data is not requested.",
+      "description": "Broad app-wide theme/token styling refactors and UI/UX changes unrelated to pending phone confirmation (e.g., App.tsx theme-token styling, login button styling changes, footer/header changes).",
+      "reason": "Not requested by REQ-1/2/3; these changes go beyond the in-app parent confirmation flow.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "frontend/src/pages/parent/ParentDashboard.tsx",
         "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Theme-token-based styling and various UI/translation overhauls across unrelated pages (Admin panel, Transparency policies, etc.).",
-      "reason": "Not requested by the BuildRequest; only pairing/phone-based flow and related i18n strings were requested.",
+      "description": "Large-scale translation/i18n rewrites across unrelated pages (AdminPanel, TransparencyPolicies) and additional Portuguese support work not scoped to the pending pairing feature.",
+      "reason": "BuildRequest only requires new text for this feature be in English via i18n; it does not request full translation coverage refactors across the app.",
       "evidence": [
         "frontend-file-summaries.txt",
-        "frontend/src/i18n/translations/en.ts (truncated)",
-        "frontend/src/i18n/translations/pt-BR.ts (truncated)"
+        "frontend/src/i18n/translations/pt-BR.ts"
       ]
     },
     {
-      "description": "Introduced backend migration system (backend/migration.mo) and applied it on upgrade.",
-      "reason": "Migration was allowed only if strictly necessary; the diff summary does not provide evidence it was strictly necessary, so it appears potentially extra relative to the request.",
+      "description": "Added/changed polling behavior for activities, location views, child summary cards, and other monitoring components unrelated to pairing confirmation.",
+      "reason": "Not part of REQ-1/2/3; introduces additional automatic refetch behavior beyond the requested pending confirmation polling.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Changes to child check-in/live location sharing messaging and capability detection unrelated to phone pairing confirmation.",
+      "reason": "Not requested; BuildRequest explicitly focuses on in-app parent confirmation for phone-based linking.",
+      "evidence": [
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.66,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/child/PairWithParentCard.tsx",
-    "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
     "frontend/src/pages/parent/ParentDashboard.tsx",
-    "frontend/src/utils/phoneNumber.ts",
     "project_state.json"
   ]
 }

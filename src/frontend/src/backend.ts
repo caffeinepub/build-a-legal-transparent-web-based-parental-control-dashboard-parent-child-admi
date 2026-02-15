@@ -89,17 +89,19 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface ScheduleChangeDetails {
-    child: Principal;
-    newConfig: ScheduleConfig;
+export interface PendingRequestCompletedDetails {
+    childPrincipal: Principal;
+    childName: string;
+    successful: boolean;
+    parent: Principal;
 }
 export interface PhonePairingInitiatedDetails {
     phoneNumber: string;
     parentId: Principal;
 }
-export interface ContentCategory {
-    name: string;
-    enabled: boolean;
+export interface ScheduleChangeDetails {
+    child: Principal;
+    newConfig: ScheduleConfig;
 }
 export type Time = bigint;
 export interface DayTimeWindow {
@@ -107,9 +109,9 @@ export interface DayTimeWindow {
     dayOfWeek: bigint;
     startHour: bigint;
 }
-export interface AccountDisabledDetails {
-    account: Principal;
-    reason: string;
+export interface ContentCategory {
+    name: string;
+    enabled: boolean;
 }
 export interface ScheduleConfig {
     allowedHours: Array<DayTimeWindow>;
@@ -126,9 +128,19 @@ export interface ContentFilterConfig {
     blocklist: Array<string>;
     allowlist: Array<string>;
 }
+export interface PendingRequestInitiatedDetails {
+    child: Principal;
+    parent: Principal;
+}
 export type AuditLogDetails = {
+    __kind__: "pendingRequestInitiated";
+    pendingRequestInitiated: PendingRequestInitiatedDetails;
+} | {
     __kind__: "phonePairingInitiated";
     phonePairingInitiated: PhonePairingInitiatedDetails;
+} | {
+    __kind__: "pendingRequestCompleted";
+    pendingRequestCompleted: PendingRequestCompletedDetails;
 } | {
     __kind__: "phonePairingCompleted";
     phonePairingCompleted: PhonePairingCompletedDetails;
@@ -166,6 +178,16 @@ export interface FilterChangeDetails {
     child: Principal;
     newConfig: ContentFilterConfig;
 }
+export interface AccountDisabledDetails {
+    account: Principal;
+    reason: string;
+}
+export interface PendingPairingRequest {
+    id: bigint;
+    pending: boolean;
+    child: Principal;
+    parent: Principal;
+}
 export interface ActivityEntry {
     appSite: string;
     childId: Principal;
@@ -187,7 +209,9 @@ export interface PhonePairingCompletedDetails {
     parentId: Principal;
 }
 export enum ActionType {
+    pendingRequestInitiated = "pendingRequestInitiated",
     phonePairingInitiated = "phonePairingInitiated",
+    pendingRequestCompleted = "pendingRequestCompleted",
     phonePairingCompleted = "phonePairingCompleted",
     pairingCreated = "pairingCreated",
     filterChanged = "filterChanged",
@@ -206,10 +230,12 @@ export enum PairWithParentResult {
     notAChild = "notAChild",
     codeExpired = "codeExpired",
     sameFamily = "sameFamily",
+    unexpectedError = "unexpectedError",
     phoneVerificationInitiated = "phoneVerificationInitiated",
     parentNotFound = "parentNotFound",
     alreadyPaired = "alreadyPaired",
     parentNotParent = "parentNotParent",
+    pendingLinkRequest = "pendingLinkRequest",
     invalidCode = "invalidCode",
     phoneVerificationSuccess = "phoneVerificationSuccess",
     success = "success",
@@ -223,10 +249,10 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    acceptPendingPairing(requestId: bigint): Promise<PairWithParentResult>;
     addActivity(entry: ActivityEntry): Promise<void>;
     addLocation(entry: LocationEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    completePhonePairing(phoneNumber: string, verificationCode: string): Promise<PairWithParentResult>;
     disableAccount(account: Principal, reason: string): Promise<void>;
     enableAccount(account: Principal): Promise<void>;
     generateInviteCode(): Promise<string>;
@@ -250,12 +276,14 @@ export interface backendInterface {
     getMyChildren(): Promise<Array<Principal>>;
     getMyParent(): Promise<Principal | null>;
     getParentChildLinks(): Promise<Array<[Principal, Array<Principal>]>>;
+    getPendingPairingRequests(): Promise<Array<PendingPairingRequest>>;
     getSchedule(childId: Principal): Promise<ScheduleConfig | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     pairWithParent(code: string): Promise<PairWithParentResult>;
     pairWithParentViaPhone(phoneNumber: string): Promise<PairWithParentResult>;
+    requestPairingWithParent(parentId: Principal): Promise<PairWithParentResult>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAdminPassword(newPassword: string): Promise<void>;
     setLiveLocationSharing(enabled: boolean): Promise<void>;
@@ -264,7 +292,7 @@ export interface backendInterface {
     updateSchedule(childId: Principal, newConfig: ScheduleConfig): Promise<void>;
     verifyAdminPassword(password: string): Promise<boolean>;
 }
-import type { AccountDisabledDetails as _AccountDisabledDetails, ActionType as _ActionType, AppRole as _AppRole, AuditLogDetails as _AuditLogDetails, AuditLogEntry as _AuditLogEntry, ContentFilterConfig as _ContentFilterConfig, FilterChangeDetails as _FilterChangeDetails, PairWithParentResult as _PairWithParentResult, PairingDetails as _PairingDetails, PhonePairingCompletedDetails as _PhonePairingCompletedDetails, PhonePairingInitiatedDetails as _PhonePairingInitiatedDetails, ScheduleChangeDetails as _ScheduleChangeDetails, ScheduleConfig as _ScheduleConfig, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { AccountDisabledDetails as _AccountDisabledDetails, ActionType as _ActionType, AppRole as _AppRole, AuditLogDetails as _AuditLogDetails, AuditLogEntry as _AuditLogEntry, ContentFilterConfig as _ContentFilterConfig, FilterChangeDetails as _FilterChangeDetails, PairWithParentResult as _PairWithParentResult, PairingDetails as _PairingDetails, PendingRequestCompletedDetails as _PendingRequestCompletedDetails, PendingRequestInitiatedDetails as _PendingRequestInitiatedDetails, PhonePairingCompletedDetails as _PhonePairingCompletedDetails, PhonePairingInitiatedDetails as _PhonePairingInitiatedDetails, ScheduleChangeDetails as _ScheduleChangeDetails, ScheduleConfig as _ScheduleConfig, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -279,6 +307,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor._initializeAccessControlWithSecret(arg0);
             return result;
+        }
+    }
+    async acceptPendingPairing(arg0: bigint): Promise<PairWithParentResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.acceptPendingPairing(arg0);
+                return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.acceptPendingPairing(arg0);
+            return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async addActivity(arg0: ActivityEntry): Promise<void> {
@@ -312,29 +354,15 @@ export class Backend implements backendInterface {
     async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n3(this._uploadFile, this._downloadFile, arg1));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n3(this._uploadFile, this._downloadFile, arg1));
             return result;
-        }
-    }
-    async completePhonePairing(arg0: string, arg1: string): Promise<PairWithParentResult> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.completePhonePairing(arg0, arg1);
-                return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.completePhonePairing(arg0, arg1);
-            return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
         }
     }
     async disableAccount(arg0: Principal, arg1: string): Promise<void> {
@@ -594,6 +622,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getPendingPairingRequests(): Promise<Array<PendingPairingRequest>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingPairingRequests();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingPairingRequests();
+            return result;
+        }
+    }
     async getSchedule(arg0: Principal): Promise<ScheduleConfig | null> {
         if (this.processError) {
             try {
@@ -654,28 +696,42 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.pairWithParent(arg0);
-                return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
+                return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.pairWithParent(arg0);
-            return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
+            return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async pairWithParentViaPhone(arg0: string): Promise<PairWithParentResult> {
         if (this.processError) {
             try {
                 const result = await this.actor.pairWithParentViaPhone(arg0);
-                return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
+                return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.pairWithParentViaPhone(arg0);
-            return from_candid_PairWithParentResult_n3(this._uploadFile, this._downloadFile, result);
+            return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async requestPairingWithParent(arg0: Principal): Promise<PairWithParentResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.requestPairingWithParent(arg0);
+                return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.requestPairingWithParent(arg0);
+            return from_candid_PairWithParentResult_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
@@ -789,8 +845,8 @@ function from_candid_AuditLogDetails_n17(_uploadFile: (file: ExternalBlob) => Pr
 function from_candid_AuditLogEntry_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AuditLogEntry): AuditLogEntry {
     return from_candid_record_n14(_uploadFile, _downloadFile, value);
 }
-function from_candid_PairWithParentResult_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PairWithParentResult): PairWithParentResult {
-    return from_candid_variant_n4(_uploadFile, _downloadFile, value);
+function from_candid_PairWithParentResult_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PairWithParentResult): PairWithParentResult {
+    return from_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
 function from_candid_UserProfile_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserProfile): UserProfile {
     return from_candid_record_n9(_uploadFile, _downloadFile, value);
@@ -862,7 +918,11 @@ function from_candid_variant_n11(_uploadFile: (file: ExternalBlob) => Promise<Ui
     return "admin" in value ? AppRole.admin : "child" in value ? AppRole.child : "parent" in value ? AppRole.parent : value;
 }
 function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    pendingRequestInitiated: null;
+} | {
     phonePairingInitiated: null;
+} | {
+    pendingRequestCompleted: null;
 } | {
     phonePairingCompleted: null;
 } | {
@@ -874,10 +934,14 @@ function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Ui
 } | {
     scheduleChanged: null;
 }): ActionType {
-    return "phonePairingInitiated" in value ? ActionType.phonePairingInitiated : "phonePairingCompleted" in value ? ActionType.phonePairingCompleted : "pairingCreated" in value ? ActionType.pairingCreated : "filterChanged" in value ? ActionType.filterChanged : "accountDisabled" in value ? ActionType.accountDisabled : "scheduleChanged" in value ? ActionType.scheduleChanged : value;
+    return "pendingRequestInitiated" in value ? ActionType.pendingRequestInitiated : "phonePairingInitiated" in value ? ActionType.phonePairingInitiated : "pendingRequestCompleted" in value ? ActionType.pendingRequestCompleted : "phonePairingCompleted" in value ? ActionType.phonePairingCompleted : "pairingCreated" in value ? ActionType.pairingCreated : "filterChanged" in value ? ActionType.filterChanged : "accountDisabled" in value ? ActionType.accountDisabled : "scheduleChanged" in value ? ActionType.scheduleChanged : value;
 }
 function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    pendingRequestInitiated: _PendingRequestInitiatedDetails;
+} | {
     phonePairingInitiated: _PhonePairingInitiatedDetails;
+} | {
+    pendingRequestCompleted: _PendingRequestCompletedDetails;
 } | {
     phonePairingCompleted: _PhonePairingCompletedDetails;
 } | {
@@ -889,8 +953,14 @@ function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Ui
 } | {
     scheduleChanged: _ScheduleChangeDetails;
 }): {
+    __kind__: "pendingRequestInitiated";
+    pendingRequestInitiated: PendingRequestInitiatedDetails;
+} | {
     __kind__: "phonePairingInitiated";
     phonePairingInitiated: PhonePairingInitiatedDetails;
+} | {
+    __kind__: "pendingRequestCompleted";
+    pendingRequestCompleted: PendingRequestCompletedDetails;
 } | {
     __kind__: "phonePairingCompleted";
     phonePairingCompleted: PhonePairingCompletedDetails;
@@ -907,9 +977,15 @@ function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Ui
     __kind__: "scheduleChanged";
     scheduleChanged: ScheduleChangeDetails;
 } {
-    return "phonePairingInitiated" in value ? {
+    return "pendingRequestInitiated" in value ? {
+        __kind__: "pendingRequestInitiated",
+        pendingRequestInitiated: value.pendingRequestInitiated
+    } : "phonePairingInitiated" in value ? {
         __kind__: "phonePairingInitiated",
         phonePairingInitiated: value.phonePairingInitiated
+    } : "pendingRequestCompleted" in value ? {
+        __kind__: "pendingRequestCompleted",
+        pendingRequestCompleted: value.pendingRequestCompleted
     } : "phonePairingCompleted" in value ? {
         __kind__: "phonePairingCompleted",
         phonePairingCompleted: value.phonePairingCompleted
@@ -927,16 +1003,7 @@ function from_candid_variant_n18(_uploadFile: (file: ExternalBlob) => Promise<Ui
         scheduleChanged: value.scheduleChanged
     } : value;
 }
-function from_candid_variant_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    admin: null;
-} | {
-    user: null;
-} | {
-    guest: null;
-}): UserRole {
-    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
-}
-function from_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     alreadyUsed: null;
 } | {
     parentIdNotProvided: null;
@@ -949,6 +1016,8 @@ function from_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } | {
     sameFamily: null;
 } | {
+    unexpectedError: null;
+} | {
     phoneVerificationInitiated: null;
 } | {
     parentNotFound: null;
@@ -956,6 +1025,8 @@ function from_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uin
     alreadyPaired: null;
 } | {
     parentNotParent: null;
+} | {
+    pendingLinkRequest: null;
 } | {
     invalidCode: null;
 } | {
@@ -967,7 +1038,16 @@ function from_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } | {
     phoneNumberAlreadyLinked: null;
 }): PairWithParentResult {
-    return "alreadyUsed" in value ? PairWithParentResult.alreadyUsed : "parentIdNotProvided" in value ? PairWithParentResult.parentIdNotProvided : "phoneVerificationExpired" in value ? PairWithParentResult.phoneVerificationExpired : "notAChild" in value ? PairWithParentResult.notAChild : "codeExpired" in value ? PairWithParentResult.codeExpired : "sameFamily" in value ? PairWithParentResult.sameFamily : "phoneVerificationInitiated" in value ? PairWithParentResult.phoneVerificationInitiated : "parentNotFound" in value ? PairWithParentResult.parentNotFound : "alreadyPaired" in value ? PairWithParentResult.alreadyPaired : "parentNotParent" in value ? PairWithParentResult.parentNotParent : "invalidCode" in value ? PairWithParentResult.invalidCode : "phoneVerificationSuccess" in value ? PairWithParentResult.phoneVerificationSuccess : "success" in value ? PairWithParentResult.success : "phoneVerificationFailed" in value ? PairWithParentResult.phoneVerificationFailed : "phoneNumberAlreadyLinked" in value ? PairWithParentResult.phoneNumberAlreadyLinked : value;
+    return "alreadyUsed" in value ? PairWithParentResult.alreadyUsed : "parentIdNotProvided" in value ? PairWithParentResult.parentIdNotProvided : "phoneVerificationExpired" in value ? PairWithParentResult.phoneVerificationExpired : "notAChild" in value ? PairWithParentResult.notAChild : "codeExpired" in value ? PairWithParentResult.codeExpired : "sameFamily" in value ? PairWithParentResult.sameFamily : "unexpectedError" in value ? PairWithParentResult.unexpectedError : "phoneVerificationInitiated" in value ? PairWithParentResult.phoneVerificationInitiated : "parentNotFound" in value ? PairWithParentResult.parentNotFound : "alreadyPaired" in value ? PairWithParentResult.alreadyPaired : "parentNotParent" in value ? PairWithParentResult.parentNotParent : "pendingLinkRequest" in value ? PairWithParentResult.pendingLinkRequest : "invalidCode" in value ? PairWithParentResult.invalidCode : "phoneVerificationSuccess" in value ? PairWithParentResult.phoneVerificationSuccess : "success" in value ? PairWithParentResult.success : "phoneVerificationFailed" in value ? PairWithParentResult.phoneVerificationFailed : "phoneNumberAlreadyLinked" in value ? PairWithParentResult.phoneNumberAlreadyLinked : value;
+}
+function from_candid_variant_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+}): UserRole {
+    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
 function from_candid_vec_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_AuditLogEntry>): Array<AuditLogEntry> {
     return value.map((x)=>from_candid_AuditLogEntry_n13(_uploadFile, _downloadFile, x));
@@ -981,8 +1061,8 @@ function to_candid_AppRole_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint
 function to_candid_UserProfile_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserProfile): _UserProfile {
     return to_candid_record_n26(_uploadFile, _downloadFile, value);
 }
-function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
-    return to_candid_variant_n2(_uploadFile, _downloadFile, value);
+function to_candid_UserRole_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n4(_uploadFile, _downloadFile, value);
 }
 function to_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: string;
@@ -999,21 +1079,6 @@ function to_candid_record_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         phoneNumber: value.phoneNumber ? candid_some(value.phoneNumber) : candid_none()
     };
 }
-function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
-    admin: null;
-} | {
-    user: null;
-} | {
-    guest: null;
-} {
-    return value == UserRole.admin ? {
-        admin: null
-    } : value == UserRole.user ? {
-        user: null
-    } : value == UserRole.guest ? {
-        guest: null
-    } : value;
-}
 function to_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: AppRole): {
     admin: null;
 } | {
@@ -1027,6 +1092,21 @@ function to_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint
         child: null
     } : value == AppRole.parent ? {
         parent: null
+    } : value;
+}
+function to_candid_variant_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+} {
+    return value == UserRole.admin ? {
+        admin: null
+    } : value == UserRole.user ? {
+        user: null
+    } : value == UserRole.guest ? {
+        guest: null
     } : value;
 }
 export interface CreateActorOptions {

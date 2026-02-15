@@ -2,12 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-new-pairing-option-for-children-to-link-to-a-parent-guardian-by-entering-the-parent-s-phone-number-in-the-format-00-000000000-which-triggers-an-sms-verification-flow-and-then-connects-the-logins-creates-the-same-parent-child-relationship-as-the-existing-pairing-code-flow",
-      "featureTitle": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
+      "featureId": "feature-add-a-parent-facing-ui-alert-that-surfaces-pending-phone-confirmation-requests-and-allows-the-parent-to-confirm-with-one-click",
+      "featureTitle": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
       "files": [
-        "frontend/src/components/child/PairWithParentCard.tsx",
         "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/phoneNumber.ts"
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -25,12 +25,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-extend-the-user-profile-setup-editing-experience-so-a-parent-guardian-can-provide-and-later-update-their-phone-number-for-phone-based-pairing-without-breaking-existing-profiles",
-      "featureTitle": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
+      "featureId": "feature-update-the-child-phone-pairing-ui-flow-so-that-after-the-child-submits-the-parent-phone-number-the-ui-reflects-pending-parent-confirmation-state-instead-of-or-in-addition-to-the-current-otp-based-completion-step-and-keeps-polling-refetching-until-the-request-is-confirmed",
+      "featureTitle": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
       "files": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx",
-        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/i18n/translations/en.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -44,30 +44,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-adjust-frontend-i18n-strings-english-and-pt-br-for-the-new-phone-based-pairing-flow-and-for-any-new-updated-validation-and-error-states-introduced-by-the-fixed-6-digit-pairing-backend-behavior",
-      "featureTitle": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
-      "files": [
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }
