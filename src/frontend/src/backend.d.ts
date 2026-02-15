@@ -126,6 +126,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getContentFilter(childId: Principal): Promise<ContentFilterConfig | null>;
     getInviteCodes(): Promise<Array<InviteCode>>;
+    getLiveLocationSharingStatus(childId: Principal): Promise<boolean>;
     getLocations(childId: Principal): Promise<Array<LocationEntry>>;
     getMyChildren(): Promise<Array<Principal>>;
     getMyParent(): Promise<Principal | null>;
@@ -136,6 +137,7 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAdminPassword(newPassword: string): Promise<void>;
+    setLiveLocationSharing(enabled: boolean): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;
     updateSchedule(childId: Principal, newConfig: ScheduleConfig): Promise<void>;

@@ -1,22 +1,40 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield } from 'lucide-react';
+import { Shield, MapPin, Users } from 'lucide-react';
+import { useI18n } from '../../hooks/useI18n';
 
 interface ConsentNoticeProps {
   type: 'activity' | 'location' | 'pairing';
 }
 
 export default function ConsentNotice({ type }: ConsentNoticeProps) {
-  const messages = {
-    activity: 'You are about to share activity information with your parent. This is completely voluntary and you can see everything that gets shared.',
-    location: 'You are about to share your location with your parent. This is a one-time share, not continuous tracking. You control when and what to share.',
-    pairing: 'By pairing with a parent, you agree to share information you voluntarily submit. Your parent will see activities and locations you choose to share. There is no hidden monitoring.',
+  const { t } = useI18n();
+
+  const config = {
+    activity: {
+      icon: Shield,
+      title: t('consentActivityTitle'),
+      description: t('consentActivityDescription'),
+    },
+    location: {
+      icon: MapPin,
+      title: t('consentLocationTitle'),
+      description: t('consentLocationDescription'),
+    },
+    pairing: {
+      icon: Users,
+      title: t('consentPairingTitle'),
+      description: t('consentPairingDescription'),
+    },
   };
 
+  const { icon: Icon, title, description } = config[type];
+
   return (
-    <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-      <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />
-      <AlertDescription className="text-green-900 dark:text-green-100 text-sm">
-        <strong>Transparency Notice:</strong> {messages[type]}
+    <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+      <Icon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+      <AlertDescription className="text-amber-900 dark:text-amber-100 text-sm space-y-2">
+        <p className="font-semibold">{title}</p>
+        <p>{description}</p>
       </AlertDescription>
     </Alert>
   );

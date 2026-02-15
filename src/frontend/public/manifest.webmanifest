@@ -1,0 +1,21 @@
+{
+  "name": "Parental Control",
+  "short_name": "ParentalCtrl",
+  "description": "Family Safety & Supervision - A consent-based parental control system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/generated/pc-logo.dim_256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

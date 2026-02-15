@@ -6,7 +6,7 @@ import { Shield, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { AppRole } from '../../backend';
-import type { TranslationKey } from '../../i18n/translations/en';
+import type { TranslationKey } from '../../i18n';
 
 interface AppHeaderProps {
   onShowPolicies: () => void;

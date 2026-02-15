@@ -1,74 +1,109 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T01:57:09.688Z",
-  "summary": "The diff shows substantial i18n adoption across AdminPanel, ParentDashboard, ChildHome, and several components by replacing many visible strings with `t(...)` calls and adding/expanding en/pt-BR dictionaries. However, there is evidence that some user-visible strings remain hardcoded (notably content filter category names), and the diff summary does not provide enough evidence to confirm fallback/typing guarantees or full reactive language switching behavior across all mounted UI (e.g., persistence via localStorage, open dialogs). There are also non-requested UI/styling and auth/admin-gate behavior changes mentioned in the change summaries.",
+  "generatedAt": "2026-02-15T03:01:59.148Z",
+  "summary": "Diff adds PWA assets (manifest + sw.js), a service worker registration utility, capability detection/messaging, and a queue + background-sync request path from the live location hook. However, evidence is insufficient that the service worker is actually registered from the React entry flow, that periodic/closed-UI background sync is fully wired end-to-end, and that all required copy/transparency policy statements were updated as specified. Several unrelated UI/i18n/theming changes also appear in the diff summary.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
-      "reason": "At least some user-visible strings remain hardcoded (English) rather than translated via `t(...)` (e.g., content filter category names). This violates the requirement that all visible strings be translated and that no user-visible English remains in authenticated flows (excluding user-generated content).",
+      "id": "REQ-2",
+      "requirement": "Register a service worker from the React app entry flow (without modifying immutable paths).",
+      "reason": "A registration utility was added (registerServiceWorker.ts) but the diff summary does not show it being invoked from the React entry (e.g., src/main.tsx/App.tsx).",
       "evidence": [
-        "frontend/src/components/filters/ContentFilterEditor.tsx (DEFAULT_CATEGORIES uses 'Adult Content', 'Violence', 'Gambling', 'Social Media', 'Gaming' as literal strings)"
+        "frontend/src/pwa/registerServiceWorker.ts",
+        "frontend-file-summaries.txt (mentions frontend/src/App.tsx but does not mention SW registration)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Update translation dictionaries to fully cover all UI text used by the app, with pt-BR complete and en as fallback; preserve strong typing and fallback behavior.",
-      "reason": "While en.ts and pt-BR.ts were modified, the diff summary is truncated and does not demonstrate that all newly introduced keys across the modified components are present in both dictionaries, nor does it show any mechanism/verification for strong typing preservation or fallback-to-en behavior when pt-BR keys are missing.",
+      "requirement": "Use a background-capable mechanism (e.g., service worker + background/periodic sync) to queue and/or submit location updates when Live Location Sharing is enabled, including when UI is closed where supported.",
+      "reason": "The hook queues failed submissions to localStorage and requests a one-off Background Sync tag, but the service worker’s sync handler only logs updates and contains placeholder comments instead of actually submitting them to the backend. Also, periodic sync registration is implemented in the utility but not shown as being requested/used when live sharing is enabled.",
+      "evidence": [
+        "frontend/src/hooks/useLiveLocationSharing.ts",
+        "frontend/public/sw.js",
+        "frontend/src/pwa/registerServiceWorker.ts"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Fallback behavior and a clear status/notice on browsers that do not support background/periodic sync.",
+      "reason": "Capability detection + messaging functions were added, but the diff summary does not conclusively show the fallback/status notice being surfaced in the UI in all required cases (ChildCheckIn is truncated before showing where capabilityMessage is rendered).",
+      "evidence": [
+        "frontend/src/utils/liveLocationCapabilities.ts",
+        "frontend/src/components/child/ChildCheckIn.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Update specific Live Location Sharing English copy (e.g., liveLocationActiveInfo, liveLocationForegroundNote, parent-side live sharing description) so it no longer claims sharing only works while the app is open.",
+      "reason": "Translation files are modified but truncated; the diff summary does not show the referenced keys/strings being updated, so this cannot be verified from provided evidence.",
       "evidence": [
         "frontend/src/i18n/translations/en.ts (truncated)",
+        "frontend/src/components/parent/LocationView.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Update pt-BR translations to match the new meaning.",
+      "reason": "pt-BR translation file is truncated and does not show the relevant live-location strings being updated, so completion cannot be confirmed from the diff summary.",
+      "evidence": [
         "frontend/src/i18n/translations/pt-BR.ts (truncated)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Ensure language switching updates consistently for currently mounted and newly rendered UI (tabs, dialogs/modals, conditional sections) without refresh, and persists via existing localStorage mechanism (appLanguage).",
-      "reason": "Many components now use `useI18n()`/`t(...)`, which helps reactivity, but the diff summary does not show changes (or confirm no regressions) in the LanguageSelector/i18n provider regarding live updates for open dialogs/modals and persistence via `localStorage` key `appLanguage`. Those mechanisms are not evidenced in the shown diffs.",
+      "requirement": "Update Transparency & Policies content so it does not incorrectly state the app 'Does NOT collect data in the background' when background live sharing is enabled by the child.",
+      "reason": "The actual Transparency & Policies page/content changes are not shown in the diff summary (only a high-level file summary entry exists, without the specific statement change). Therefore it’s not verifiable that the incorrect claim was removed/updated.",
       "evidence": [
-        "frontend-file-summaries.txt (mentions language selector, but no concrete diff shown)"
+        "frontend-file-summaries.txt (mentions frontend/src/pages/TransparencyPolicies.tsx but no quoted content)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Theme-token-based styling and contrast refactors across layout/auth components (replacing hard-coded colors, hover states, etc.).",
-      "reason": "The BuildRequest is strictly about completing pt-BR translations/i18n coverage and explicitly states no feature-set changes beyond localization; styling refactors are not requested.",
+      "description": "App-wide i18n expansion/translation refactors across many pages (parent dashboard, child home, admin panel, schedule editor, etc.).",
+      "reason": "BuildRequest only requires copy updates related to live location sharing and transparency/policies; broad translation coverage changes are not requested.",
       "evidence": [
-        "frontend-file-summaries.txt (entries for frontend/src/App.tsx, frontend/src/components/layout/AppHeader.tsx, frontend/src/components/layout/AppFooter.tsx, frontend/src/components/auth/LoginButton.tsx mention theme-token-based styling/contrast updates)"
+        "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Admin gate behavior changes such as clearing the admin gate on logout and additional admin password management UX changes beyond translation.",
-      "reason": "Not requested by the BuildRequest (which focuses on translation/i18n).",
+      "description": "Theme-token-based styling and theme toggle related UI adjustments.",
+      "reason": "Not part of the requested background live location/PWA/copy scope.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/auth/LoginButton.tsx mentions admin gate clearing on logout; frontend/src/components/admin/AdminPasswordGate.tsx modified beyond pure string replacement, per summary)"
+        "frontend-file-summaries.txt",
+        "frontend/src/components/layout/AppHeader.tsx"
       ]
     },
     {
-      "description": "Non-translation UI tweak in TransparencyPolicies: Tailwind class change from `flex-shrink-0` to `shrink-0`.",
-      "reason": "Not requested; translation-only task.",
+      "description": "Service worker asset caching/offline fetch handling for '/', '/index.html', and logo asset.",
+      "reason": "REQ-2 asks for PWA support and SW registration/sync attempts; offline caching strategy is not explicitly requested (though it may be incidental to PWA).",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/TransparencyPolicies.tsx mentions class change)"
+        "frontend/public/sw.js"
+      ]
+    },
+    {
+      "description": "Parent location view enhancements: last-update age calculation and stale update warnings.",
+      "reason": "Not explicitly requested by requirements/AC (copy/limitations notice is requested, but this monitoring UX is additional).",
+      "evidence": [
+        "frontend/src/components/parent/LocationView.tsx"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.62,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/admin/AccountsTable.tsx",
-    "frontend/src/components/admin/AdminPasswordGate.tsx",
-    "frontend/src/components/alerts/AlertsPanelChild.tsx",
-    "frontend/src/components/alerts/AlertsPanelParent.tsx",
+    "frontend/index.html",
+    "frontend/public/manifest.webmanifest",
+    "frontend/public/sw.js",
     "frontend/src/components/child/ChildCheckIn.tsx",
-    "frontend/src/components/filters/ContentFilterEditor.tsx",
-    "frontend/src/components/parent/PairingSetup.tsx",
-    "frontend/src/components/schedule/ScheduleEditor.tsx",
+    "frontend/src/components/layout/AppHeader.tsx",
+    "frontend/src/components/parent/LocationView.tsx",
+    "frontend/src/hooks/useLiveLocationSharing.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
-    "frontend/src/pages/admin/AdminPanel.tsx",
-    "frontend/src/pages/child/ChildHome.tsx",
-    "frontend/src/pages/parent/ParentDashboard.tsx",
+    "frontend/src/pwa/registerServiceWorker.ts",
+    "frontend/src/utils/liveLocationCapabilities.ts",
+    "frontend/src/utils/locationUpdateQueue.ts",
     "project_state.json"
   ]
 }

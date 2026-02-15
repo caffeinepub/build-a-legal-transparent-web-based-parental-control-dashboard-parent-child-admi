@@ -2,20 +2,14 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-all-hardcoded-ui-strings-across-the-app-with-i18n-translation-keys-so-that-switching-the-language-applies-to-every-screen-tab-and-conditional-empty-state",
-      "featureTitle": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
+      "featureId": "feature-implement-best-effort-background-live-location-sharing-so-that-after-a-child-enables-live-location-sharing-location-updates-can-continue-even-when-the-app-is-not-in-the-foreground-and-where-the-platform-supports-it-even-after-the-tab-app-ui-is-closed",
+      "featureTitle": "Implement best-effort background live location sharing so that, after a child enables live location sharing, location updates can continue even when the app is not in the foreground (and, where the platform supports it, even after the tab/app UI is closed).",
       "files": [
-        "frontend/src/components/admin/AccountsTable.tsx",
-        "frontend/src/components/admin/AdminPasswordGate.tsx",
-        "frontend/src/components/alerts/AlertsPanelChild.tsx",
-        "frontend/src/components/alerts/AlertsPanelParent.tsx",
         "frontend/src/components/child/ChildCheckIn.tsx",
-        "frontend/src/components/filters/ContentFilterEditor.tsx",
-        "frontend/src/components/parent/PairingSetup.tsx",
-        "frontend/src/components/schedule/ScheduleEditor.tsx",
-        "frontend/src/pages/admin/AdminPanel.tsx",
-        "frontend/src/pages/child/ChildHome.tsx",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/components/parent/LocationView.tsx",
+        "frontend/src/hooks/useLiveLocationSharing.ts",
+        "frontend/src/utils/liveLocationCapabilities.ts",
+        "frontend/src/utils/locationUpdateQueue.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -32,11 +26,14 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-translation-dictionaries-to-fully-cover-all-ui-text-used-by-the-app-ensuring-pt-br-contains-complete-translations-for-every-key-and-en-remains-the-fallback-for-any-missing-key",
-      "featureTitle": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
+      "featureId": "feature-add-pwa-support-web-app-manifest-service-worker-registration-and-attempt-periodic-background-sync-approaches-where-available-to-continue-submitting-location-updates-when-the-ui-is-closed-while-keeping-behavior-safe-and-permission-respecting",
+      "featureTitle": "Add PWA support (web app manifest + service worker registration) and attempt periodic/background sync approaches where available, to continue submitting location updates when the UI is closed, while keeping behavior safe and permission-respecting.",
       "files": [
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
+        "frontend/index.html",
+        "frontend/public/manifest.webmanifest",
+        "frontend/public/sw.js",
+        "frontend/src/hooks/useLiveLocationSharing.ts",
+        "frontend/src/pwa/registerServiceWorker.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -53,12 +50,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-language-switching-works-consistently-for-all-currently-mounted-and-newly-rendered-ui-e-g-when-navigating-between-tabs-opening-dialogs-modals-or-when-conditional-sections-appear-without-requiring-a-refresh",
-      "featureTitle": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+      "featureId": "feature-update-all-user-facing-copy-and-transparency-consent-messaging-to-accurately-reflect-the-new-background-behavior-including-the-transparency-policy-section-that-currently-states-the-app-does-not-collect-data-in-the-background",
+      "featureTitle": "Update all user-facing copy and transparency/consent messaging to accurately reflect the new background behavior, including the transparency policy section that currently states the app does not collect data in the background.",
       "files": [
-        "frontend/src/pages/admin/AdminPanel.tsx",
-        "frontend/src/pages/child/ChildHome.tsx",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/components/child/ChildCheckIn.tsx",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts"
       ],
       "components": [
         "authorization@4.0.0",

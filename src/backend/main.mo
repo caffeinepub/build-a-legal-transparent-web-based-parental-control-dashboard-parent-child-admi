@@ -124,6 +124,7 @@ actor {
   let locations = Map.empty<Principal, List.List<LocationEntry>>();
   let auditLogs = Map.empty<Principal, List.List<AuditLogEntry>>();
   let disabledAccounts = Map.empty<Principal, Bool>();
+  let liveLocationSharing = Map.empty<Principal, Bool>();
 
   // Admin Password Management
   public shared ({ caller }) func setAdminPassword(newPassword : Text) : async () {
@@ -148,6 +149,72 @@ actor {
     } else {
       false;
     };
+  };
+
+  // Live Location Sharing Management
+  public shared ({ caller }) func setLiveLocationSharing(enabled : Bool) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update location sharing");
+    };
+
+    // Check if account is disabled
+    if (isAccountDisabledInternal(caller)) {
+      Runtime.trap("Cannot update location sharing for disabled account");
+    };
+
+    // Only children can update their own location sharing
+    switch (userProfiles.get(caller)) {
+      case (?profile) {
+        switch (profile.role) {
+          case (#child) {
+            liveLocationSharing.add(caller, enabled);
+          };
+          case (_) {
+            Runtime.trap("Only children can update location sharing");
+          };
+        };
+      };
+      case (null) {
+        Runtime.trap("Only children can update location sharing");
+      };
+    };
+  };
+
+  public query ({ caller }) func getLiveLocationSharingStatus(childId : Principal) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view location sharing status");
+    };
+
+    // Child can view their own location sharing status
+    if (caller == childId) {
+      return switch (liveLocationSharing.get(childId)) {
+        case (?enabled) { enabled };
+        case (null) { false };
+      };
+    };
+
+    // Parent can view their child's location sharing status
+    switch (childParentLinks.get(childId)) {
+      case (?parent) {
+        if (parent == caller) {
+          return switch (liveLocationSharing.get(childId)) {
+            case (?enabled) { enabled };
+            case (null) { false };
+          };
+        };
+      };
+      case (null) {};
+    };
+
+    // Admin can view any child's location sharing status
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      return switch (liveLocationSharing.get(childId)) {
+        case (?enabled) { enabled };
+        case (null) { false };
+      };
+    };
+
+    Runtime.trap("Unauthorized: Can only view your own, your child's, or any child's (admin) location sharing status");
   };
 
   // User Profile Management (Required by frontend)
@@ -596,4 +663,3 @@ actor {
     };
   };
 };
-

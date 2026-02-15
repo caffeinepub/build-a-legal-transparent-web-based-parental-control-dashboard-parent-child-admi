@@ -1,209 +1,118 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Full pt-BR localization coverage and reactive language switching",
+  "title": "Best-effort background live location sharing with PWA support and updated transparency copy",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Replace all remaining hardcoded UI strings with i18n translation keys across authenticated screens, tabs, and empty/conditional states.",
+      "summary": "Enable best-effort periodic live location updates while the app is backgrounded, and clearly communicate limitations when closed/unsupported without changing backend-controlled enabled state.",
       "acceptanceCriteria": [
-        "In ParentDashboard, all visible strings are translated via t(...) (e.g., titles, descriptions, tab labels, alert text, empty-state text).",
-        "In ChildHome, all visible strings are translated via t(...) (e.g., headings, descriptions, supervision notice, pairing warning, tab labels, card titles/descriptions).",
-        "In AdminPanel, all visible strings are translated via t(...) (e.g., headings, descriptions, tab labels, section titles/descriptions, empty-state text).",
-        "No user-visible English strings remain in the authenticated app flows when language is set to pt-BR (excluding user-generated content such as names and free-text notes)."
+        "When a child enables Live Location Sharing, the app continues attempting periodic location updates while the page is backgrounded (e.g., another tab/app is in front) without requiring the user to keep the page focused.",
+        "If the platform/browser does not support continuing execution after the app is closed, the UI communicates that limitation clearly (i.e., no misleading promise of always-on background sharing).",
+        "Live Location Sharing state remains controlled by the backend flag (useGetLiveLocationSharingStatus / useSetLiveLocationSharing) and is not silently toggled off just because a capture attempt failed locally."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
+          "path": "frontend/src/hooks/useLiveLocationSharing.ts",
           "operation": "modify",
-          "description": "Replace hardcoded ParentDashboard strings (page title/description, zero-children state title/description, alert text, child details section title/description, tab labels) with t(...) keys."
+          "description": "Refactor live sharing to be resilient in background-tab scenarios: use best-effort scheduling (including Page Visibility awareness) and/or geolocation watch mode as appropriate, avoid stopping local sharing attempts on transient capture/submit failures, and decouple UI 'actively capturing' status from the backend-enabled flag so failures do not imply the backend toggle changed."
         },
         {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
-          "operation": "modify",
-          "description": "Replace hardcoded ChildHome strings (welcome header/description, supervision notice label + body, unpaired alert text, tab labels, history cards titles/descriptions) with t(...) keys."
+          "path": "frontend/src/utils/liveLocationCapabilities.ts",
+          "operation": "create",
+          "description": "Add a small capability-detection utility to determine whether the current browser context is likely to keep running in background tabs and whether it can support PWA/service-worker assistance; return a concise status that the UI can use to show accurate limitations messaging."
         },
         {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Replace hardcoded AdminPanel strings (page title/description, tab labels, section titles/descriptions, empty-state 'no pairings' message) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/parent/PairingSetup.tsx",
-          "operation": "modify",
-          "description": "Replace all hardcoded pairing UI strings and toast messages with t(...) keys (card title/description, warning alert title/body, button labels, 'your pairing code' label, copy success text, helper/expiry text)."
-        },
-        {
-          "path": "frontend/src/components/admin/AccountsTable.tsx",
-          "operation": "modify",
-          "description": "Audit for any remaining hardcoded table/dialog text and replace with t(...) keys (headers, status labels, action labels, confirmation copy, placeholders, loading states)."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminPasswordGate.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded admin gate UI strings (headings, instructions, input labels, button text, error/help text) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-          "operation": "modify",
-          "description": "Ensure all metric card titles/labels are sourced from t(...) keys (no hardcoded labels)."
-        },
-        {
-          "path": "frontend/src/components/alerts/AlertsPanelChild.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded child alerts UI strings (titles/descriptions, empty state, request-more-time section copy, textarea placeholder, submit button/loading) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/alerts/AlertsPanelParent.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded parent alerts UI strings (titles/descriptions, empty state) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/audit/AuditLogTable.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded audit table strings (loading/empty text, column headers, action labels) with t(...) keys."
+          "path": "frontend/src/utils/locationUpdateQueue.ts",
+          "operation": "create",
+          "description": "Implement a lightweight, permission-respecting queue for pending location updates (e.g., when offline or when submission fails) so the app can retry later; ensure queueing only happens when Live Location Sharing is enabled via the existing toggle."
         },
         {
           "path": "frontend/src/components/child/ChildCheckIn.tsx",
           "operation": "modify",
-          "description": "Replace any remaining hardcoded check-in UI strings (tab labels, form titles, labels, placeholders, consent text, preview text, submit/loading states, validation/help text) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/child/ConsentNotice.tsx",
-          "operation": "modify",
-          "description": "Ensure consent notice titles/messages use t(...) keys only (no hardcoded strings)."
-        },
-        {
-          "path": "frontend/src/components/child/ActivityHistoryList.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded activity history strings (loading/empty states, table headers/labels, 'no notes' placeholder, units formatting label) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/child/LocationHistoryList.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded location history strings (loading/empty states, table headers/labels) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/filters/ContentFilterEditor.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded content filter editor strings (titles/descriptions, section headings, placeholders, save/loading text, note text) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/filters/ContentFilterReadOnly.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded read-only filter strings (loading/empty states, headings/labels, status labels) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/schedule/ScheduleEditor.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded schedule editor strings (title/description, alert text, field labels, day names, add/remove/save/loading) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/schedule/ScheduleReadOnly.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded schedule read-only strings (loading/empty states, title/description, labels) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/parent/ChildSummaryCard.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded strings in the child summary card (title, counts, 'last check-in' label, 'no check-ins yet' label) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/parent/ActivityView.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded parent activity view strings (transparency notice copy, headings if present) with t(...) keys."
+          "description": "Update the Live Location Sharing panel to: (1) show background/closed-app limitations based on capability detection, (2) show a clear 'best-effort' status when enabled even if a recent capture fails, and (3) avoid implying the feature turned off unless the backend flag is disabled."
         },
         {
           "path": "frontend/src/components/parent/LocationView.tsx",
           "operation": "modify",
-          "description": "Replace any remaining hardcoded parent location view strings (transparency notice copy, headings if present) with t(...) keys."
-        },
-        {
-          "path": "frontend/src/components/layout/AppFooter.tsx",
-          "operation": "modify",
-          "description": "Replace any remaining hardcoded footer strings with t(...) keys (keep dynamic values like year/hostname as params where needed)."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Audit authenticated flows and any conditional/empty states rendered by App for remaining hardcoded strings and replace with t(...) keys (do not modify frontend/src/main.tsx)."
+          "description": "Adjust parent-side live sharing description text usage to align with best-effort background behavior and potential closed-app limitations (e.g., clarify that updates may pause depending on the child's device/browser)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Expand and align en/pt-BR translation dictionaries to cover all UI text keys while preserving strong typing and en fallback behavior.",
+      "summary": "Add installable PWA support with manifest + service worker registration and implement best-effort background-capable queuing/retry mechanisms where available, with clear fallbacks when unsupported.",
       "acceptanceCriteria": [
-        "Any new translation keys introduced during the hardcoded-string removal are added to both frontend/src/i18n/translations/en.ts and frontend/src/i18n/translations/pt-BR.ts.",
-        "The app compiles with strong typing preserved for TranslationKey usage (no `any`-typed translation keys introduced).",
-        "When a key is missing in pt-BR, the UI falls back to the en value instead of displaying the raw key."
+        "The frontend includes an installable PWA manifest and registers a service worker from the React app entry flow (without modifying any immutable paths).",
+        "Where supported by the browser, the app uses a background-capable mechanism (e.g., service worker + background/periodic sync) to queue and/or submit location updates when Live Location Sharing is enabled.",
+        "On browsers that do not support background/periodic sync, the app falls back to foreground/background-tab operation only and shows a clear status/notice."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/i18n/translations/en.ts",
-          "operation": "modify",
-          "description": "Add any missing translation keys introduced by REQ-1 refactors (including newly discovered strings from dashboards, tabs, dialogs, toasts, and empty states) and keep `TranslationKey` strongly typed via the `as const` dictionary."
+          "path": "frontend/public/manifest.webmanifest",
+          "operation": "create",
+          "description": "Create a PWA manifest declaring app name, start_url, display mode, theme/background colors, and icons referencing frontend/public/assets/generated/pc-logo.dim_256x256.png."
         },
         {
-          "path": "frontend/src/i18n/translations/pt-BR.ts",
-          "operation": "modify",
-          "description": "Add complete pt-BR translations for every key in en.ts (including new keys introduced by REQ-1), ensuring the dictionary fully mirrors the English keyset."
+          "path": "frontend/public/assets/generated/pc-logo.dim_256x256.png",
+          "operation": "create",
+          "description": "Add the generated logo asset at the required path so it can be referenced by the web app manifest."
         },
         {
-          "path": "frontend/src/i18n/index.ts",
-          "operation": "modify",
-          "description": "Keep translations typed as `Record<Locale, Record<TranslationKey, string>>` and adjust as needed to ensure compile-time coverage while maintaining en as the fallback via I18nProvider behavior."
+          "path": "frontend/public/sw.js",
+          "operation": "create",
+          "description": "Create a service worker that supports app-shell caching and (where available) background sync triggers for retrying queued location submissions; keep behavior safe and permission-respecting by only acting on queued updates created while the user had explicitly enabled live sharing."
         },
         {
-          "path": "frontend/src/i18n/I18nProvider.tsx",
+          "path": "frontend/src/pwa/registerServiceWorker.ts",
+          "operation": "create",
+          "description": "Add a small registration helper that registers the service worker, reports support/registration status, and exposes helpers to request background sync/periodic sync where supported."
+        },
+        {
+          "path": "frontend/src/main.tsx",
           "operation": "modify",
-          "description": "Confirm fallback behavior remains `pt-BR` → `en` → raw key, and (if needed) harden typing around `t(key: TranslationKey, ...)` so no `any` keys are introduced during refactors."
+          "description": "Wire service worker registration into the React app bootstrap flow (after initial render) using the new registerServiceWorker helper; ensure it does not rely on immutable paths and fails safely on unsupported browsers."
+        },
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Link the PWA manifest and add any required meta tags (e.g., theme-color) so the app is installable and provides correct PWA metadata."
+        },
+        {
+          "path": "frontend/src/hooks/useLiveLocationSharing.ts",
+          "operation": "modify",
+          "description": "Integrate queueing/retry signals for PWA/background support: when live sharing is enabled, enqueue failed submissions for later retry and (when supported) request a background sync trigger so queued updates can be retried with the UI closed."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Ensure language switching re-renders all mounted and newly rendered UI (including tabs and dialogs) immediately without refresh and persists via localStorage.",
+      "summary": "Update user-facing copy (EN and pt-BR) and transparency/policy text to accurately reflect best-effort background behavior and platform limitations.",
       "acceptanceCriteria": [
-        "Changing the language from the LanguageSelector updates text immediately across the current page and any open modal/dialog (where applicable) without a full page reload.",
-        "After switching language, moving between tabs in ParentDashboard/ChildHome/AdminPanel shows the correct localized text in each tab’s content.",
-        "Language selection persists across reloads via the existing localStorage mechanism (appLanguage)."
+        "English translations are updated for Live Location Sharing helper text so it no longer claims sharing only works while the app is open (e.g., update liveLocationActiveInfo, liveLocationForegroundNote, and parent-side live sharing description).",
+        "Portuguese (pt-BR) translations are updated to match the new meaning.",
+        "The Transparency & Policies content is updated so it does not incorrectly state the app 'Does NOT collect data in the background' when background live sharing is enabled by the child."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/i18n/LanguageSelector.tsx",
+          "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Verify LanguageSelector triggers reactive updates by using the i18n context state directly (no cached labels outside render) and ensure the button title/labels are always derived from t(...)."
+          "description": "Update Live Location Sharing strings to reflect best-effort background operation (backgrounded tabs) and clearly state limitations when the app is fully closed or the browser restricts background execution; update liveLocationActiveInfo, liveLocationForegroundNote, and liveLocationParentActiveDescription accordingly, and adjust transparencyNotDoL2 so it no longer incorrectly claims no background collection when live sharing is enabled."
         },
         {
-          "path": "frontend/src/i18n/I18nProvider.tsx",
+          "path": "frontend/src/i18n/translations/pt-BR.ts",
           "operation": "modify",
-          "description": "Ensure i18n context updates trigger re-render for all consumers and keep language persistence via localStorage key appLanguage; avoid patterns that freeze translated strings at mount time."
+          "description": "Update pt-BR Live Location Sharing strings to match the updated English meaning (best-effort background behavior + clear closed-app limitations), and adjust the Transparency & Policies copy so it no longer incorrectly states that the app does not collect data in the background when the child has enabled live sharing."
         },
         {
           "path": "frontend/src/pages/TransparencyPolicies.tsx",
           "operation": "modify",
-          "description": "Verify the modal’s full content is rendered from t(...) keys so switching language while the modal is open updates immediately without closing/reopening."
+          "description": "Ensure the Transparency & Policies UI presents the updated translation content without implying unconditional background tracking; if needed, adjust section ordering/emphasis to keep consent and limitations clear while still matching existing translation keys."
         },
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/components/child/ChildCheckIn.tsx",
           "operation": "modify",
-          "description": "Verify this modal renders all labels/buttons from t(...) at render time so switching language while the dialog is open updates immediately."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Ensure tab labels/content headers are not stored in state/memo without language dependencies; all strings should be derived from t(...) during render so switching language updates current and future tab content."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
-          "operation": "modify",
-          "description": "Ensure tab labels and conditional alert text re-render from t(...) immediately on language change (avoid initializing translated strings into state)."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Ensure tab labels and empty state text are derived from t(...) during render so language changes are reflected immediately when switching tabs."
+          "description": "Update helper/notice copy usage in the Live Location Sharing panel so it aligns with new translations and emphasizes explicit opt-in, best-effort behavior, and platform limitations (no misleading always-on promise)."
         }
       ]
     }

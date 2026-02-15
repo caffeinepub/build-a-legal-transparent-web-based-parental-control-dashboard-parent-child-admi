@@ -7,13 +7,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
-import { useAddActivity, useAddLocation } from '../../hooks/useQueries';
+import { Info, MapPin, Radio, Smartphone } from 'lucide-react';
+import { useAddActivity, useAddLocation, useGetLiveLocationSharingStatus, useSetLiveLocationSharing } from '../../hooks/useQueries';
+import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useLiveLocationSharing } from '../../hooks/useLiveLocationSharing';
 import ConsentNotice from './ConsentNotice';
 import { useI18n } from '../../hooks/useI18n';
+import { detectLocationCapabilities, getCapabilityMessage } from '../../utils/liveLocationCapabilities';
 
 export default function ChildCheckIn() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const { identity } = useInternetIdentity();
+  const childId = identity?.getPrincipal() || null;
+
   const [activityApp, setActivityApp] = useState('');
   const [activityDuration, setActivityDuration] = useState('');
   const [activityNotes, setActivityNotes] = useState('');
@@ -26,6 +32,17 @@ export default function ChildCheckIn() {
 
   const addActivity = useAddActivity({ silent: true });
   const addLocation = useAddLocation({ silent: true });
+
+  // Live location sharing
+  const { data: liveLocationEnabled = false } = useGetLiveLocationSharingStatus(childId);
+  const setLiveLocationSharing = useSetLiveLocationSharing();
+  const { isSharing, error: sharingError, lastUpdate } = useLiveLocationSharing({
+    enabled: liveLocationEnabled,
+    intervalMs: 30000, // 30 seconds
+  });
+
+  const capabilities = detectLocationCapabilities();
+  const capabilityMessage = getCapabilityMessage(capabilities, language as 'en' | 'pt-BR');
 
   const handleActivitySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +87,26 @@ export default function ChildCheckIn() {
         },
       }
     );
+  };
+
+  const handleToggleLiveSharing = async () => {
+    await setLiveLocationSharing.mutateAsync(!liveLocationEnabled);
+  };
+
+  const getErrorMessage = (errorCode: string | null) => {
+    if (!errorCode) return null;
+    switch (errorCode) {
+      case 'permission_denied':
+        return t('liveLocationErrorPermissionDenied');
+      case 'position_unavailable':
+        return t('liveLocationErrorUnavailable');
+      case 'timeout':
+        return t('liveLocationErrorTimeout');
+      case 'not_supported':
+        return t('liveLocationErrorNotSupported');
+      default:
+        return t('liveLocationErrorUnknown');
+    }
   };
 
   return (
@@ -153,68 +190,131 @@ export default function ChildCheckIn() {
 
           <TabsContent value="location" className="space-y-4">
             <ConsentNotice type="location" />
-            <form onSubmit={handleLocationSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="place">{t('checkinLocationPlaceLabel')}</Label>
-                <Input
-                  id="place"
-                  value={locationPlace}
-                  onChange={(e) => setLocationPlace(e.target.value)}
-                  placeholder={t('checkinLocationPlacePlaceholder')}
-                />
+
+            {/* Live Location Sharing Control */}
+            <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Radio className={`w-4 h-4 ${liveLocationEnabled && isSharing ? 'text-green-600 animate-pulse' : 'text-muted-foreground'}`} />
+                    <h3 className="font-semibold text-sm">{t('liveLocationTitle')}</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {liveLocationEnabled ? t('liveLocationStatusOn') : t('liveLocationStatusOff')}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleToggleLiveSharing}
+                  disabled={setLiveLocationSharing.isPending}
+                  variant={liveLocationEnabled ? 'destructive' : 'default'}
+                  size="sm"
+                >
+                  {setLiveLocationSharing.isPending
+                    ? t('liveLocationUpdating')
+                    : liveLocationEnabled
+                    ? t('liveLocationStopButton')
+                    : t('liveLocationStartButton')}
+                </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {liveLocationEnabled && (
                 <div className="space-y-2">
-                  <Label htmlFor="lat">{t('checkinLocationLatLabel')}</Label>
-                  <Input
-                    id="lat"
-                    type="number"
-                    step="any"
-                    value={locationLat}
-                    onChange={(e) => setLocationLat(e.target.value)}
-                    placeholder="0.0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lng">{t('checkinLocationLonLabel')}</Label>
-                  <Input
-                    id="lng"
-                    type="number"
-                    step="any"
-                    value={locationLng}
-                    onChange={(e) => setLocationLng(e.target.value)}
-                    placeholder="0.0"
-                  />
-                </div>
-              </div>
+                  <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                    <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <AlertDescription className="text-blue-900 dark:text-blue-100 text-xs">
+                      {t('liveLocationActiveInfo')}
+                    </AlertDescription>
+                  </Alert>
 
-              <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                  <strong>{t('checkinLocationPreview')}</strong> {t('checkinLocationPreviewBody')}
+                  {lastUpdate && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('liveLocationLastUpdate')}: {lastUpdate.toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {sharingError && (
+                <Alert variant="destructive">
+                  <AlertDescription className="text-sm">{getErrorMessage(sharingError)}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Capability message */}
+              <Alert className="bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800">
+                <Smartphone className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <AlertDescription className="text-purple-900 dark:text-purple-100 text-xs">
+                  {capabilityMessage}
                 </AlertDescription>
               </Alert>
+            </div>
 
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="location-consent"
-                  checked={locationConsent}
-                  onCheckedChange={(checked) => setLocationConsent(checked as boolean)}
-                />
-                <Label htmlFor="location-consent" className="text-sm leading-relaxed cursor-pointer">
-                  {t('checkinLocationConsent')}
-                </Label>
-              </div>
+            {/* Manual Location Submission */}
+            <div className="pt-4 border-t">
+              <h3 className="font-semibold text-sm mb-4">{t('checkinLocationManualTitle')}</h3>
+              <form onSubmit={handleLocationSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="place">{t('checkinLocationPlaceLabel')}</Label>
+                  <Input
+                    id="place"
+                    value={locationPlace}
+                    onChange={(e) => setLocationPlace(e.target.value)}
+                    placeholder={t('checkinLocationPlacePlaceholder')}
+                  />
+                </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-navy-600 hover:bg-navy-700 text-white"
-                disabled={!locationConsent || addLocation.isPending}
-              >
-                {addLocation.isPending ? t('checkinLocationSubmitting') : t('checkinLocationSubmitButton')}
-              </Button>
-            </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="lat">{t('checkinLocationLatLabel')}</Label>
+                    <Input
+                      id="lat"
+                      type="number"
+                      step="any"
+                      value={locationLat}
+                      onChange={(e) => setLocationLat(e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lng">{t('checkinLocationLonLabel')}</Label>
+                    <Input
+                      id="lng"
+                      type="number"
+                      step="any"
+                      value={locationLng}
+                      onChange={(e) => setLocationLng(e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+                </div>
+
+                <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                  <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
+                    <strong>{t('checkinLocationPreview')}</strong> {t('checkinLocationPreviewBody')}
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="location-consent"
+                    checked={locationConsent}
+                    onCheckedChange={(checked) => setLocationConsent(checked as boolean)}
+                  />
+                  <Label htmlFor="location-consent" className="text-sm leading-relaxed cursor-pointer">
+                    {t('checkinLocationConsent')}
+                  </Label>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-navy-600 hover:bg-navy-700 text-white"
+                  disabled={!locationConsent || addLocation.isPending}
+                >
+                  {addLocation.isPending ? t('checkinLocationSubmitting') : t('checkinLocationSubmitButton')}
+                </Button>
+              </form>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>

@@ -109,6 +109,7 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContentFilter' : ActorMethod<[Principal], [] | [ContentFilterConfig]>,
   'getInviteCodes' : ActorMethod<[], Array<InviteCode>>,
+  'getLiveLocationSharingStatus' : ActorMethod<[Principal], boolean>,
   'getLocations' : ActorMethod<[Principal], Array<LocationEntry>>,
   'getMyChildren' : ActorMethod<[], Array<Principal>>,
   'getMyParent' : ActorMethod<[], [] | [Principal]>,
@@ -119,6 +120,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setAdminPassword' : ActorMethod<[string], undefined>,
+  'setLiveLocationSharing' : ActorMethod<[boolean], undefined>,
   'submitRSVP' : ActorMethod<[string, boolean, string], undefined>,
   'updateContentFilter' : ActorMethod<
     [Principal, ContentFilterConfig],

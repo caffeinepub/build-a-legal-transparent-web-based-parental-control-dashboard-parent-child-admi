@@ -141,6 +141,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getInviteCodes' : IDL.Func([], [IDL.Vec(InviteCode)], ['query']),
+  'getLiveLocationSharingStatus' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Bool],
+      ['query'],
+    ),
   'getLocations' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(LocationEntry)],
@@ -167,6 +172,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setAdminPassword' : IDL.Func([IDL.Text], [], []),
+  'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),
   'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
   'updateContentFilter' : IDL.Func(
       [IDL.Principal, ContentFilterConfig],
@@ -313,6 +319,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getInviteCodes' : IDL.Func([], [IDL.Vec(InviteCode)], ['query']),
+    'getLiveLocationSharingStatus' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Bool],
+        ['query'],
+      ),
     'getLocations' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(LocationEntry)],
@@ -339,6 +350,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setAdminPassword' : IDL.Func([IDL.Text], [], []),
+    'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),
     'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
     'updateContentFilter' : IDL.Func(
         [IDL.Principal, ContentFilterConfig],

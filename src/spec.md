@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Complete the Portuguese (pt-BR) translation across the entire app by removing hardcoded UI strings, expanding translation dictionaries, and ensuring language switching updates all screens and states immediately.
+**Goal:** Enable best-effort live location sharing in the background (without needing the app kept open), with clear messaging about platform limitations and updated transparency/consent copy.
 
 **Planned changes:**
-- Replace hardcoded UI strings with i18n translation keys across ParentDashboard, ChildHome, and AdminPanel (including tabs, dialogs/modals where applicable, and conditional/empty states).
-- Update `frontend/src/i18n/translations/en.ts` and `frontend/src/i18n/translations/pt-BR.ts` to include all keys used in the UI, keeping en as the fallback for missing pt-BR entries.
-- Verify language switching via the existing LanguageSelector updates currently mounted and newly rendered UI (navigation, tabs, conditionals) without refresh and continues to persist via `appLanguage`.
+- Keep Live Location Sharing enabled/controlled via existing backend status/toggle hooks while adding best-effort periodic location capture/submission that continues when the page is backgrounded (not focused).
+- Add installable PWA support (web app manifest + service worker registration) and, where supported, use background-capable mechanisms (e.g., background/periodic sync) to queue and/or submit location updates when the UI is closed.
+- Add safe fallbacks for browsers without background/periodic sync support, and show a clear notice/status when only foreground/background-tab operation is possible.
+- Update all user-facing copy (EN + pt-BR) for Live Location Sharing helper text and parent-side descriptions to match new background behavior.
+- Update Transparency & Policies content to remove/adjust any statement that the app does not collect data in the background when background live sharing is enabled by the child.
 
-**User-visible outcome:** When pt-BR is selected, the authenticated app experience (ParentDashboard/ChildHome/AdminPanel) displays fully localized Portuguese text across all screens and states, and switching languages updates immediately without needing to reload.
+**User-visible outcome:** After enabling Live Location Sharing, the app will continue attempting location updates in the background when possible (and via PWA/background features on supported platforms), while clearly informing users when their browser/device cannot keep sharing after the UI is closed.

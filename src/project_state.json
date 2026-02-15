@@ -1,32 +1,32 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
-  "known_issues": [
-    "O app não está traduzindo todas as informações completamente para português em todas as telas."
+  "summary": "Enable real-time sharing to work even when the app is not open, by running in the background.",
+  "architectural_notes": [
+    "Real-time sharing should support background execution (platform-appropriate background service/tasks and permissions)."
   ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-replace-all-hardcoded-ui-strings-across-the-app-with-i18n-translation-keys-so-that-switching-the-language-applies-to-every-screen-tab-and-conditional-empty-state",
-      "title": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
+      "id": "feature-implement-best-effort-background-live-location-sharing-so-that-after-a-child-enables-live-location-sharing-location-updates-can-continue-even-when-the-app-is-not-in-the-foreground-and-where-the-platform-supports-it-even-after-the-tab-app-ui-is-closed",
+      "title": "Implement best-effort background live location sharing so that, after a child enables live location sharing, location updates can continue even when the app is not in the foreground (and, where the platform supports it, even after the tab/app UI is closed).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-translation-dictionaries-to-fully-cover-all-ui-text-used-by-the-app-ensuring-pt-br-contains-complete-translations-for-every-key-and-en-remains-the-fallback-for-any-missing-key",
-      "title": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
+      "id": "feature-add-pwa-support-web-app-manifest-service-worker-registration-and-attempt-periodic-background-sync-approaches-where-available-to-continue-submitting-location-updates-when-the-ui-is-closed-while-keeping-behavior-safe-and-permission-respecting",
+      "title": "Add PWA support (web app manifest + service worker registration) and attempt periodic/background sync approaches where available, to continue submitting location updates when the UI is closed, while keeping behavior safe and permission-respecting.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-language-switching-works-consistently-for-all-currently-mounted-and-newly-rendered-ui-e-g-when-navigating-between-tabs-opening-dialogs-modals-or-when-conditional-sections-appear-without-requiring-a-refresh",
-      "title": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+      "id": "feature-update-all-user-facing-copy-and-transparency-consent-messaging-to-accurately-reflect-the-new-background-behavior-including-the-transparency-policy-section-that-currently-states-the-app-does-not-collect-data-in-the-background",
+      "title": "Update all user-facing copy and transparency/consent messaging to accurately reflect the new background behavior, including the transparency policy section that currently states the app does not collect data in the background.",
       "reqIds": [
         "REQ-3"
       ],
@@ -36,12 +36,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Ajustar o botão/funcionalidade de tradução para traduzir completamente as informações para português em todas as telas do app (incluindo telas abertas/novas).",
+      "summary": "Allow real-time sharing to continue in the background (app does not need to be open).",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Complete Portuguese (pt-BR) translation across all app screens",
+  "projectName": "Enable best-effort background live location sharing (no need to keep the app open)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

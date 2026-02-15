@@ -1,90 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Complete Portuguese (pt-BR) translation across all app screens",
+  "title": "Enable best-effort background live location sharing (no need to keep the app open)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-6"
-        ],
-        "quotes": [
-          "o app não está traduzindo as informações completamente, refaça os ajustes do botão para traduzir para todas as telas que abrir no app.",
-          "sim, busque traduzir o máximo que conseguir para o português"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In ParentDashboard, all visible strings are translated via t(...) (e.g., titles, descriptions, tab labels, alert text, empty-state text).",
-        "In ChildHome, all visible strings are translated via t(...) (e.g., headings, descriptions, supervision notice, pairing warning, tab labels, card titles/descriptions).",
-        "In AdminPanel, all visible strings are translated via t(...) (e.g., headings, descriptions, tab labels, section titles/descriptions, empty-state text).",
-        "No user-visible English strings remain in the authenticated app flows when language is set to pt-BR (excluding user-generated content such as names and free-text notes)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-3",
-          "msg-6"
-        ],
-        "quotes": [
-          "o app não está traduzindo as informações completamente, refaça os ajustes do botão para traduzir para todas as telas que abrir no app.",
-          "sim, busque traduzir o máximo que conseguir para o português"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Any new translation keys introduced during the hardcoded-string removal are added to both frontend/src/i18n/translations/en.ts and frontend/src/i18n/translations/pt-BR.ts.",
-        "The app compiles with strong typing preserved for TranslationKey usage (no `any`-typed translation keys introduced).",
-        "When a key is missing in pt-BR, the UI falls back to the en value instead of displaying the raw key."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+      "text": "Implement best-effort background live location sharing so that, after a child enables live location sharing, location updates can continue even when the app is not in the foreground (and, where the platform supports it, even after the tab/app UI is closed).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-3"
         ],
         "quotes": [
-          "refaça os ajustes do botão para traduzir para todas as telas que abrir no app."
+          "ajuste para que o app não necessite estar aberto para o compartilhamento em tempo real, mas que trabalhe em segundo plano."
         ]
       },
       "acceptanceCriteria": [
-        "Changing the language from the LanguageSelector updates text immediately across the current page and any open modal/dialog (where applicable) without a full page reload.",
-        "After switching language, moving between tabs in ParentDashboard/ChildHome/AdminPanel shows the correct localized text in each tab’s content.",
-        "Language selection persists across reloads via the existing localStorage mechanism (appLanguage)."
+        "When a child enables Live Location Sharing, the app continues attempting periodic location updates while the page is backgrounded (e.g., another tab/app is in front) without requiring the user to keep the page focused.",
+        "If the platform/browser does not support continuing execution after the app is closed, the UI communicates that limitation clearly (i.e., no misleading promise of always-on background sharing).",
+        "Live Location Sharing state remains controlled by the backend flag (useGetLiveLocationSharingStatus / useSetLiveLocationSharing) and is not silently toggled off just because a capture attempt failed locally."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add PWA support (web app manifest + service worker registration) and attempt periodic/background sync approaches where available, to continue submitting location updates when the UI is closed, while keeping behavior safe and permission-respecting.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "...mas que trabalhe em segundo plano."
+        ]
+      },
+      "acceptanceCriteria": [
+        "The frontend includes an installable PWA manifest and registers a service worker from the React app entry flow (without modifying any immutable paths).",
+        "Where supported by the browser, the app uses a background-capable mechanism (e.g., service worker + background/periodic sync) to queue and/or submit location updates when Live Location Sharing is enabled.",
+        "On browsers that do not support background/periodic sync, the app falls back to foreground/background-tab operation only and shows a clear status/notice."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update all user-facing copy and transparency/consent messaging to accurately reflect the new background behavior, including the transparency policy section that currently states the app does not collect data in the background.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-3"
+        ],
+        "quotes": [
+          "...não necessite estar aberto... trabalhe em segundo plano."
+        ]
+      },
+      "acceptanceCriteria": [
+        "English translations are updated for Live Location Sharing helper text so it no longer claims sharing only works while the app is open (e.g., update liveLocationActiveInfo, liveLocationForegroundNote, and parent-side live sharing description).",
+        "Portuguese (pt-BR) translations are updated to match the new meaning.",
+        "The Transparency & Policies content is updated so it does not incorrectly state the app 'Does NOT collect data in the background' when background live sharing is enabled by the child."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
-    "Keep the backend architecture unchanged (single Motoko actor); no backend changes are required for this translation task."
+    "Do not edit files under frontend/src/components/ui or any other immutable frontend paths listed in SYSTEM_CONTEXT.",
+    "Respect browser privacy/permission requirements: do not attempt background location collection without explicit child opt-in via the existing Live Location Sharing toggle.",
+    "Keep the backend as a single Motoko actor; do not introduce additional backend services."
   ],
   "nonGoals": [
-    "Translating user-generated content stored in the backend (e.g., profile names, free-form notes).",
-    "Adding new locales beyond en and pt-BR.",
-    "Changing the app’s feature set or implementing new backend APIs unrelated to localization."
+    "Adding push notifications or any server-initiated real-time delivery mechanism.",
+    "Guaranteeing background location sharing on all browsers/devices even when the app is fully closed (implement best-effort and communicate platform limitations).",
+    "Introducing third-party authentication, native mobile builds, or external background location SDKs."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

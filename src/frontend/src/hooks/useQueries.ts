@@ -123,7 +123,7 @@ export function useAddActivity(options?: { silent?: boolean }) {
   });
 }
 
-export function useGetLocations(childId: Principal | null) {
+export function useGetLocations(childId: Principal | null, options?: { refetchInterval?: number }) {
   const { actor, isFetching } = useActor();
 
   return useQuery<LocationEntry[]>({
@@ -133,6 +133,7 @@ export function useGetLocations(childId: Principal | null) {
       return actor.getLocations(childId);
     },
     enabled: !!actor && !isFetching && !!childId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -344,6 +345,38 @@ export function useSetAdminPassword() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to update password: ${error.message}`);
+    },
+  });
+}
+
+export function useGetLiveLocationSharingStatus(childId: Principal | null, options?: { refetchInterval?: number }) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['liveLocationSharing', childId?.toString()],
+    queryFn: async () => {
+      if (!actor || !childId) return false;
+      return actor.getLiveLocationSharingStatus(childId);
+    },
+    enabled: !!actor && !isFetching && !!childId,
+    refetchInterval: options?.refetchInterval,
+  });
+}
+
+export function useSetLiveLocationSharing() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setLiveLocationSharing(enabled);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liveLocationSharing'] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update location sharing: ${error.message}`);
     },
   });
 }
