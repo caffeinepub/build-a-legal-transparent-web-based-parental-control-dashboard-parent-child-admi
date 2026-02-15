@@ -20,7 +20,7 @@ export default function ChildHome() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-amber-900 dark:text-amber-100 mb-2">
+        <h2 className="text-3xl font-bold font-brand text-navy-900 dark:text-navy-100 mb-2">
           Welcome, {userProfile?.name}!
         </h2>
         <p className="text-muted-foreground">

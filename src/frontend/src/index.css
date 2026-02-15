@@ -3,69 +3,95 @@
 @tailwind utilities;
 
 @layer base {
-    :root {
-        --radius: 0.5rem;
-        
-        /* Warm amber/orange palette for light mode */
-        --background: 0.98 0.02 60;
-        --foreground: 0.2 0.05 40;
-        --card: 1 0 0;
-        --card-foreground: 0.2 0.05 40;
-        --popover: 1 0 0;
-        --popover-foreground: 0.2 0.05 40;
-        --primary: 0.65 0.15 50;
-        --primary-foreground: 0.98 0 0;
-        --secondary: 0.95 0.03 60;
-        --secondary-foreground: 0.3 0.05 40;
-        --muted: 0.96 0.02 60;
-        --muted-foreground: 0.5 0.03 40;
-        --accent: 0.92 0.05 55;
-        --accent-foreground: 0.25 0.05 40;
-        --destructive: 0.55 0.22 25;
-        --destructive-foreground: 0.98 0 0;
-        --border: 0.9 0.02 60;
-        --input: 0.9 0.02 60;
-        --ring: 0.65 0.15 50;
-        --chart-1: 0.7 0.18 45;
-        --chart-2: 0.6 0.12 180;
-        --chart-3: 0.5 0.08 220;
-        --chart-4: 0.75 0.16 80;
-        --chart-5: 0.68 0.14 35;
-    }
-
-    .dark {
-        --background: 0.15 0.02 40;
-        --foreground: 0.95 0.02 60;
-        --card: 0.2 0.03 40;
-        --card-foreground: 0.95 0.02 60;
-        --popover: 0.18 0.03 40;
-        --popover-foreground: 0.95 0.02 60;
-        --primary: 0.75 0.15 50;
-        --primary-foreground: 0.15 0.02 40;
-        --secondary: 0.25 0.04 40;
-        --secondary-foreground: 0.95 0.02 60;
-        --muted: 0.25 0.03 40;
-        --muted-foreground: 0.65 0.03 50;
-        --accent: 0.35 0.05 45;
-        --accent-foreground: 0.95 0.02 60;
-        --destructive: 0.6 0.2 25;
-        --destructive-foreground: 0.95 0 0;
-        --border: 0.3 0.03 40;
-        --input: 0.3 0.03 40;
-        --ring: 0.7 0.12 50;
-        --chart-1: 0.65 0.2 45;
-        --chart-2: 0.55 0.15 180;
-        --chart-3: 0.45 0.1 220;
-        --chart-4: 0.7 0.18 80;
-        --chart-5: 0.62 0.16 35;
-    }
-
-    * {
-        @apply border-border;
-    }
+  :root {
+    /* Navy/White Theme - Light Mode */
+    --background: 98% 0.01 240;
+    --foreground: 20% 0.02 240;
+    --card: 100% 0 0;
+    --card-foreground: 20% 0.02 240;
+    --popover: 100% 0 0;
+    --popover-foreground: 20% 0.02 240;
+    --primary: 35% 0.12 240;
+    --primary-foreground: 98% 0.01 240;
+    --secondary: 92% 0.02 240;
+    --secondary-foreground: 25% 0.02 240;
+    --muted: 94% 0.01 240;
+    --muted-foreground: 45% 0.03 240;
+    --accent: 90% 0.03 240;
+    --accent-foreground: 25% 0.02 240;
+    --destructive: 55% 0.22 25;
+    --destructive-foreground: 98% 0.01 240;
+    --border: 88% 0.02 240;
+    --input: 88% 0.02 240;
+    --ring: 35% 0.12 240;
+    --radius: 0.5rem;
+    --chart-1: 60% 0.15 240;
+    --chart-2: 70% 0.12 200;
+    --chart-3: 65% 0.14 280;
+    --chart-4: 75% 0.10 160;
+    --chart-5: 55% 0.18 320;
     
-    body {
-        @apply bg-background text-foreground;
-        font-feature-settings: "rlig" 1, "calt" 1;
-    }
+    /* Navy color tokens */
+    --navy-50: 97% 0.01 240;
+    --navy-100: 92% 0.02 240;
+    --navy-200: 85% 0.03 240;
+    --navy-300: 70% 0.05 240;
+    --navy-400: 55% 0.08 240;
+    --navy-500: 45% 0.10 240;
+    --navy-600: 35% 0.12 240;
+    --navy-700: 28% 0.10 240;
+    --navy-800: 22% 0.08 240;
+    --navy-900: 18% 0.05 240;
+    --navy-950: 12% 0.03 240;
+  }
+
+  .dark {
+    /* Navy/White Theme - Dark Mode */
+    --background: 15% 0.04 240;
+    --foreground: 95% 0.01 240;
+    --card: 20% 0.06 240;
+    --card-foreground: 95% 0.01 240;
+    --popover: 20% 0.06 240;
+    --popover-foreground: 95% 0.01 240;
+    --primary: 65% 0.14 240;
+    --primary-foreground: 15% 0.04 240;
+    --secondary: 28% 0.10 240;
+    --secondary-foreground: 95% 0.01 240;
+    --muted: 25% 0.08 240;
+    --muted-foreground: 65% 0.06 240;
+    --accent: 32% 0.12 240;
+    --accent-foreground: 95% 0.01 240;
+    --destructive: 55% 0.22 25;
+    --destructive-foreground: 95% 0.01 240;
+    --border: 30% 0.10 240;
+    --input: 30% 0.10 240;
+    --ring: 65% 0.14 240;
+    --chart-1: 60% 0.15 240;
+    --chart-2: 70% 0.12 200;
+    --chart-3: 65% 0.14 280;
+    --chart-4: 75% 0.10 160;
+    --chart-5: 55% 0.18 320;
+    
+    /* Navy color tokens - dark mode */
+    --navy-50: 12% 0.03 240;
+    --navy-100: 18% 0.05 240;
+    --navy-200: 22% 0.08 240;
+    --navy-300: 28% 0.10 240;
+    --navy-400: 35% 0.12 240;
+    --navy-500: 45% 0.10 240;
+    --navy-600: 55% 0.08 240;
+    --navy-700: 65% 0.05 240;
+    --navy-800: 75% 0.03 240;
+    --navy-900: 85% 0.02 240;
+    --navy-950: 92% 0.01 240;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

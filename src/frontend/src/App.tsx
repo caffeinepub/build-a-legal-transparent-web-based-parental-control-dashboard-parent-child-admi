@@ -1,35 +1,53 @@
 import { useEffect, useState } from 'react';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
+import { useAdminGate } from './hooks/useAdminGate';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
+import { I18nProvider } from './i18n/I18nProvider';
+import { useI18n } from './hooks/useI18n';
 import LoginButton from './components/auth/LoginButton';
+import LanguageSelector from './components/i18n/LanguageSelector';
 import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
+import AppHeader from './components/layout/AppHeader';
+import AppFooter from './components/layout/AppFooter';
 import ParentDashboard from './pages/parent/ParentDashboard';
 import ChildHome from './pages/child/ChildHome';
 import AdminPanel from './pages/admin/AdminPanel';
 import TransparencyPolicies from './pages/TransparencyPolicies';
-import AppHeader from './components/layout/AppHeader';
-import AppFooter from './components/layout/AppFooter';
-import { Shield } from 'lucide-react';
 import { AppRole } from './backend';
+import { Loader2 } from 'lucide-react';
+
+const queryClient = new QueryClient();
 
 function AppContent() {
-  const { identity, isInitializing } = useInternetIdentity();
+  const { identity, isInitializing, clear } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
-  const { data: isAdmin } = useIsCallerAdmin();
+  const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
+  const { clearGate } = useAdminGate();
+  const { t } = useI18n();
   const [showPolicies, setShowPolicies] = useState(false);
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
 
-  if (isInitializing || (isAuthenticated && profileLoading)) {
+  useEffect(() => {
+    const handleLogout = () => {
+      clearGate();
+    };
+
+    if (!isAuthenticated) {
+      handleLogout();
+    }
+  }, [isAuthenticated, clearGate]);
+
+  if (isInitializing || (isAuthenticated && (profileLoading || adminLoading))) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Shield className="w-16 h-16 mx-auto text-amber-600 dark:text-amber-400 animate-pulse" />
-          <p className="text-muted-foreground">Loading...</p>
+          <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -37,92 +55,96 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <header className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
+        <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-40">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/assets/generated/pc-logo.dim_256x256.png" alt="FamilyGuard" className="w-10 h-10" />
-              <h1 className="text-2xl font-bold text-amber-900 dark:text-amber-100">FamilyGuard</h1>
+              <img src="/assets/generated/pc-logo.dim_256x256.png" alt={t('appName')} className="w-10 h-10" />
+              <h1 className="text-xl font-bold font-brand text-foreground">{t('appName')}</h1>
             </div>
-            <LoginButton />
+            <div className="flex items-center gap-2">
+              <LanguageSelector />
+              <LoginButton />
+            </div>
           </div>
         </header>
-        <main className="container mx-auto px-4 py-12">
+
+        <main className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <img src="/assets/generated/pc-hero.dim_1200x600.png" alt="Family Safety" className="w-full max-w-2xl mx-auto rounded-2xl shadow-lg" />
             <div className="space-y-4">
-              <h2 className="text-4xl font-bold text-amber-900 dark:text-amber-100">
-                Transparent Parental Guidance
+              <h2 className="text-5xl font-bold font-brand text-foreground">
+                {t('landingHero')}
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                A legal, consent-based web platform for families. Set healthy screen time limits, review activity reports, and maintain open communication—all with full transparency.
+                {t('landingDescription')}
               </p>
-              <div className="flex flex-wrap gap-4 justify-center pt-4">
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                  <p className="font-semibold text-amber-800 dark:text-amber-200">✓ Consent-Based</p>
-                  <p className="text-sm text-muted-foreground">Child approval required</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                  <p className="font-semibold text-amber-800 dark:text-amber-200">✓ Transparent</p>
-                  <p className="text-sm text-muted-foreground">No hidden monitoring</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-                  <p className="font-semibold text-amber-800 dark:text-amber-200">✓ Legal</p>
-                  <p className="text-sm text-muted-foreground">Compliant with privacy laws</p>
-                </div>
+            </div>
+
+            <div className="relative w-full max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
+              <img
+                src="/assets/generated/pc-hero.dim_1200x600.png"
+                alt={t('appName')}
+                className="w-full h-auto"
+              />
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 mt-12">
+              <div className="p-6 bg-card rounded-lg shadow-md border">
+                <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                  {t('landingFeature1Title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landingFeature1Desc')}
+                </p>
               </div>
-              <button
-                onClick={() => setShowPolicies(true)}
-                className="text-amber-700 dark:text-amber-300 underline hover:no-underline"
-              >
-                Learn about our transparency policies
-              </button>
+              <div className="p-6 bg-card rounded-lg shadow-md border">
+                <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                  {t('landingFeature2Title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landingFeature2Desc')}
+                </p>
+              </div>
+              <div className="p-6 bg-card rounded-lg shadow-md border">
+                <h3 className="text-lg font-semibold text-card-foreground mb-2">
+                  {t('landingFeature3Title')}
+                </h3>
+                <p className="text-muted-foreground">
+                  {t('landingFeature3Desc')}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-8">
+              <LoginButton />
             </div>
           </div>
         </main>
+
         <AppFooter onShowPolicies={() => setShowPolicies(true)} />
         {showPolicies && <TransparencyPolicies onClose={() => setShowPolicies(false)} />}
       </div>
     );
   }
 
-  if (showProfileSetup) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <AppHeader onShowPolicies={() => setShowPolicies(true)} />
-        <ProfileSetupDialog />
-        {showPolicies && <TransparencyPolicies onClose={() => setShowPolicies(false)} />}
-      </div>
-    );
-  }
-
-  const renderRoleView = () => {
-    if (isAdmin) {
-      return <AdminPanel />;
-    }
-
-    if (userProfile?.role === AppRole.parent) {
-      return <ParentDashboard />;
-    }
-
-    if (userProfile?.role === AppRole.child) {
-      return <ChildHome />;
-    }
-
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Unknown role. Please contact support.</p>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <AppHeader onShowPolicies={() => setShowPolicies(true)} />
       <main className="container mx-auto px-4 py-8">
-        {renderRoleView()}
+        {isAdmin ? (
+          <AdminPanel />
+        ) : userProfile?.role === AppRole.parent ? (
+          <ParentDashboard />
+        ) : userProfile?.role === AppRole.child ? (
+          <ChildHome />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">{t('roleUnknown')}</p>
+          </div>
+        )}
       </main>
       <AppFooter onShowPolicies={() => setShowPolicies(true)} />
+      {showProfileSetup && <ProfileSetupDialog />}
       {showPolicies && <TransparencyPolicies onClose={() => setShowPolicies(false)} />}
     </div>
   );
@@ -130,9 +152,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <AppContent />
-      <Toaster />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <I18nProvider>
+          <AppContent />
+          <Toaster />
+        </I18nProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

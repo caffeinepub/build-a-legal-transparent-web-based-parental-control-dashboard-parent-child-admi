@@ -20,7 +20,7 @@ export default function AggregatedMetricsCards({ metrics }: AggregatedMetricsCar
       title: 'Total Users',
       value: Number(metrics.totalUsers),
       icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
+      color: 'text-navy-600 dark:text-navy-400',
     },
     {
       title: 'Parents',
@@ -32,7 +32,7 @@ export default function AggregatedMetricsCards({ metrics }: AggregatedMetricsCar
       title: 'Children',
       value: Number(metrics.totalChildren),
       icon: Users,
-      color: 'text-amber-600 dark:text-amber-400',
+      color: 'text-blue-600 dark:text-blue-400',
     },
     {
       title: 'Pairings',

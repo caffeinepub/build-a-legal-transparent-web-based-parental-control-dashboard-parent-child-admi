@@ -96,7 +96,7 @@ export function useGetActivities(childId: Principal | null) {
   });
 }
 
-export function useAddActivity() {
+export function useAddActivity(options?: { silent?: boolean }) {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const { identity } = useInternetIdentity();
@@ -113,7 +113,9 @@ export function useAddActivity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
-      toast.success('Activity submitted');
+      if (!options?.silent) {
+        toast.success('Activity submitted');
+      }
     },
     onError: (error: Error) => {
       toast.error(`Failed to submit activity: ${error.message}`);
@@ -134,7 +136,7 @@ export function useGetLocations(childId: Principal | null) {
   });
 }
 
-export function useAddLocation() {
+export function useAddLocation(options?: { silent?: boolean }) {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const { identity } = useInternetIdentity();
@@ -151,7 +153,9 @@ export function useAddLocation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['locations'] });
-      toast.success('Location submitted');
+      if (!options?.silent) {
+        toast.success('Location submitted');
+      }
     },
     onError: (error: Error) => {
       toast.error(`Failed to submit location: ${error.message}`);
@@ -236,7 +240,7 @@ export function useGetAuditLog(childId: Principal | null) {
   });
 }
 
-export function useGetAllUsers() {
+export function useGetAllUsers(enabled: boolean = true) {
   const { actor, isFetching } = useActor();
 
   return useQuery<[Principal, UserProfile][]>({
@@ -245,11 +249,11 @@ export function useGetAllUsers() {
       if (!actor) return [];
       return actor.getAllUsers();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && enabled,
   });
 }
 
-export function useGetAggregatedMetrics() {
+export function useGetAggregatedMetrics(enabled: boolean = true) {
   const { actor, isFetching } = useActor();
 
   return useQuery({
@@ -258,7 +262,7 @@ export function useGetAggregatedMetrics() {
       if (!actor) return null;
       return actor.getAggregatedMetrics();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && enabled,
   });
 }
 
@@ -300,7 +304,7 @@ export function useEnableAccount() {
   });
 }
 
-export function useGetParentChildLinks() {
+export function useGetParentChildLinks(enabled: boolean = true) {
   const { actor, isFetching } = useActor();
 
   return useQuery<[Principal, Principal[]][]>({
@@ -309,6 +313,37 @@ export function useGetParentChildLinks() {
       if (!actor) return [];
       return actor.getParentChildLinks();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && enabled,
+  });
+}
+
+export function useVerifyAdminPassword() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (password: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.verifyAdminPassword(password);
+    },
+    onError: (error: Error) => {
+      toast.error(`Verification failed: ${error.message}`);
+    },
+  });
+}
+
+export function useSetAdminPassword() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (newPassword: string) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.setAdminPassword(newPassword);
+    },
+    onSuccess: () => {
+      toast.success('Admin password updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update password: ${error.message}`);
+    },
   });
 }

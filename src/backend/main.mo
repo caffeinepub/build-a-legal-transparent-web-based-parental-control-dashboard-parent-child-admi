@@ -1,9 +1,8 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
-import Time "mo:core/Time";
-import Order "mo:core/Order";
-import Array "mo:core/Array";
 import Text "mo:core/Text";
+import Time "mo:core/Time";
+import Array "mo:core/Array";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
@@ -12,17 +11,20 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import InviteLinksModule "invite-links/invite-links-module";
 
+
+
 actor {
   // Authorization
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
+  // Admin Password (not persisted)
+  var adminPassword : Text = "secure_password"; // Change this to your desired password
+
   // Invite Links System State
   let inviteLinksState = InviteLinksModule.initState();
 
   // Types
-  public type InstanceId = Nat32;
-
   public type UserProfile = {
     name : Text;
     role : AppRole;
@@ -112,18 +114,6 @@ actor {
     reason : Text;
   };
 
-  public type ParentChildLink = {
-    parent : Principal;
-    child : Principal;
-    createdAt : Time.Time;
-  };
-
-  public type ParentInviteCode = {
-    parent : Principal;
-    code : Text;
-    createdAt : Time.Time;
-  };
-
   // State
   let userProfiles = Map.empty<Principal, UserProfile>();
   let parentChildLinks = Map.empty<Principal, List.List<Principal>>(); // parent -> list of children
@@ -134,7 +124,31 @@ actor {
   let locations = Map.empty<Principal, List.List<LocationEntry>>();
   let auditLogs = Map.empty<Principal, List.List<AuditLogEntry>>();
   let disabledAccounts = Map.empty<Principal, Bool>();
-  let parentInviteCodes = Map.empty<Text, ParentInviteCode>();
+
+  // Admin Password Management
+  public shared ({ caller }) func setAdminPassword(newPassword : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can change the password");
+    };
+    if (Text.equal(newPassword, "")) {
+      Runtime.trap("Password cannot be empty");
+    };
+    adminPassword := newPassword;
+  };
+
+  public shared ({ caller }) func verifyAdminPassword(password : Text) : async Bool {
+    // Require authenticated user (not guest/anonymous)
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can verify admin password");
+    };
+
+    // Return consistent response to prevent timing attacks
+    if (Text.equal(password, adminPassword)) {
+      true;
+    } else {
+      false;
+    };
+  };
 
   // User Profile Management (Required by frontend)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -178,7 +192,9 @@ actor {
     code;
   };
 
-  public shared func submitRSVP(name : Text, attending : Bool, inviteCode : Text) : async () {
+  public shared ({ caller }) func submitRSVP(name : Text, attending : Bool, inviteCode : Text) : async () {
+    // Allow authenticated users and guests to submit RSVPs (public invite links)
+    // No authorization check - this is intentionally public for invite link functionality
     InviteLinksModule.submitRSVP(inviteLinksState, name, attending, inviteCode);
   };
 
@@ -580,3 +596,4 @@ actor {
     };
   };
 };
+

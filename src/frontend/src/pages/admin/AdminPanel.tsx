@@ -1,19 +1,26 @@
 import { useGetAllUsers, useGetAggregatedMetrics, useGetParentChildLinks } from '../../hooks/useQueries';
+import { useAdminGate } from '../../hooks/useAdminGate';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Users, UserCheck, Link2, TrendingUp } from 'lucide-react';
+import { Shield, Link2 } from 'lucide-react';
 import AccountsTable from '../../components/admin/AccountsTable';
 import AggregatedMetricsCards from '../../components/admin/AggregatedMetricsCards';
+import AdminPasswordGate from '../../components/admin/AdminPasswordGate';
 
 export default function AdminPanel() {
-  const { data: users = [] } = useGetAllUsers();
-  const { data: metrics } = useGetAggregatedMetrics();
-  const { data: links = [] } = useGetParentChildLinks();
+  const { isGatePassed } = useAdminGate();
+  const { data: users = [] } = useGetAllUsers(isGatePassed);
+  const { data: metrics } = useGetAggregatedMetrics(isGatePassed);
+  const { data: links = [] } = useGetParentChildLinks(isGatePassed);
+
+  if (!isGatePassed) {
+    return <AdminPasswordGate />;
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-amber-900 dark:text-amber-100 mb-2 flex items-center gap-2">
+        <h2 className="text-3xl font-bold font-brand text-foreground mb-2 flex items-center gap-2">
           <Shield className="w-8 h-8" />
           Admin Panel
         </h2>

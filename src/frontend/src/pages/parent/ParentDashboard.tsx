@@ -24,7 +24,7 @@ export default function ParentDashboard() {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 font-brand">
               <Users className="w-5 h-5" />
               Parent Dashboard
             </CardTitle>
@@ -43,7 +43,7 @@ export default function ParentDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-amber-900 dark:text-amber-100 mb-2">
+        <h2 className="text-3xl font-bold font-brand text-foreground mb-2">
           Parent Dashboard
         </h2>
         <p className="text-muted-foreground">
@@ -51,9 +51,9 @@ export default function ParentDashboard() {
         </p>
       </div>
 
-      <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-        <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-        <AlertDescription className="text-amber-900 dark:text-amber-100">
+      <Alert className="bg-accent border-accent-foreground/20">
+        <Info className="w-4 h-4 text-accent-foreground" />
+        <AlertDescription className="text-accent-foreground">
           All data shown here is voluntarily submitted by your child with their explicit consent. No hidden monitoring occurs.
         </AlertDescription>
       </Alert>

@@ -118,12 +118,14 @@ export interface _SERVICE {
   'isAccountDisabled' : ActorMethod<[Principal], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setAdminPassword' : ActorMethod<[string], undefined>,
   'submitRSVP' : ActorMethod<[string, boolean, string], undefined>,
   'updateContentFilter' : ActorMethod<
     [Principal, ContentFilterConfig],
     undefined
   >,
   'updateSchedule' : ActorMethod<[Principal, ScheduleConfig], undefined>,
+  'verifyAdminPassword' : ActorMethod<[string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -22,8 +22,8 @@ export default function ChildCheckIn() {
   const [locationLng, setLocationLng] = useState('');
   const [locationConsent, setLocationConsent] = useState(false);
 
-  const addActivity = useAddActivity();
-  const addLocation = useAddLocation();
+  const addActivity = useAddActivity({ silent: true });
+  const addLocation = useAddLocation({ silent: true });
 
   const handleActivitySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,7 +143,7 @@ export default function ChildCheckIn() {
 
               <Button
                 type="submit"
-                className="w-full bg-amber-600 hover:bg-amber-700"
+                className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                 disabled={!activityConsent || addActivity.isPending}
               >
                 {addActivity.isPending ? 'Submitting...' : 'Submit Activity'}
@@ -209,7 +209,7 @@ export default function ChildCheckIn() {
 
               <Button
                 type="submit"
-                className="w-full bg-amber-600 hover:bg-amber-700"
+                className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                 disabled={!locationConsent || addLocation.isPending}
               >
                 {addLocation.isPending ? 'Submitting...' : 'Share Location'}

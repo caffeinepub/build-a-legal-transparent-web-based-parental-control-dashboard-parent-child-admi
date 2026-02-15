@@ -166,6 +166,7 @@ export const idlService = IDL.Service({
   'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setAdminPassword' : IDL.Func([IDL.Text], [], []),
   'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
   'updateContentFilter' : IDL.Func(
       [IDL.Principal, ContentFilterConfig],
@@ -173,6 +174,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateSchedule' : IDL.Func([IDL.Principal, ScheduleConfig], [], []),
+  'verifyAdminPassword' : IDL.Func([IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -336,6 +338,7 @@ export const idlFactory = ({ IDL }) => {
     'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setAdminPassword' : IDL.Func([IDL.Text], [], []),
     'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
     'updateContentFilter' : IDL.Func(
         [IDL.Principal, ContentFilterConfig],
@@ -343,6 +346,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateSchedule' : IDL.Func([IDL.Principal, ScheduleConfig], [], []),
+    'verifyAdminPassword' : IDL.Func([IDL.Text], [IDL.Bool], []),
   });
 };
 

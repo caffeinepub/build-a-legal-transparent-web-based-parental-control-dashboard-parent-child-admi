@@ -218,9 +218,11 @@ export interface backendInterface {
     isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setAdminPassword(newPassword: string): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;
     updateSchedule(childId: Principal, newConfig: ScheduleConfig): Promise<void>;
+    verifyAdminPassword(password: string): Promise<boolean>;
 }
 import type { AccountDisabledDetails as _AccountDisabledDetails, ActionType as _ActionType, AppRole as _AppRole, AuditLogDetails as _AuditLogDetails, AuditLogEntry as _AuditLogEntry, ContentFilterConfig as _ContentFilterConfig, FilterChangeDetails as _FilterChangeDetails, PairingDetails as _PairingDetails, ScheduleChangeDetails as _ScheduleChangeDetails, ScheduleConfig as _ScheduleConfig, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -580,6 +582,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async setAdminPassword(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setAdminPassword(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setAdminPassword(arg0);
+            return result;
+        }
+    }
     async submitRSVP(arg0: string, arg1: boolean, arg2: string): Promise<void> {
         if (this.processError) {
             try {
@@ -619,6 +635,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateSchedule(arg0, arg1);
+            return result;
+        }
+    }
+    async verifyAdminPassword(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyAdminPassword(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyAdminPassword(arg0);
             return result;
         }
     }

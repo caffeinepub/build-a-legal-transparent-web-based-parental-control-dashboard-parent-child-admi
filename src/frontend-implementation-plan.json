@@ -1,444 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Parental Control Dashboard (Web) — Frontend UI, RBAC, Pairing, Check-ins, Policies",
+  "title": "Restore readable light/dark theme contrast by fixing global tokens and removing hard-coded surfaces",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Implement Internet Identity sign-in UX and role-based navigation/route separation for Parent/Child/Admin.",
+      "summary": "Fix global theme tokens so surface/background colors and text colors are distinct and meet readable contrast in light and dark mode.",
       "acceptanceCriteria": [
-        "Users can sign in using Internet Identity.",
-        "Non-admin users cannot access Admin routes; Child users cannot access Parent-only routes.",
-        "UI shows role-appropriate entry points (Parent dashboard, Child check-in, Admin panel)."
+        "Update the CSS variables in frontend/src/index.css for both :root (light) and .dark (dark) so that background/card/popover colors are not visually similar to foreground/card-foreground/popover-foreground text colors.",
+        "Body text (text-foreground on bg-background) meets WCAG AA contrast (>= 4.5:1) in both light and dark themes.",
+        "Muted text (text-muted-foreground) remains visibly distinct from normal text and remains readable on bg-background and bg-card in both light and dark themes.",
+        "Primary/secondary/accent button combinations using *-foreground variables remain readable (no cases where button text appears close to the button background color)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "create",
-          "description": "Create the top-level app shell that requires authentication before showing any app data, fetches the signed-in user profile/role, and conditionally renders role-appropriate navigation and screens (Parent/Child/Admin) with an AccessDenied view for unauthorized access. Use the authorization component patterns (profile fetch, cache clearing on logout, access denied UX). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/LoginButton.tsx",
-          "operation": "create",
-          "description": "Add an Internet Identity login/logout button that clears cached queries on logout and surfaces login errors. Use the authorization component guidance for login/logout behaviors. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "operation": "create",
-          "description": "Create a first-login profile setup dialog (collect name + select role: Parent/Child/Admin only when appropriate) that is shown only after actor/profile query is fetched to prevent modal flash. Use the authorization component's 'Preventing Profile Setup Modal Flash' guidance. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/RoleGuard.tsx",
-          "operation": "create",
-          "description": "Add a small wrapper that gates rendering by required app role (parent/child/admin), showing AccessDenied content and a link back to the role home. Use the authorization component guidance for access control UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "create",
-          "description": "Add React Query hooks for fetching current user profile, current user role/admin status, and other role-dependent data used across the app, including graceful handling of authorization failures. Use the authorization component guidance for authenticated data fetching and error handling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/layout/AppHeader.tsx",
-          "operation": "create",
-          "description": "Add a shared header that shows the generated logo, current user's display name (from profile), and role-appropriate navigation links plus the login/logout button. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Update light/dark CSS variable values for background/foreground/card/popover/border/accent/muted/primary (and their *-foreground counterparts) to restore clear contrast while keeping the navy/white direction. Ensure variables are defined in a format compatible with Tailwind's theme mapping (e.g., variables used via hsl(var(--token)) should contain raw HSL channels, and variables used via oklch(var(--navy-*))) should contain raw OKLCH channels) to prevent invalid computed colors and low-contrast rendering."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Create Parent–Child pairing onboarding flow using an invite code with explicit consent disclosures.",
+      "summary": "Remove/replace hard-coded color utility classes in key layouts so they consistently rely on theme tokens and avoid low-contrast combinations.",
       "acceptanceCriteria": [
-        "Parent can generate an invite code for pairing.",
-        "Child can enter the invite code to link to the Parent.",
-        "Child must confirm a consent checkbox acknowledging supervision/data sharing before linking completes.",
-        "After pairing, Parent sees linked Child; Child sees linked Parent and supervision notice."
+        "In the main app shell and authentication/landing layout (e.g., frontend/src/App.tsx), gradients/surfaces and text colors do not produce low-contrast combinations in either theme.",
+        "In shared layout components (e.g., header/footer), background and text utilities do not override the new token-based theme in a way that reduces readability (especially in dark mode).",
+        "No visible areas where headings/body text blend into their immediate container background (cards, headers, tables, panels) in both light and dark mode."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/pages/OnboardingPairing.tsx",
-          "operation": "create",
-          "description": "Create an onboarding page with two role-specific sections: (1) Parent: generate an invite code and show it with copy-to-clipboard; (2) Child: enter invite code and confirm an explicit consent checkbox before submitting pairing. Include clear disclosures about supervision/data sharing during pairing. Where invite code generation/display is needed, leverage the invite-links component concept of invite codes in the UI flow (generate + share code) while keeping the pairing semantics aligned to this app. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add mutations/queries used by onboarding: generate invite code, redeem/link flow, and queries that refresh parent-child linkage after successful pairing. Verify the component's usage instructions before implementing."
-        },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Wire the onboarding screen into the app flow so newly signed-in users can complete pairing (Parent generates code; Child redeems) and then are routed to their role home. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Provide a Parent dashboard UI to manage linked children with child detail sections and transparency labels.",
-      "acceptanceCriteria": [
-        "Parent dashboard lists linked Children with status (last check-in time, alerts count).",
-        "Selecting a Child opens sections for: Activity, Schedules & Limits, Content Filters, Location, Alerts, Audit Log.",
-        "Activity/location views clearly label that data is child-submitted/consented (no hidden monitoring)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "create",
-          "description": "Create the Parent dashboard page that lists linked children (using backend-linked child principals) and shows summary cards including derived status (e.g., last check-in from recent activity/location timestamps, alerts count from alerts computation results). Include a child selector and a right-side detail panel with sections/tabs: Activity, Schedules & Limits, Content Filters, Location, Alerts, Audit Log, each with prominent transparency labels (child-submitted/consented data only). Verify the component's usage instructions before implementing."
+          "description": "Audit the authenticated shell + unauthenticated landing UI and replace hard-coded surfaces/text colors (e.g., white/gray backgrounds, dark gray overrides, text-navy overrides) with token-based utilities (bg-background/bg-card/text-foreground/text-muted-foreground/border-border, and token-aligned gradient stops) so the new global tokens fully control contrast in both themes. Keep existing overall navy/white look while avoiding any text-on-surface blending."
         },
         {
-          "path": "frontend/src/components/parent/ChildSummaryCard.tsx",
-          "operation": "create",
-          "description": "Add a reusable summary card for a child (name if available, last check-in, alerts count) used by the Parent dashboard. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/parent/ChildDetailTabs.tsx",
-          "operation": "create",
-          "description": "Add a tabbed/section container used on the Parent dashboard to switch between Activity, Schedules & Limits, Content Filters, Location, Alerts, Audit Log, ensuring each section shows the transparency notice. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/components/layout/AppHeader.tsx",
           "operation": "modify",
-          "description": "Add queries for parent-facing child data: getMyChildren, getActivities(child), getLocations(child), getSchedule(child), getContentFilter(child), getAuditLog(child), and any small helper selectors to compute UI summaries. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the Parent dashboard into role-based navigation so only Parent/Admin can access it, and Child cannot. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Add schedule/time-limit configuration UI for Parents and read-only schedule transparency for Children.",
-      "acceptanceCriteria": [
-        "Parent can set allowed time windows per weekday and a daily usage limit value.",
-        "Child can see the current schedule/limits in read-only form (transparency)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/schedule/ScheduleEditor.tsx",
-          "operation": "create",
-          "description": "Create a schedule editor UI for Parents/Admin to edit allowed hours by weekday and daily limit minutes with client-side validation (hour ranges, overlaps, required values) before submitting updates. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/schedule/ScheduleReadOnly.tsx",
-          "operation": "create",
-          "description": "Create a read-only schedule view component for Children that clearly explains the schedule/limits are policies configured by Parent/Admin and provides transparency. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add schedule hooks: getSchedule(child) and updateSchedule(child, newConfig), ensuring cache invalidation and authorization error handling (only Parent/Admin can update). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
-          "operation": "create",
-          "description": "Create a Child home page that includes a read-only 'Your schedule & limits' section using ScheduleReadOnly, plus a persistent supervision notice. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Integrate ScheduleEditor under the 'Schedules & Limits' section for the selected child, only enabling editing when current user role permits. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the Child home page into the Child navigation and ensure schedule/limits are visible in read-only mode for Children. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Implement Child check-in UI for submitting activity and optional location entries with explicit per-entry consent and history views.",
-      "acceptanceCriteria": [
-        "Child can add an activity entry with required fields (label/category + duration) and optional details.",
-        "Child can add a location entry (place name and/or coordinates) with explicit consent checkbox per submission.",
-        "Parent can view submitted entries chronologically; Child can view their own submission history."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/child/ChildCheckIn.tsx",
-          "operation": "create",
-          "description": "Create a Child check-in page with two submission forms: Activity (required app/site label + duration; optional notes) and Location (text place and/or coordinates) where each submission requires an explicit consent checkbox and a preview/summary of what will be shared. Also include a 'My submission history' section for the child. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/child/ConsentNotice.tsx",
-          "operation": "create",
-          "description": "Add a reusable consent + transparency notice component used in Child check-in and pairing, clearly stating what data will be shared and that there is no hidden monitoring. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/child/ActivityHistoryList.tsx",
-          "operation": "create",
-          "description": "Add a list/table component to render activity history chronologically with timestamps, durations, and notes, used by both Child (own history) and Parent (selected child). Ensure transparency labels are shown on Parent views. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/child/LocationHistoryList.tsx",
-          "operation": "create",
-          "description": "Add a list/table component to render location history chronologically with timestamps and submitted location fields, used by both Child and Parent views, including transparency labels on Parent views. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add mutations/queries for activity/location: addActivity, addLocation, getActivities(child), getLocations(child), including cache invalidation and user-friendly errors for unauthorized/disabled accounts. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Use ActivityHistoryList and LocationHistoryList in the Parent dashboard child detail sections and ensure chronological viewing with consented-data labels. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the Child check-in page into role navigation for Child users only, and ensure Parents cannot submit child entries from parent views. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Add per-child content filter policy configuration UI for Parents and transparent read-only policy view for Children (no device enforcement).",
-      "acceptanceCriteria": [
-        "Parent can configure categories as allowed/blocked and maintain allowlist/blocklist strings.",
-        "Child can view the current policy in read-only mode, including last-updated timestamp and who updated it."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/filters/ContentFilterEditor.tsx",
-          "operation": "create",
-          "description": "Create a policy configuration editor for Parents/Admin: category toggles and allowlist/blocklist text inputs (stored as arrays of strings). Ensure the UI clarifies this is a transparency policy (no device-level enforcement). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/filters/ContentFilterReadOnly.tsx",
-          "operation": "create",
-          "description": "Create a Child-facing read-only policy view that lists enabled/blocked categories and allowlist/blocklist, and shows metadata (last updated + updated by) when available from audit log metadata. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add hooks for content filter: getContentFilter(child), updateContentFilter(child, newConfig), and helper logic to derive 'last updated' + 'who updated' from audit log entries (metadata only). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Integrate ContentFilterEditor into the Parent dashboard 'Content Filters' section for the selected child, and surface a note that this does not enforce on devices. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
-          "operation": "modify",
-          "description": "Add a 'Your content filter policy' read-only section using ContentFilterReadOnly. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Display supportive 'excessive use' alerts based on submitted activity vs configured daily limits, with Parent acknowledgement and Child 'request more time' note UX.",
-      "acceptanceCriteria": [
-        "Parent dashboard shows alerts and allows marking them as acknowledged.",
-        "Child view shows an informational message when limits are exceeded and can optionally submit a 'request more time' note to Parent."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/alerts/AlertsPanelParent.tsx",
-          "operation": "create",
-          "description": "Create a Parent-facing alerts panel that computes daily totals from child-submitted activities vs schedule daily limits (using fetched activities + schedule) and displays alert cards, including an 'acknowledged' UI state stored client-side unless a backend capability exists. Keep messaging transparent and non-punitive. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/alerts/AlertsPanelChild.tsx",
-          "operation": "create",
-          "description": "Create a Child-facing alerts panel that shows supportive messages when limits are exceeded and provides a 'request more time' note input; if no backend capability exists for notes, store locally and clearly label it as a draft/visible-on-this-device only. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add selector utilities/hooks to compute alert status per day from activities + schedule, and to expose alert counts for dashboard summary cards. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Integrate AlertsPanelParent into the 'Alerts' section and ensure alerts count is reflected in the child summary cards. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildHome.tsx",
-          "operation": "modify",
-          "description": "Integrate AlertsPanelChild into the Child home so children can see limit overages transparently and request more time (as supported by the UI). Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Create an Admin panel UI to manage accounts/roles/links and view aggregated metrics (no raw child content).",
-      "acceptanceCriteria": [
-        "Admin can list all accounts and change roles / disable accounts.",
-        "Admin can view aggregate metrics without per-child content details.",
-        "Admin cannot access raw activity/location entries through UI."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "create",
-          "description": "Create an Admin panel page that includes: accounts table (principal + name + app role + disabled status), controls to change role and disable/enable accounts, parent-child links overview (structure only), and an aggregated metrics section. Do not render or request per-child activity/location content in the Admin UI. Use the authorization component patterns for admin-only access control UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AccountsTable.tsx",
-          "operation": "create",
-          "description": "Add an accounts management table component with actions to change roles and disable/enable accounts, including confirmation dialogs and reason capture for disabling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-          "operation": "create",
-          "description": "Add a metrics display component for aggregate counts (total parents/children/users/pairings) and other available aggregated values, ensuring no per-child content is shown. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add Admin hooks: getAllUsers, assignCallerUserRole, disableAccount, enableAccount, isAccountDisabled, getParentChildLinks, getAggregatedMetrics, and ensure queries/mutations are guarded by admin checks with graceful unauthorized handling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire AdminPanel into navigation and gate access with RoleGuard so only Admin can reach it. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "summary": "Expose audit log views for Parents (linked children) and Admin (metadata-only) consistent with transparency and no child content exposure.",
-      "acceptanceCriteria": [
-        "Parent can view audit events relevant to their linked children (no hidden events).",
-        "Admin can view audit metadata necessary for support, but not child-submitted content."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/audit/AuditLogTable.tsx",
-          "operation": "create",
-          "description": "Create an audit log table that renders timestamp, action type, executor, and target metadata, with safe formatting for details (no child-submitted activity/location content). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Integrate AuditLogTable into the selected child 'Audit Log' section and only fetch audit log for children linked to the signed-in parent. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Add an Admin audit metadata view that is limited to metadata-only presentation; avoid showing any child-submitted content and do not include admin UI access paths to activities/locations. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add audit log query hooks (getAuditLog(child)) and helper formatting functions that only surface allowed metadata in UI. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "summary": "Add a Transparency & Policies page and ensure consent expectations appear during pairing and Child check-ins.",
-      "acceptanceCriteria": [
-        "A dedicated page is accessible from footer/header with plain-English disclosures.",
-        "The page explicitly states that the web app does not perform covert monitoring, screen mirroring, or remote camera access.",
-        "Consent expectations are shown during pairing and within the Child check-in UI."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/TransparencyPolicies.tsx",
-          "operation": "create",
-          "description": "Create a dedicated Transparency & Policies page with plain-English supervision disclosure, data handling summary, consent explanation, and explicit non-supported features (no covert monitoring, no screen mirroring, no remote camera). Also include account recovery expectations consistent with Internet Identity (no password emailing). Verify the component's usage instructions before implementing."
+          "description": "Replace hard-coded header surface and title colors (e.g., bg-white/gray, text-navy) with token-based background/foreground and border tokens so header readability remains consistent across light/dark mode and does not override the updated theme."
         },
         {
           "path": "frontend/src/components/layout/AppFooter.tsx",
-          "operation": "create",
-          "description": "Add a footer with a prominent link to the Transparency & Policies page available across roles (and from pre-auth/landing when present). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/OnboardingPairing.tsx",
           "operation": "modify",
-          "description": "Ensure pairing flow includes explicit consent disclosures and links to the Transparency & Policies page before completing linking. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildCheckIn.tsx",
-          "operation": "modify",
-          "description": "Ensure each submission includes explicit per-entry consent UI and a clear preview of what will be shared, plus a link to the Transparency & Policies page. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the Transparency & Policies page into app navigation and ensure it is reachable from header/footer. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "summary": "Establish and apply a cohesive, responsive visual theme across all screens, avoiding blue/purple as primary colors.",
-      "acceptanceCriteria": [
-        "Theme is applied consistently to layouts, buttons, forms, tables, and headings.",
-        "Primary palette is not blue/purple (unless used only as minor accents).",
-        "UI is responsive and usable on mobile and desktop."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "create",
-          "description": "Add/define global styles and Tailwind base layer customizations (typography, spacing scale, background/surface colors) to establish a warm, non-blue/purple primary palette and consistent defaults across the app. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Update Tailwind theme tokens (colors, fontFamily, borderRadius, etc.) to reflect the app's primary palette (avoid blue/purple) and ensure consistent component styling across screens. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/layout/AppHeader.tsx",
-          "operation": "modify",
-          "description": "Apply the new theme styling consistently in the header (surfaces, typography, spacing) and ensure responsive layout behavior. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
-          "operation": "modify",
-          "description": "Apply consistent theme styling to cards/tables/sections and ensure responsive behavior (stacking, readable tap targets). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/child/ChildCheckIn.tsx",
-          "operation": "modify",
-          "description": "Apply consistent theme styling to forms/consent blocks and ensure mobile usability. Verify the component's usage instructions before implementing."
+          "description": "Replace hard-coded footer surface colors (e.g., bg-white/gray) and any contrast-sensitive hover overrides as needed to ensure footer text/links stay readable using the global tokens (bg-background/bg-card, text-muted-foreground, border-border) in both themes."
         },
         {
           "path": "frontend/src/pages/admin/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Apply consistent theme styling to tables/actions and ensure mobile usability without exposing extra content. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-12",
-      "summary": "Add generated static images (logo + hero illustration) to public assets and reference them in app shell and onboarding.",
-      "acceptanceCriteria": [
-        "Images exist under frontend/public/assets/generated and are referenced directly by the frontend.",
-        "App shell includes the logo in header/auth screens.",
-        "Landing/onboarding uses the hero illustration without fetching it from the backend."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/public/assets/generated/pc-logo.dim_256x256.png",
-          "operation": "create",
-          "description": "Add the generated logo image asset at frontend/public/assets/generated/pc-logo.dim_256x256.png for direct static use by the frontend."
+          "description": "Update admin panel heading/title color utilities that currently hard-code navy text to instead use token-based foreground/muted-foreground utilities, ensuring headings and supporting text maintain contrast on token-based surfaces in light and dark mode."
         },
         {
-          "path": "frontend/public/assets/generated/pc-hero.dim_1200x600.png",
-          "operation": "create",
-          "description": "Add the generated hero illustration asset at frontend/public/assets/generated/pc-hero.dim_1200x600.png for direct static use by the frontend."
-        },
-        {
-          "path": "frontend/src/components/layout/AppHeader.tsx",
+          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
           "operation": "modify",
-          "description": "Reference the static logo image at frontend/public/assets/generated/pc-logo.dim_256x256.png in the app header/auth shell. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/OnboardingPairing.tsx",
-          "operation": "modify",
-          "description": "Reference the static hero illustration at frontend/public/assets/generated/pc-hero.dim_1200x600.png within the onboarding/pairing screen (no backend fetching). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Ensure pre-auth/unauthenticated views (and/or first-login profile setup contexts) also display the logo for a cohesive app shell. Verify the component's usage instructions before implementing."
+          "description": "Audit parent dashboard for hard-coded text colors (e.g., text-navy) and replace with token-based foreground/muted-foreground where appropriate. Ensure any highlighted informational surfaces (e.g., alerts) retain clear contrast with their text in both light and dark mode without relying on brittle hard-coded combinations."
         }
       ]
     }

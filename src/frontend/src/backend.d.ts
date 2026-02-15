@@ -135,7 +135,9 @@ export interface backendInterface {
     isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setAdminPassword(newPassword: string): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;
     updateSchedule(childId: Principal, newConfig: ScheduleConfig): Promise<void>;
+    verifyAdminPassword(password: string): Promise<boolean>;
 }
