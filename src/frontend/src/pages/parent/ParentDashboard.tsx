@@ -3,34 +3,39 @@ import { useGetMyChildren, useGetCallerUserProfile } from '../../hooks/useQuerie
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, AlertCircle, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import ChildSummaryCard from '../../components/parent/ChildSummaryCard';
+import PairingSetup from '../../components/parent/PairingSetup';
 import ActivityView from '../../components/parent/ActivityView';
 import LocationView from '../../components/parent/LocationView';
 import ScheduleEditor from '../../components/schedule/ScheduleEditor';
 import ContentFilterEditor from '../../components/filters/ContentFilterEditor';
-import AlertsPanel from '../../components/alerts/AlertsPanelParent';
+import AlertsPanelParent from '../../components/alerts/AlertsPanelParent';
 import AuditLogTable from '../../components/audit/AuditLogTable';
-import PairingSetup from '../../components/parent/PairingSetup';
 import type { Principal } from '@icp-sdk/core/principal';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function ParentDashboard() {
+  const { t } = useI18n();
+  const { data: profile } = useGetCallerUserProfile();
   const { data: children = [] } = useGetMyChildren();
-  const { data: userProfile } = useGetCallerUserProfile();
   const [selectedChild, setSelectedChild] = useState<Principal | null>(null);
 
   if (children.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto p-6 space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-navy-900 dark:text-navy-100 mb-2">
+            {t('parentDashboardTitle')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('parentDashboardWelcome', { name: profile?.name || '' })}
+          </p>
+        </div>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-brand">
-              <Users className="w-5 h-5" />
-              Parent Dashboard
-            </CardTitle>
-            <CardDescription>
-              Welcome, {userProfile?.name}! Set up your first child connection.
-            </CardDescription>
+            <CardTitle>{t('parentDashboardNoChildren')}</CardTitle>
+            <CardDescription>{t('parentDashboardNoChildrenDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <PairingSetup />
@@ -40,85 +45,75 @@ export default function ParentDashboard() {
     );
   }
 
+  const currentChild = selectedChild || children[0];
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold font-brand text-foreground mb-2">
-          Parent Dashboard
-        </h2>
-        <p className="text-muted-foreground">
-          Monitor and guide your children with transparency and consent
-        </p>
+        <h1 className="text-3xl font-bold text-navy-900 dark:text-navy-100 mb-2">
+          {t('parentDashboardTitle')}
+        </h1>
+        <p className="text-muted-foreground">{t('parentDashboardDescription')}</p>
       </div>
 
-      <Alert className="bg-accent border-accent-foreground/20">
-        <Info className="w-4 h-4 text-accent-foreground" />
-        <AlertDescription className="text-accent-foreground">
-          All data shown here is voluntarily submitted by your child with their explicit consent. No hidden monitoring occurs.
+      <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
+          {t('parentDashboardAlert')}
         </AlertDescription>
       </Alert>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {children.map((childId) => (
           <ChildSummaryCard
             key={childId.toString()}
             childId={childId}
-            isSelected={selectedChild?.toString() === childId.toString()}
+            isSelected={currentChild.toString() === childId.toString()}
             onSelect={() => setSelectedChild(childId)}
           />
         ))}
       </div>
 
-      {selectedChild && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Child Details</CardTitle>
-            <CardDescription>
-              View and manage settings for the selected child
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="activity" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-                <TabsTrigger value="location">Location</TabsTrigger>
-                <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                <TabsTrigger value="filters">Filters</TabsTrigger>
-                <TabsTrigger value="alerts">Alerts</TabsTrigger>
-                <TabsTrigger value="audit">Audit Log</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="activity" className="space-y-4">
-                <ActivityView childId={selectedChild} />
-              </TabsContent>
-
-              <TabsContent value="location" className="space-y-4">
-                <LocationView childId={selectedChild} />
-              </TabsContent>
-
-              <TabsContent value="schedule" className="space-y-4">
-                <ScheduleEditor childId={selectedChild} />
-              </TabsContent>
-
-              <TabsContent value="filters" className="space-y-4">
-                <ContentFilterEditor childId={selectedChild} />
-              </TabsContent>
-
-              <TabsContent value="alerts" className="space-y-4">
-                <AlertsPanel childId={selectedChild} />
-              </TabsContent>
-
-              <TabsContent value="audit" className="space-y-4">
-                <AuditLogTable childId={selectedChild} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
-        <CardContent className="pt-6">
-          <PairingSetup />
+        <CardHeader>
+          <CardTitle>{t('parentDashboardChildDetails')}</CardTitle>
+          <CardDescription>{t('parentDashboardChildDetailsDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="activity">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="activity">{t('parentDashboardTabActivity')}</TabsTrigger>
+              <TabsTrigger value="location">{t('parentDashboardTabLocation')}</TabsTrigger>
+              <TabsTrigger value="schedule">{t('parentDashboardTabSchedule')}</TabsTrigger>
+              <TabsTrigger value="filters">{t('parentDashboardTabFilters')}</TabsTrigger>
+              <TabsTrigger value="alerts">{t('parentDashboardTabAlerts')}</TabsTrigger>
+              <TabsTrigger value="audit">{t('parentDashboardTabAudit')}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="activity" className="space-y-4">
+              <ActivityView childId={currentChild} />
+            </TabsContent>
+
+            <TabsContent value="location" className="space-y-4">
+              <LocationView childId={currentChild} />
+            </TabsContent>
+
+            <TabsContent value="schedule" className="space-y-4">
+              <ScheduleEditor childId={currentChild} />
+            </TabsContent>
+
+            <TabsContent value="filters" className="space-y-4">
+              <ContentFilterEditor childId={currentChild} />
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-4">
+              <AlertsPanelParent childId={currentChild} />
+            </TabsContent>
+
+            <TabsContent value="audit" className="space-y-4">
+              <AuditLogTable childId={currentChild} />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

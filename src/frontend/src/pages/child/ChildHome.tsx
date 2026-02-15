@@ -1,98 +1,96 @@
-import { useGetMyParent, useGetCallerUserProfile } from '../../hooks/useQueries';
+import { useGetCallerUserProfile, useGetMyParent } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Info } from 'lucide-react';
-import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info, AlertTriangle } from 'lucide-react';
 import ChildCheckIn from '../../components/child/ChildCheckIn';
+import ActivityHistoryList from '../../components/child/ActivityHistoryList';
+import LocationHistoryList from '../../components/child/LocationHistoryList';
 import ScheduleReadOnly from '../../components/schedule/ScheduleReadOnly';
 import ContentFilterReadOnly from '../../components/filters/ContentFilterReadOnly';
 import AlertsPanelChild from '../../components/alerts/AlertsPanelChild';
-import ActivityHistoryList from '../../components/child/ActivityHistoryList';
-import LocationHistoryList from '../../components/child/LocationHistoryList';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function ChildHome() {
-  const { data: parent } = useGetMyParent();
-  const { data: userProfile } = useGetCallerUserProfile();
-  const { identity } = useInternetIdentity();
-  const childId = identity?.getPrincipal() || null;
+  const { t } = useI18n();
+  const { data: profile } = useGetCallerUserProfile();
+  const { data: parentId } = useGetMyParent();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold font-brand text-navy-900 dark:text-navy-100 mb-2">
-          Welcome, {userProfile?.name}!
-        </h2>
-        <p className="text-muted-foreground">
-          Your activity dashboard with full transparency
-        </p>
+        <h1 className="text-3xl font-bold text-navy-900 dark:text-navy-100 mb-2">
+          {t('childHomeWelcome', { name: profile?.name || '' })}
+        </h1>
+        <p className="text-muted-foreground">{t('childHomeDescription')}</p>
       </div>
 
       <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-        <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-        <AlertDescription className="text-blue-900 dark:text-blue-100">
-          <strong>Supervision Notice:</strong> Your parent can see the information you choose to share. All submissions require your explicit consent. There is no hidden monitoring.
-        </AlertDescription>
+        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div>
+          <AlertTitle className="text-blue-900 dark:text-blue-100 font-semibold">
+            {t('childHomeSupervisionNotice')}
+          </AlertTitle>
+          <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
+            {t('childHomeSupervisionBody')}
+          </AlertDescription>
+        </div>
       </Alert>
 
-      {!parent && (
-        <Alert>
-          <Info className="w-4 h-4" />
-          <AlertDescription>
-            You are not currently paired with a parent. Ask your parent for a pairing code to connect.
+      {!parentId && (
+        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="text-amber-900 dark:text-amber-100 text-sm">
+            {t('childHomeNoPairingAlert')}
           </AlertDescription>
         </Alert>
       )}
 
-      <Tabs defaultValue="checkin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
-          <TabsTrigger value="checkin">Check-in</TabsTrigger>
-          <TabsTrigger value="history">My History</TabsTrigger>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="filters">Filters</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
+      <Tabs defaultValue="checkin">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="checkin">{t('childHomeTabCheckin')}</TabsTrigger>
+          <TabsTrigger value="history">{t('childHomeTabHistory')}</TabsTrigger>
+          <TabsTrigger value="schedule">{t('childHomeTabSchedule')}</TabsTrigger>
+          <TabsTrigger value="filters">{t('childHomeTabFilters')}</TabsTrigger>
+          <TabsTrigger value="alerts">{t('childHomeTabAlerts')}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="checkin">
+        <TabsContent value="checkin" className="space-y-4">
           <ChildCheckIn />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>My Activity History</CardTitle>
-              <CardDescription>
-                Activities you've submitted
-              </CardDescription>
+              <CardTitle>{t('childHomeActivityHistoryTitle')}</CardTitle>
+              <CardDescription>{t('childHomeActivityHistoryDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ActivityHistoryList childId={childId} showTransparencyLabel={false} />
+              <ActivityHistoryList childId={null} showTransparencyLabel={false} />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>My Location History</CardTitle>
-              <CardDescription>
-                Locations you've shared
-              </CardDescription>
+              <CardTitle>{t('childHomeLocationHistoryTitle')}</CardTitle>
+              <CardDescription>{t('childHomeLocationHistoryDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <LocationHistoryList childId={childId} showTransparencyLabel={false} />
+              <LocationHistoryList childId={null} showTransparencyLabel={false} />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="schedule">
-          <ScheduleReadOnly childId={childId} />
+        <TabsContent value="schedule" className="space-y-4">
+          <ScheduleReadOnly childId={null} />
         </TabsContent>
 
-        <TabsContent value="filters">
-          <ContentFilterReadOnly childId={childId} />
+        <TabsContent value="filters" className="space-y-4">
+          <ContentFilterReadOnly childId={null} />
         </TabsContent>
 
-        <TabsContent value="alerts">
-          <AlertsPanelChild childId={childId} />
+        <TabsContent value="alerts" className="space-y-4">
+          <AlertsPanelChild childId={null} />
         </TabsContent>
       </Tabs>
     </div>

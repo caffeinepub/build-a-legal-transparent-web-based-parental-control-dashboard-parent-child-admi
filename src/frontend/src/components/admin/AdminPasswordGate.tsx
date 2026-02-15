@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Lock, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
 import { useVerifyAdminPassword, useSetAdminPassword } from '../../hooks/useQueries';
 import { useAdminGate } from '../../hooks/useAdminGate';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function AdminPasswordGate() {
+  const { t } = useI18n();
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,10 +31,10 @@ export default function AdminPasswordGate() {
       if (isValid) {
         passGate();
       } else {
-        setVerifyError('Incorrect password');
+        setVerifyError(t('adminGateErrorIncorrect'));
       }
     } catch (error: any) {
-      setVerifyError(error.message || 'Verification failed');
+      setVerifyError(error.message || t('adminGateErrorIncorrect'));
     }
   };
 
@@ -41,12 +43,12 @@ export default function AdminPasswordGate() {
     setChangeError('');
 
     if (newPassword !== confirmPassword) {
-      setChangeError('Passwords do not match');
+      setChangeError(t('adminGateErrorMismatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      setChangeError('Password must be at least 8 characters');
+      setChangeError(t('adminGateErrorLength'));
       return;
     }
 
@@ -55,7 +57,7 @@ export default function AdminPasswordGate() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      setChangeError(error.message || 'Failed to change password');
+      setChangeError(error.message || t('adminGateErrorIncorrect'));
     }
   };
 
@@ -65,29 +67,27 @@ export default function AdminPasswordGate() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5 text-navy-600 dark:text-navy-400" />
-            Admin Access
+            {t('adminGateTitle')}
           </CardTitle>
-          <CardDescription>
-            Enter the admin password to access the admin panel
-          </CardDescription>
+          <CardDescription>{t('adminGateDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="verify">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="verify">Verify</TabsTrigger>
-              <TabsTrigger value="change">Change Password</TabsTrigger>
+              <TabsTrigger value="verify">{t('adminGateTabVerify')}</TabsTrigger>
+              <TabsTrigger value="change">{t('adminGateTabChange')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="verify">
               <form onSubmit={handleVerify} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Admin Password</Label>
+                  <Label htmlFor="password">{t('adminGatePasswordLabel')}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter admin password"
+                    placeholder={t('adminGatePasswordPlaceholder')}
                     required
                   />
                 </div>
@@ -104,7 +104,7 @@ export default function AdminPasswordGate() {
                   className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                   disabled={verifyPassword.isPending}
                 >
-                  {verifyPassword.isPending ? 'Verifying...' : 'Access Admin Panel'}
+                  {verifyPassword.isPending ? t('adminGateVerifying') : t('adminGateAccessButton')}
                 </Button>
               </form>
             </TabsContent>
@@ -112,25 +112,25 @@ export default function AdminPasswordGate() {
             <TabsContent value="change">
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
+                  <Label htmlFor="new-password">{t('adminGateNewPasswordLabel')}</Label>
                   <Input
                     id="new-password"
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
+                    placeholder={t('adminGateNewPasswordPlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label htmlFor="confirm-password">{t('adminGateConfirmPasswordLabel')}</Label>
                   <Input
                     id="confirm-password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
+                    placeholder={t('adminGateConfirmPasswordPlaceholder')}
                     required
                   />
                 </div>
@@ -147,7 +147,7 @@ export default function AdminPasswordGate() {
                   className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                   disabled={setAdminPassword.isPending}
                 >
-                  {setAdminPassword.isPending ? 'Updating...' : 'Change Password'}
+                  {setAdminPassword.isPending ? t('adminGateUpdating') : t('adminGateChangeButton')}
                 </Button>
               </form>
             </TabsContent>

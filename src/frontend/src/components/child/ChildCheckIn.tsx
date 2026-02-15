@@ -7,11 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useAddActivity, useAddLocation } from '../../hooks/useQueries';
 import ConsentNotice from './ConsentNotice';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function ChildCheckIn() {
+  const { t } = useI18n();
   const [activityApp, setActivityApp] = useState('');
   const [activityDuration, setActivityDuration] = useState('');
   const [activityNotes, setActivityNotes] = useState('');
@@ -73,52 +75,50 @@ export default function ChildCheckIn() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Check-in</CardTitle>
-        <CardDescription>
-          Share your activity or location with your parent (requires your consent)
-        </CardDescription>
+        <CardTitle>{t('checkinTitle')}</CardTitle>
+        <CardDescription>{t('checkinDescription')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="activity">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="location">Location</TabsTrigger>
+            <TabsTrigger value="activity">{t('checkinTabActivity')}</TabsTrigger>
+            <TabsTrigger value="location">{t('checkinTabLocation')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="activity" className="space-y-4">
             <ConsentNotice type="activity" />
             <form onSubmit={handleActivitySubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="app">App or Website *</Label>
+                <Label htmlFor="app">{t('checkinActivityAppLabel')}</Label>
                 <Input
                   id="app"
                   value={activityApp}
                   onChange={(e) => setActivityApp(e.target.value)}
-                  placeholder="e.g., YouTube, Instagram, Homework"
+                  placeholder={t('checkinActivityAppPlaceholder')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes) *</Label>
+                <Label htmlFor="duration">{t('checkinActivityDurationLabel')}</Label>
                 <Input
                   id="duration"
                   type="number"
                   min="1"
                   value={activityDuration}
                   onChange={(e) => setActivityDuration(e.target.value)}
-                  placeholder="30"
+                  placeholder={t('checkinActivityDurationPlaceholder')}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optional)</Label>
+                <Label htmlFor="notes">{t('checkinActivityNotesLabel')}</Label>
                 <Textarea
                   id="notes"
                   value={activityNotes}
                   onChange={(e) => setActivityNotes(e.target.value)}
-                  placeholder="What were you doing?"
+                  placeholder={t('checkinActivityNotesPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -126,7 +126,7 @@ export default function ChildCheckIn() {
               <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                 <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                  <strong>What will be shared:</strong> App/site name, duration, notes, and timestamp
+                  <strong>{t('checkinActivityPreview')}</strong> {t('checkinActivityPreviewBody')}
                 </AlertDescription>
               </Alert>
 
@@ -137,7 +137,7 @@ export default function ChildCheckIn() {
                   onCheckedChange={(checked) => setActivityConsent(checked as boolean)}
                 />
                 <Label htmlFor="activity-consent" className="text-sm leading-relaxed cursor-pointer">
-                  I consent to sharing this activity information with my parent. I understand this is voluntary and transparent.
+                  {t('checkinActivityConsent')}
                 </Label>
               </div>
 
@@ -146,7 +146,7 @@ export default function ChildCheckIn() {
                 className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                 disabled={!activityConsent || addActivity.isPending}
               >
-                {addActivity.isPending ? 'Submitting...' : 'Submit Activity'}
+                {addActivity.isPending ? t('checkinActivitySubmitting') : t('checkinActivitySubmitButton')}
               </Button>
             </form>
           </TabsContent>
@@ -155,18 +155,18 @@ export default function ChildCheckIn() {
             <ConsentNotice type="location" />
             <form onSubmit={handleLocationSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="place">Place Name (optional)</Label>
+                <Label htmlFor="place">{t('checkinLocationPlaceLabel')}</Label>
                 <Input
                   id="place"
                   value={locationPlace}
                   onChange={(e) => setLocationPlace(e.target.value)}
-                  placeholder="e.g., School, Library, Home"
+                  placeholder={t('checkinLocationPlacePlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="lat">Latitude</Label>
+                  <Label htmlFor="lat">{t('checkinLocationLatLabel')}</Label>
                   <Input
                     id="lat"
                     type="number"
@@ -177,7 +177,7 @@ export default function ChildCheckIn() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lng">Longitude</Label>
+                  <Label htmlFor="lng">{t('checkinLocationLonLabel')}</Label>
                   <Input
                     id="lng"
                     type="number"
@@ -192,7 +192,7 @@ export default function ChildCheckIn() {
               <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
                 <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                  <strong>What will be shared:</strong> Coordinates and timestamp (no background tracking)
+                  <strong>{t('checkinLocationPreview')}</strong> {t('checkinLocationPreviewBody')}
                 </AlertDescription>
               </Alert>
 
@@ -203,7 +203,7 @@ export default function ChildCheckIn() {
                   onCheckedChange={(checked) => setLocationConsent(checked as boolean)}
                 />
                 <Label htmlFor="location-consent" className="text-sm leading-relaxed cursor-pointer">
-                  I consent to sharing this location with my parent. I understand this is a one-time share, not continuous tracking.
+                  {t('checkinLocationConsent')}
                 </Label>
               </div>
 
@@ -212,7 +212,7 @@ export default function ChildCheckIn() {
                 className="w-full bg-navy-600 hover:bg-navy-700 text-white"
                 disabled={!locationConsent || addLocation.isPending}
               >
-                {addLocation.isPending ? 'Submitting...' : 'Share Location'}
+                {addLocation.isPending ? t('checkinLocationSubmitting') : t('checkinLocationSubmitButton')}
               </Button>
             </form>
           </TabsContent>

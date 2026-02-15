@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type { Principal } from '@icp-sdk/core/principal';
 import type { ContentFilterConfig, ContentCategory } from '../../backend';
+import { useI18n } from '../../hooks/useI18n';
 
 interface ContentFilterEditorProps {
   childId: Principal;
@@ -23,6 +24,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export default function ContentFilterEditor({ childId }: ContentFilterEditorProps) {
+  const { t } = useI18n();
   const { data: filter } = useGetContentFilter(childId);
   const updateFilter = useUpdateContentFilter();
 
@@ -58,65 +60,53 @@ export default function ContentFilterEditor({ childId }: ContentFilterEditorProp
       <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
         <Info className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         <AlertDescription className="text-amber-900 dark:text-amber-100 text-sm">
-          <strong>Note:</strong> This is a transparency policy only. It does not enforce device-level blocking. Your child can see these settings.
+          <strong>{t('filterEditorNote')}</strong> {t('filterEditorNoteBody')}
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Content Categories
-          </CardTitle>
-          <CardDescription>Enable or disable content categories</CardDescription>
+          <CardTitle>{t('filterEditorTitle')}</CardTitle>
+          <CardDescription>{t('filterEditorDescription')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {categories.map((category, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
-              <Label htmlFor={`cat-${idx}`} className="cursor-pointer">
-                {category.name}
-              </Label>
-              <Switch
-                id={`cat-${idx}`}
-                checked={category.enabled}
-                onCheckedChange={() => toggleCategory(idx)}
-              />
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold mb-3">{t('filterEditorCategories')}</h3>
+            <div className="space-y-3">
+              {categories.map((category, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                  <span className="text-sm">{category.name}</span>
+                  <Switch checked={category.enabled} onCheckedChange={() => toggleCategory(idx)} />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="allowlist">{t('filterEditorAllowlist')}</Label>
+            <Input
+              id="allowlist"
+              value={allowlist}
+              onChange={(e) => setAllowlist(e.target.value)}
+              placeholder={t('filterEditorAllowlistPlaceholder')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="blocklist">{t('filterEditorBlocklist')}</Label>
+            <Input
+              id="blocklist"
+              value={blocklist}
+              onChange={(e) => setBlocklist(e.target.value)}
+              placeholder={t('filterEditorBlocklistPlaceholder')}
+            />
+          </div>
+
+          <Button onClick={handleSave} disabled={updateFilter.isPending} className="w-full bg-amber-600 hover:bg-amber-700">
+            {updateFilter.isPending ? t('filterEditorSaving') : t('filterEditorSaveButton')}
+          </Button>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Allowlist</CardTitle>
-          <CardDescription>Sites/apps always allowed (comma-separated)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input
-            value={allowlist}
-            onChange={(e) => setAllowlist(e.target.value)}
-            placeholder="e.g., khanacademy.org, duolingo.com"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Blocklist</CardTitle>
-          <CardDescription>Sites/apps to block (comma-separated)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input
-            value={blocklist}
-            onChange={(e) => setBlocklist(e.target.value)}
-            placeholder="e.g., example.com, badsite.net"
-          />
-        </CardContent>
-      </Card>
-
-      <Button onClick={handleSave} disabled={updateFilter.isPending} className="w-full bg-amber-600 hover:bg-amber-700">
-        {updateFilter.isPending ? 'Saving...' : 'Save Content Filter'}
-      </Button>
     </div>
   );
 }

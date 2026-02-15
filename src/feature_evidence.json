@@ -2,10 +2,20 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-adjust-the-global-theme-color-tokens-so-that-interface-surface-colors-backgrounds-cards-popovers-borders-accents-are-clearly-distinguishable-from-text-colors-and-provide-consistent-readable-contrast-in-both-light-and-dark-mode",
-      "featureTitle": "Adjust the global theme color tokens so that interface surface colors (backgrounds, cards, popovers, borders, accents) are clearly distinguishable from text colors and provide consistent, readable contrast in both light and dark mode.",
+      "featureId": "feature-replace-all-hardcoded-ui-strings-across-the-app-with-i18n-translation-keys-so-that-switching-the-language-applies-to-every-screen-tab-and-conditional-empty-state",
+      "featureTitle": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
       "files": [
-        "frontend/src/index.css"
+        "frontend/src/components/admin/AccountsTable.tsx",
+        "frontend/src/components/admin/AdminPasswordGate.tsx",
+        "frontend/src/components/alerts/AlertsPanelChild.tsx",
+        "frontend/src/components/alerts/AlertsPanelParent.tsx",
+        "frontend/src/components/child/ChildCheckIn.tsx",
+        "frontend/src/components/filters/ContentFilterEditor.tsx",
+        "frontend/src/components/parent/PairingSetup.tsx",
+        "frontend/src/components/schedule/ScheduleEditor.tsx",
+        "frontend/src/pages/admin/AdminPanel.tsx",
+        "frontend/src/pages/child/ChildHome.tsx",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,14 +32,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-audit-and-update-key-layout-components-pages-that-use-hard-coded-color-utility-classes-so-they-consistently-rely-on-the-theme-tokens-background-foreground-card-muted-accent-and-do-not-reintroduce-low-contrast-text-on-surface-combinations",
-      "featureTitle": "Audit and update key layout components/pages that use hard-coded color utility classes so they consistently rely on the theme tokens (background/foreground/card/muted/accent) and do not reintroduce low-contrast text-on-surface combinations.",
+      "featureId": "feature-update-the-translation-dictionaries-to-fully-cover-all-ui-text-used-by-the-app-ensuring-pt-br-contains-complete-translations-for-every-key-and-en-remains-the-fallback-for-any-missing-key",
+      "featureTitle": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/layout/AppFooter.tsx",
-        "frontend/src/components/layout/AppHeader.tsx",
-        "frontend/src/pages/admin/AdminPanel.tsx",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,6 +49,28 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-language-switching-works-consistently-for-all-currently-mounted-and-newly-rendered-ui-e-g-when-navigating-between-tabs-opening-dialogs-modals-or-when-conditional-sections-appear-without-requiring-a-refresh",
+      "featureTitle": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+      "files": [
+        "frontend/src/pages/admin/AdminPanel.tsx",
+        "frontend/src/pages/child/ChildHome.tsx",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "invite-links@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
       ],
       "confidence": "high"
     }

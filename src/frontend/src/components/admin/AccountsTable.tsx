@@ -17,29 +17,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Principal } from '@icp-sdk/core/principal';
 import { AppRole, type UserProfile } from '../../backend';
+import { useI18n } from '../../hooks/useI18n';
 
 interface AccountsTableProps {
   users: [Principal, UserProfile][];
 }
 
-const getRoleLabel = (role: AppRole): string => {
-  switch (role) {
-    case AppRole.parent:
-      return 'parent';
-    case AppRole.child:
-      return 'child';
-    case AppRole.admin:
-      return 'admin';
-    default:
-      return 'user';
-  }
-};
-
 export default function AccountsTable({ users }: AccountsTableProps) {
+  const { t } = useI18n();
   const [disableTarget, setDisableTarget] = useState<Principal | null>(null);
   const [disableReason, setDisableReason] = useState('');
   const disableAccount = useDisableAccount();
   const enableAccount = useEnableAccount();
+
+  const getRoleLabel = (role: AppRole): string => {
+    switch (role) {
+      case AppRole.parent:
+        return t('roleParent');
+      case AppRole.child:
+        return t('roleChild');
+      case AppRole.admin:
+        return t('roleAdmin');
+      default:
+        return t('roleUser');
+    }
+  };
 
   const handleDisable = () => {
     if (disableTarget && disableReason.trim()) {
@@ -61,10 +63,10 @@ export default function AccountsTable({ users }: AccountsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Principal</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('accountsTablePrincipal')}</TableHead>
+              <TableHead>{t('accountsTableName')}</TableHead>
+              <TableHead>{t('accountsTableRole')}</TableHead>
+              <TableHead>{t('accountsTableActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -84,14 +86,14 @@ export default function AccountsTable({ users }: AccountsTableProps) {
                       variant="destructive"
                       onClick={() => setDisableTarget(principal)}
                     >
-                      Disable
+                      {t('accountsTableDisable')}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => enableAccount.mutate(principal)}
                     >
-                      Enable
+                      {t('accountsTableEnable')}
                     </Button>
                   </div>
                 </TableCell>
@@ -104,27 +106,27 @@ export default function AccountsTable({ users }: AccountsTableProps) {
       <AlertDialog open={!!disableTarget} onOpenChange={() => setDisableTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disable Account</AlertDialogTitle>
+            <AlertDialogTitle>{t('accountsTableDisableTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Please provide a reason for disabling this account.
+              {t('accountsTableDisableDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Label htmlFor="reason">Reason</Label>
+            <Label htmlFor="reason">{t('accountsTableReasonLabel')}</Label>
             <Input
               id="reason"
               value={disableReason}
               onChange={(e) => setDisableReason(e.target.value)}
-              placeholder="e.g., Policy violation"
+              placeholder={t('accountsTableReasonPlaceholder')}
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDisable}
               disabled={!disableReason.trim() || disableAccount.isPending}
             >
-              {disableAccount.isPending ? 'Disabling...' : 'Disable Account'}
+              {disableAccount.isPending ? t('accountsTableDisabling') : t('accountsTableDisableAccount')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

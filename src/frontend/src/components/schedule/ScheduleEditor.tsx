@@ -5,22 +5,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type { Principal } from '@icp-sdk/core/principal';
 import type { ScheduleConfig, DayTimeWindow } from '../../backend';
+import { useI18n } from '../../hooks/useI18n';
 
 interface ScheduleEditorProps {
   childId: Principal;
 }
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
+  const { t } = useI18n();
   const { data: schedule } = useGetSchedule(childId);
   const updateSchedule = useUpdateSchedule();
 
   const [dailyLimit, setDailyLimit] = useState('120');
   const [windows, setWindows] = useState<DayTimeWindow[]>([]);
+
+  const DAYS = [
+    t('scheduleEditorDaySunday'),
+    t('scheduleEditorDayMonday'),
+    t('scheduleEditorDayTuesday'),
+    t('scheduleEditorDayWednesday'),
+    t('scheduleEditorDayThursday'),
+    t('scheduleEditorDayFriday'),
+    t('scheduleEditorDaySaturday'),
+  ];
 
   useEffect(() => {
     if (schedule) {
@@ -57,14 +67,14 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
       <Alert>
         <Info className="w-4 h-4" />
         <AlertDescription className="text-sm">
-          Set allowed time windows and daily screen time limits. These are guidance policies visible to your child.
+          {t('scheduleEditorAlert')}
         </AlertDescription>
       </Alert>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Daily Limit</CardTitle>
-          <CardDescription>Maximum screen time per day (minutes)</CardDescription>
+          <CardTitle className="text-lg">{t('scheduleEditorTitle')}</CardTitle>
+          <CardDescription>{t('scheduleEditorDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
@@ -75,22 +85,22 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
               onChange={(e) => setDailyLimit(e.target.value)}
               className="max-w-xs"
             />
-            <span className="text-sm text-muted-foreground">minutes/day</span>
+            <span className="text-sm text-muted-foreground">{t('scheduleEditorMinutesPerDay')}</span>
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Allowed Time Windows</CardTitle>
-          <CardDescription>Set when screen time is allowed</CardDescription>
+          <CardTitle className="text-lg">{t('scheduleEditorTimeWindows')}</CardTitle>
+          <CardDescription>{t('scheduleEditorTimeWindowsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {windows.map((window, idx) => (
             <div key={idx} className="flex items-center gap-4 p-3 border rounded-lg">
               <div className="flex-1 grid grid-cols-3 gap-3">
                 <div>
-                  <Label className="text-xs">Day</Label>
+                  <Label className="text-xs">{t('scheduleEditorDay')}</Label>
                   <select
                     value={Number(window.dayOfWeek)}
                     onChange={(e) => {
@@ -108,7 +118,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-xs">Start Hour</Label>
+                  <Label className="text-xs">{t('scheduleEditorStart')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -122,7 +132,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">End Hour</Label>
+                  <Label className="text-xs">{t('scheduleEditorEnd')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -137,18 +147,18 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
                 </div>
               </div>
               <Button variant="destructive" size="sm" onClick={() => removeWindow(idx)}>
-                Remove
+                {t('scheduleEditorRemoveWindow')}
               </Button>
             </div>
           ))}
           <Button variant="outline" onClick={addWindow} className="w-full">
-            Add Time Window
+            {t('scheduleEditorAddWindow')}
           </Button>
         </CardContent>
       </Card>
 
       <Button onClick={handleSave} disabled={updateSchedule.isPending} className="w-full bg-amber-600 hover:bg-amber-700">
-        {updateSchedule.isPending ? 'Saving...' : 'Save Schedule'}
+        {updateSchedule.isPending ? t('scheduleEditorSaving') : t('scheduleEditorSaveButton')}
       </Button>
     </div>
   );

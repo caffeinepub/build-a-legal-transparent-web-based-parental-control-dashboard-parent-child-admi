@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the app’s light and dark theme colors so interface surfaces and text have consistent, readable contrast while keeping the existing navy/white direction.
+**Goal:** Complete the Portuguese (pt-BR) translation across the entire app by removing hardcoded UI strings, expanding translation dictionaries, and ensuring language switching updates all screens and states immediately.
 
 **Planned changes:**
-- Update global theme CSS variables in `frontend/src/index.css` for both `:root` (light) and `.dark` (dark) to ensure backgrounds/cards/popovers/borders/accents are clearly distinct from their corresponding foreground text colors and meet WCAG AA contrast for body text.
-- Adjust muted and secondary/primary/accent token pairs so muted text remains readable and button text remains clearly legible on button backgrounds in both themes.
-- Audit key layouts/pages (e.g., `frontend/src/App.tsx` and shared header/footer layouts) to remove/replace hard-coded color utility classes with theme token-based classes so low-contrast combinations are not reintroduced.
+- Replace hardcoded UI strings with i18n translation keys across ParentDashboard, ChildHome, and AdminPanel (including tabs, dialogs/modals where applicable, and conditional/empty states).
+- Update `frontend/src/i18n/translations/en.ts` and `frontend/src/i18n/translations/pt-BR.ts` to include all keys used in the UI, keeping en as the fallback for missing pt-BR entries.
+- Verify language switching via the existing LanguageSelector updates currently mounted and newly rendered UI (navigation, tabs, conditionals) without refresh and continues to persist via `appLanguage`.
 
-**User-visible outcome:** Text and UI surfaces are clearly readable across the app in both light and dark mode, with consistent contrast on backgrounds, cards/popovers, and buttons.
+**User-visible outcome:** When pt-BR is selected, the authenticated app experience (ParentDashboard/ChildHome/AdminPanel) displays fully localized Portuguese text across all screens and states, and switching languages updates immediately without needing to reload.

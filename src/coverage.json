@@ -1,43 +1,90 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T01:39:39.611Z",
+  "generatedAt": "2026-02-15T01:57:09.691Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Adjust the global theme color tokens so that interface surface colors (backgrounds, cards, popovers, borders, accents) are clearly distinguishable from text colors and provide consistent, readable contrast in both light and dark mode.",
+        "summary": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/index.css"
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/pages/child/ChildHome.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/parent/PairingSetup.tsx",
+          "frontend/src/components/admin/AccountsTable.tsx",
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "frontend/src/components/alerts/AlertsPanelChild.tsx",
+          "frontend/src/components/alerts/AlertsPanelParent.tsx",
+          "frontend/src/components/audit/AuditLogTable.tsx",
+          "frontend/src/components/child/ChildCheckIn.tsx",
+          "frontend/src/components/child/ConsentNotice.tsx",
+          "frontend/src/components/child/ActivityHistoryList.tsx",
+          "frontend/src/components/child/LocationHistoryList.tsx",
+          "frontend/src/components/filters/ContentFilterEditor.tsx",
+          "frontend/src/components/filters/ContentFilterReadOnly.tsx",
+          "frontend/src/components/schedule/ScheduleEditor.tsx",
+          "frontend/src/components/schedule/ScheduleReadOnly.tsx",
+          "frontend/src/components/parent/ChildSummaryCard.tsx",
+          "frontend/src/components/parent/ActivityView.tsx",
+          "frontend/src/components/parent/LocationView.tsx",
+          "frontend/src/components/layout/AppFooter.tsx",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/index.css"
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/pages/child/ChildHome.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/parent/PairingSetup.tsx",
+          "frontend/src/components/admin/AccountsTable.tsx",
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/components/alerts/AlertsPanelChild.tsx",
+          "frontend/src/components/alerts/AlertsPanelParent.tsx",
+          "frontend/src/components/child/ChildCheckIn.tsx",
+          "frontend/src/components/filters/ContentFilterEditor.tsx",
+          "frontend/src/components/schedule/ScheduleEditor.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Audit and update key layout components/pages that use hard-coded color utility classes so they consistently rely on the theme tokens (background/foreground/card/muted/accent) and do not reintroduce low-contrast text-on-surface combinations.",
+        "summary": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppHeader.tsx",
-          "frontend/src/components/layout/AppFooter.tsx",
-          "frontend/src/pages/admin/AdminPanel.tsx",
-          "frontend/src/pages/parent/ParentDashboard.tsx"
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts",
+          "frontend/src/i18n/index.ts",
+          "frontend/src/i18n/I18nProvider.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppHeader.tsx",
-          "frontend/src/components/layout/AppFooter.tsx",
-          "frontend/src/pages/admin/AdminPanel.tsx",
-          "frontend/src/pages/parent/ParentDashboard.tsx"
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/i18n/LanguageSelector.tsx",
+          "frontend/src/i18n/I18nProvider.tsx",
+          "frontend/src/pages/TransparencyPolicies.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/pages/child/ChildHome.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/parent/ParentDashboard.tsx",
+          "frontend/src/pages/child/ChildHome.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
         ]
       }
     ]
@@ -47,13 +94,19 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/layout/AppFooter.tsx",
-    "frontend/src/components/layout/AppHeader.tsx",
-    "frontend/src/index.css",
+    "frontend/src/components/admin/AccountsTable.tsx",
+    "frontend/src/components/admin/AdminPasswordGate.tsx",
+    "frontend/src/components/alerts/AlertsPanelChild.tsx",
+    "frontend/src/components/alerts/AlertsPanelParent.tsx",
+    "frontend/src/components/child/ChildCheckIn.tsx",
+    "frontend/src/components/filters/ContentFilterEditor.tsx",
+    "frontend/src/components/parent/PairingSetup.tsx",
+    "frontend/src/components/schedule/ScheduleEditor.tsx",
+    "frontend/src/i18n/translations/en.ts",
+    "frontend/src/i18n/translations/pt-BR.ts",
     "frontend/src/pages/admin/AdminPanel.tsx",
+    "frontend/src/pages/child/ChildHome.tsx",
     "frontend/src/pages/parent/ParentDashboard.tsx",
-    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

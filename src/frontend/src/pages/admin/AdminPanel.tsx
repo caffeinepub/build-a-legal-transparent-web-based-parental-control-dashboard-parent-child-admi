@@ -1,49 +1,38 @@
-import { useGetAllUsers, useGetAggregatedMetrics, useGetParentChildLinks } from '../../hooks/useQueries';
-import { useAdminGate } from '../../hooks/useAdminGate';
+import { useGetAllUsers, useGetParentChildLinks, useGetAggregatedMetrics } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Link2 } from 'lucide-react';
 import AccountsTable from '../../components/admin/AccountsTable';
 import AggregatedMetricsCards from '../../components/admin/AggregatedMetricsCards';
-import AdminPasswordGate from '../../components/admin/AdminPasswordGate';
+import { useI18n } from '../../hooks/useI18n';
 
 export default function AdminPanel() {
-  const { isGatePassed } = useAdminGate();
-  const { data: users = [] } = useGetAllUsers(isGatePassed);
-  const { data: metrics } = useGetAggregatedMetrics(isGatePassed);
-  const { data: links = [] } = useGetParentChildLinks(isGatePassed);
-
-  if (!isGatePassed) {
-    return <AdminPasswordGate />;
-  }
+  const { t } = useI18n();
+  const { data: users = [] } = useGetAllUsers();
+  const { data: links = [] } = useGetParentChildLinks();
+  const { data: metrics } = useGetAggregatedMetrics();
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold font-brand text-foreground mb-2 flex items-center gap-2">
-          <Shield className="w-8 h-8" />
-          Admin Panel
-        </h2>
-        <p className="text-muted-foreground">
-          System management and aggregated metrics
-        </p>
+        <h1 className="text-3xl font-bold text-navy-900 dark:text-navy-100 mb-2">
+          {t('adminPanelTitle')}
+        </h1>
+        <p className="text-muted-foreground">{t('adminPanelDescription')}</p>
       </div>
 
-      <AggregatedMetricsCards metrics={metrics} />
+      {metrics && <AggregatedMetricsCards metrics={metrics} />}
 
-      <Tabs defaultValue="accounts" className="w-full">
-        <TabsList>
-          <TabsTrigger value="accounts">Accounts</TabsTrigger>
-          <TabsTrigger value="links">Parent-Child Links</TabsTrigger>
+      <Tabs defaultValue="accounts">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="accounts">{t('adminPanelTabAccounts')}</TabsTrigger>
+          <TabsTrigger value="links">{t('adminPanelTabLinks')}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="accounts">
+        <TabsContent value="accounts" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>User Accounts</CardTitle>
-              <CardDescription>
-                Manage user roles and account status
-              </CardDescription>
+              <CardTitle>{t('adminPanelAccountsTitle')}</CardTitle>
+              <CardDescription>{t('adminPanelAccountsDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <AccountsTable users={users} />
@@ -51,38 +40,39 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="links">
+        <TabsContent value="links" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Parent-Child Links</CardTitle>
-              <CardDescription>
-                Overview of family connections (structure only, no content)
-              </CardDescription>
+              <CardTitle>{t('adminPanelLinksTitle')}</CardTitle>
+              <CardDescription>{t('adminPanelLinksDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {links.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No pairings yet</p>
-                ) : (
-                  links.map(([parent, children]) => (
-                    <div key={parent.toString()} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Link2 className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-mono text-sm text-muted-foreground">
-                          {parent.toString().slice(0, 20)}...
-                        </span>
-                      </div>
-                      <div className="ml-6 space-y-1">
+              {links.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  {t('adminPanelNoPairings')}
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {links.map(([parent, children]) => (
+                    <div key={parent.toString()} className="p-4 border rounded-lg">
+                      <p className="text-sm font-semibold text-muted-foreground mb-2">
+                        {t('adminPanelParent')}
+                      </p>
+                      <p className="font-mono text-xs mb-3">{parent.toString()}</p>
+                      <p className="text-sm font-semibold text-muted-foreground mb-2">
+                        {t('adminPanelChildren')}
+                      </p>
+                      <ul className="space-y-1">
                         {children.map((child) => (
-                          <div key={child.toString()} className="text-sm font-mono text-muted-foreground">
-                            → {child.toString().slice(0, 20)}...
-                          </div>
+                          <li key={child.toString()} className="font-mono text-xs">
+                            {child.toString()}
+                          </li>
                         ))}
-                      </div>
+                      </ul>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

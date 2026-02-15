@@ -1,58 +1,209 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Restore readable light/dark theme contrast by fixing global tokens and removing hard-coded surfaces",
+  "title": "Full pt-BR localization coverage and reactive language switching",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Fix global theme tokens so surface/background colors and text colors are distinct and meet readable contrast in light and dark mode.",
+      "summary": "Replace all remaining hardcoded UI strings with i18n translation keys across authenticated screens, tabs, and empty/conditional states.",
       "acceptanceCriteria": [
-        "Update the CSS variables in frontend/src/index.css for both :root (light) and .dark (dark) so that background/card/popover colors are not visually similar to foreground/card-foreground/popover-foreground text colors.",
-        "Body text (text-foreground on bg-background) meets WCAG AA contrast (>= 4.5:1) in both light and dark themes.",
-        "Muted text (text-muted-foreground) remains visibly distinct from normal text and remains readable on bg-background and bg-card in both light and dark themes.",
-        "Primary/secondary/accent button combinations using *-foreground variables remain readable (no cases where button text appears close to the button background color)."
+        "In ParentDashboard, all visible strings are translated via t(...) (e.g., titles, descriptions, tab labels, alert text, empty-state text).",
+        "In ChildHome, all visible strings are translated via t(...) (e.g., headings, descriptions, supervision notice, pairing warning, tab labels, card titles/descriptions).",
+        "In AdminPanel, all visible strings are translated via t(...) (e.g., headings, descriptions, tab labels, section titles/descriptions, empty-state text).",
+        "No user-visible English strings remain in the authenticated app flows when language is set to pt-BR (excluding user-generated content such as names and free-text notes)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
           "operation": "modify",
-          "description": "Update light/dark CSS variable values for background/foreground/card/popover/border/accent/muted/primary (and their *-foreground counterparts) to restore clear contrast while keeping the navy/white direction. Ensure variables are defined in a format compatible with Tailwind's theme mapping (e.g., variables used via hsl(var(--token)) should contain raw HSL channels, and variables used via oklch(var(--navy-*))) should contain raw OKLCH channels) to prevent invalid computed colors and low-contrast rendering."
+          "description": "Replace hardcoded ParentDashboard strings (page title/description, zero-children state title/description, alert text, child details section title/description, tab labels) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/pages/child/ChildHome.tsx",
+          "operation": "modify",
+          "description": "Replace hardcoded ChildHome strings (welcome header/description, supervision notice label + body, unpaired alert text, tab labels, history cards titles/descriptions) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Replace hardcoded AdminPanel strings (page title/description, tab labels, section titles/descriptions, empty-state 'no pairings' message) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/parent/PairingSetup.tsx",
+          "operation": "modify",
+          "description": "Replace all hardcoded pairing UI strings and toast messages with t(...) keys (card title/description, warning alert title/body, button labels, 'your pairing code' label, copy success text, helper/expiry text)."
+        },
+        {
+          "path": "frontend/src/components/admin/AccountsTable.tsx",
+          "operation": "modify",
+          "description": "Audit for any remaining hardcoded table/dialog text and replace with t(...) keys (headers, status labels, action labels, confirmation copy, placeholders, loading states)."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded admin gate UI strings (headings, instructions, input labels, button text, error/help text) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "operation": "modify",
+          "description": "Ensure all metric card titles/labels are sourced from t(...) keys (no hardcoded labels)."
+        },
+        {
+          "path": "frontend/src/components/alerts/AlertsPanelChild.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded child alerts UI strings (titles/descriptions, empty state, request-more-time section copy, textarea placeholder, submit button/loading) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/alerts/AlertsPanelParent.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded parent alerts UI strings (titles/descriptions, empty state) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/audit/AuditLogTable.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded audit table strings (loading/empty text, column headers, action labels) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/child/ChildCheckIn.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded check-in UI strings (tab labels, form titles, labels, placeholders, consent text, preview text, submit/loading states, validation/help text) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/child/ConsentNotice.tsx",
+          "operation": "modify",
+          "description": "Ensure consent notice titles/messages use t(...) keys only (no hardcoded strings)."
+        },
+        {
+          "path": "frontend/src/components/child/ActivityHistoryList.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded activity history strings (loading/empty states, table headers/labels, 'no notes' placeholder, units formatting label) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/child/LocationHistoryList.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded location history strings (loading/empty states, table headers/labels) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/filters/ContentFilterEditor.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded content filter editor strings (titles/descriptions, section headings, placeholders, save/loading text, note text) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/filters/ContentFilterReadOnly.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded read-only filter strings (loading/empty states, headings/labels, status labels) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/schedule/ScheduleEditor.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded schedule editor strings (title/description, alert text, field labels, day names, add/remove/save/loading) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/schedule/ScheduleReadOnly.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded schedule read-only strings (loading/empty states, title/description, labels) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/parent/ChildSummaryCard.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded strings in the child summary card (title, counts, 'last check-in' label, 'no check-ins yet' label) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/parent/ActivityView.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded parent activity view strings (transparency notice copy, headings if present) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/parent/LocationView.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded parent location view strings (transparency notice copy, headings if present) with t(...) keys."
+        },
+        {
+          "path": "frontend/src/components/layout/AppFooter.tsx",
+          "operation": "modify",
+          "description": "Replace any remaining hardcoded footer strings with t(...) keys (keep dynamic values like year/hostname as params where needed)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Audit authenticated flows and any conditional/empty states rendered by App for remaining hardcoded strings and replace with t(...) keys (do not modify frontend/src/main.tsx)."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Remove/replace hard-coded color utility classes in key layouts so they consistently rely on theme tokens and avoid low-contrast combinations.",
+      "summary": "Expand and align en/pt-BR translation dictionaries to cover all UI text keys while preserving strong typing and en fallback behavior.",
       "acceptanceCriteria": [
-        "In the main app shell and authentication/landing layout (e.g., frontend/src/App.tsx), gradients/surfaces and text colors do not produce low-contrast combinations in either theme.",
-        "In shared layout components (e.g., header/footer), background and text utilities do not override the new token-based theme in a way that reduces readability (especially in dark mode).",
-        "No visible areas where headings/body text blend into their immediate container background (cards, headers, tables, panels) in both light and dark mode."
+        "Any new translation keys introduced during the hardcoded-string removal are added to both frontend/src/i18n/translations/en.ts and frontend/src/i18n/translations/pt-BR.ts.",
+        "The app compiles with strong typing preserved for TranslationKey usage (no `any`-typed translation keys introduced).",
+        "When a key is missing in pt-BR, the UI falls back to the en value instead of displaying the raw key."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Audit the authenticated shell + unauthenticated landing UI and replace hard-coded surfaces/text colors (e.g., white/gray backgrounds, dark gray overrides, text-navy overrides) with token-based utilities (bg-background/bg-card/text-foreground/text-muted-foreground/border-border, and token-aligned gradient stops) so the new global tokens fully control contrast in both themes. Keep existing overall navy/white look while avoiding any text-on-surface blending."
+          "description": "Add any missing translation keys introduced by REQ-1 refactors (including newly discovered strings from dashboards, tabs, dialogs, toasts, and empty states) and keep `TranslationKey` strongly typed via the `as const` dictionary."
         },
         {
-          "path": "frontend/src/components/layout/AppHeader.tsx",
+          "path": "frontend/src/i18n/translations/pt-BR.ts",
           "operation": "modify",
-          "description": "Replace hard-coded header surface and title colors (e.g., bg-white/gray, text-navy) with token-based background/foreground and border tokens so header readability remains consistent across light/dark mode and does not override the updated theme."
+          "description": "Add complete pt-BR translations for every key in en.ts (including new keys introduced by REQ-1), ensuring the dictionary fully mirrors the English keyset."
         },
         {
-          "path": "frontend/src/components/layout/AppFooter.tsx",
+          "path": "frontend/src/i18n/index.ts",
           "operation": "modify",
-          "description": "Replace hard-coded footer surface colors (e.g., bg-white/gray) and any contrast-sensitive hover overrides as needed to ensure footer text/links stay readable using the global tokens (bg-background/bg-card, text-muted-foreground, border-border) in both themes."
+          "description": "Keep translations typed as `Record<Locale, Record<TranslationKey, string>>` and adjust as needed to ensure compile-time coverage while maintaining en as the fallback via I18nProvider behavior."
         },
         {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "path": "frontend/src/i18n/I18nProvider.tsx",
           "operation": "modify",
-          "description": "Update admin panel heading/title color utilities that currently hard-code navy text to instead use token-based foreground/muted-foreground utilities, ensuring headings and supporting text maintain contrast on token-based surfaces in light and dark mode."
+          "description": "Confirm fallback behavior remains `pt-BR` → `en` → raw key, and (if needed) harden typing around `t(key: TranslationKey, ...)` so no `any` keys are introduced during refactors."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Ensure language switching re-renders all mounted and newly rendered UI (including tabs and dialogs) immediately without refresh and persists via localStorage.",
+      "acceptanceCriteria": [
+        "Changing the language from the LanguageSelector updates text immediately across the current page and any open modal/dialog (where applicable) without a full page reload.",
+        "After switching language, moving between tabs in ParentDashboard/ChildHome/AdminPanel shows the correct localized text in each tab’s content.",
+        "Language selection persists across reloads via the existing localStorage mechanism (appLanguage)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/i18n/LanguageSelector.tsx",
+          "operation": "modify",
+          "description": "Verify LanguageSelector triggers reactive updates by using the i18n context state directly (no cached labels outside render) and ensure the button title/labels are always derived from t(...)."
+        },
+        {
+          "path": "frontend/src/i18n/I18nProvider.tsx",
+          "operation": "modify",
+          "description": "Ensure i18n context updates trigger re-render for all consumers and keep language persistence via localStorage key appLanguage; avoid patterns that freeze translated strings at mount time."
+        },
+        {
+          "path": "frontend/src/pages/TransparencyPolicies.tsx",
+          "operation": "modify",
+          "description": "Verify the modal’s full content is rendered from t(...) keys so switching language while the modal is open updates immediately without closing/reopening."
+        },
+        {
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "operation": "modify",
+          "description": "Verify this modal renders all labels/buttons from t(...) at render time so switching language while the dialog is open updates immediately."
         },
         {
           "path": "frontend/src/pages/parent/ParentDashboard.tsx",
           "operation": "modify",
-          "description": "Audit parent dashboard for hard-coded text colors (e.g., text-navy) and replace with token-based foreground/muted-foreground where appropriate. Ensure any highlighted informational surfaces (e.g., alerts) retain clear contrast with their text in both light and dark mode without relying on brittle hard-coded combinations."
+          "description": "Ensure tab labels/content headers are not stored in state/memo without language dependencies; all strings should be derived from t(...) during render so switching language updates current and future tab content."
+        },
+        {
+          "path": "frontend/src/pages/child/ChildHome.tsx",
+          "operation": "modify",
+          "description": "Ensure tab labels and conditional alert text re-render from t(...) immediately on language change (avoid initializing translated strings into state)."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure tab labels and empty state text are derived from t(...) during render so language changes are reflected immediately when switching tabs."
         }
       ]
     }

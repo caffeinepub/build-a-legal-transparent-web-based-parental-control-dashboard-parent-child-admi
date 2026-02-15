@@ -4,23 +4,31 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Cores da interface estão incompatíveis com as cores da fonte, prejudicando contraste/diferenciação visual."
+    "O app não está traduzindo todas as informações completamente para português em todas as telas."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-adjust-the-global-theme-color-tokens-so-that-interface-surface-colors-backgrounds-cards-popovers-borders-accents-are-clearly-distinguishable-from-text-colors-and-provide-consistent-readable-contrast-in-both-light-and-dark-mode",
-      "title": "Adjust the global theme color tokens so that interface surface colors (backgrounds, cards, popovers, borders, accents) are clearly distinguishable from text colors and provide consistent, readable contrast in both light and dark mode.",
+      "id": "feature-replace-all-hardcoded-ui-strings-across-the-app-with-i18n-translation-keys-so-that-switching-the-language-applies-to-every-screen-tab-and-conditional-empty-state",
+      "title": "Replace all hardcoded UI strings across the app with i18n translation keys so that switching the language applies to every screen, tab, and conditional/empty state.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-audit-and-update-key-layout-components-pages-that-use-hard-coded-color-utility-classes-so-they-consistently-rely-on-the-theme-tokens-background-foreground-card-muted-accent-and-do-not-reintroduce-low-contrast-text-on-surface-combinations",
-      "title": "Audit and update key layout components/pages that use hard-coded color utility classes so they consistently rely on the theme tokens (background/foreground/card/muted/accent) and do not reintroduce low-contrast text-on-surface combinations.",
+      "id": "feature-update-the-translation-dictionaries-to-fully-cover-all-ui-text-used-by-the-app-ensuring-pt-br-contains-complete-translations-for-every-key-and-en-remains-the-fallback-for-any-missing-key",
+      "title": "Update the translation dictionaries to fully cover all UI text used by the app, ensuring pt-BR contains complete translations for every key and en remains the fallback for any missing key.",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-language-switching-works-consistently-for-all-currently-mounted-and-newly-rendered-ui-e-g-when-navigating-between-tabs-opening-dialogs-modals-or-when-conditional-sections-appear-without-requiring-a-refresh",
+      "title": "Ensure language switching works consistently for all currently mounted and newly rendered UI (e.g., when navigating between tabs, opening dialogs/modals, or when conditional sections appear) without requiring a refresh.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
@@ -28,12 +36,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Reajustar as cores da interface do app para evitar incompatibilidade/baixa distinção com as cores da fonte (garantir contraste e diferenciação)",
+      "summary": "Ajustar o botão/funcionalidade de tradução para traduzir completamente as informações para português em todas as telas do app (incluindo telas abertas/novas).",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix UI theme colors to ensure readable contrast between interface surfaces and text",
+  "projectName": "Complete Portuguese (pt-BR) translation across all app screens",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
