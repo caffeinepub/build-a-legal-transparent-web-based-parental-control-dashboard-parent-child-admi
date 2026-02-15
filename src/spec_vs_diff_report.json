@@ -1,109 +1,111 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T03:01:59.148Z",
-  "summary": "Diff adds PWA assets (manifest + sw.js), a service worker registration utility, capability detection/messaging, and a queue + background-sync request path from the live location hook. However, evidence is insufficient that the service worker is actually registered from the React entry flow, that periodic/closed-UI background sync is fully wired end-to-end, and that all required copy/transparency policy statements were updated as specified. Several unrelated UI/i18n/theming changes also appear in the diff summary.",
+  "generatedAt": "2026-02-15T16:01:29.643Z",
+  "summary": "Diff implements significant parts of phone-number-based pairing UI and introduces backend state/types for phone numbers and phone verifications, plus a migration file. However, key BuildRequest items are not evidenced in the diff summary: backend 6-digit enforcement/generation details, SMS provider-agnostic sending + safe fallback behavior, explicit handling for OTP error cases, and complete i18n coverage for new UI strings (and some user-visible toasts remain hard-coded). The diff also includes several unrelated frontend changes (polling, theme/style, broad translation work) not requested.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Register a service worker from the React app entry flow (without modifying immutable paths).",
-      "reason": "A registration utility was added (registerServiceWorker.ts) but the diff summary does not show it being invoked from the React entry (e.g., src/main.tsx/App.tsx).",
+      "id": "REQ-1",
+      "requirement": "Backend generatePairingCode returns exactly 6 digits as Text and pairWithParent rejects anything not exactly 6 digits with an explicit non-success result.",
+      "reason": "backend/main.mo is truncated and the diff summary does not show the implementation of generatePairingCode or the validation logic in pairWithParent enforcing exactly 6 numeric digits; only frontend-side 6-digit validation is clearly shown.",
       "evidence": [
-        "frontend/src/pwa/registerServiceWorker.ts",
-        "frontend-file-summaries.txt (mentions frontend/src/App.tsx but does not mention SW registration)"
+        "backend/main.mo (truncated)",
+        "frontend/src/components/child/PairWithParentCard.tsx"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Use a background-capable mechanism (e.g., service worker + background/periodic sync) to queue and/or submit location updates when Live Location Sharing is enabled, including when UI is closed where supported.",
-      "reason": "The hook queues failed submissions to localStorage and requests a one-off Background Sync tag, but the service worker’s sync handler only logs updates and contains placeholder comments instead of actually submitting them to the backend. Also, periodic sync registration is implemented in the utility but not shown as being requested/used when live sharing is enabled.",
+      "requirement": "Backend must send OTP via provider-agnostic SMS mechanism and provide a safe fallback when provider credentials are not available, while still storing OTP for dev/test verification.",
+      "reason": "No evidence in the diff summary of any SMS-sending abstraction/config, provider selection, environment-based configuration, or fallback behavior. Only types/result variants for phone verification appear.",
       "evidence": [
-        "frontend/src/hooks/useLiveLocationSharing.ts",
-        "frontend/public/sw.js",
-        "frontend/src/pwa/registerServiceWorker.ts"
+        "backend/main.mo (truncated)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Fallback behavior and a clear status/notice on browsers that do not support background/periodic sync.",
-      "reason": "Capability detection + messaging functions were added, but the diff summary does not conclusively show the fallback/status notice being surfaced in the UI in all required cases (ChildCheckIn is truncated before showing where capabilityMessage is rendered).",
+      "requirement": "Backend must create time-limited verification challenge tied to (child principal, resolved parent principal by phone) and handle incorrect OTP, expired OTP, too many attempts, unknown/unregistered phone, or child already paired with explicit result codes and corresponding UI messages.",
+      "reason": "While backend types include PhoneVerificationData with expires/isVerified and some result variants (#phoneVerificationExpired/#phoneVerificationFailed/#phoneVerificationSuccess), the diff summary does not show implementations for: parent resolution by phone, challenge keyed by (child,parent), attempt counting/lockout, and explicit handling for unknown/unregistered phone or too many attempts. Frontend i18n/error mapping for all these cases is also not evidenced in translations.",
       "evidence": [
-        "frontend/src/utils/liveLocationCapabilities.ts",
-        "frontend/src/components/child/ChildCheckIn.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Update specific Live Location Sharing English copy (e.g., liveLocationActiveInfo, liveLocationForegroundNote, parent-side live sharing description) so it no longer claims sharing only works while the app is open.",
-      "reason": "Translation files are modified but truncated; the diff summary does not show the referenced keys/strings being updated, so this cannot be verified from provided evidence.",
-      "evidence": [
+        "backend/main.mo (truncated)",
+        "frontend/src/components/child/PairWithParentCard.tsx",
         "frontend/src/i18n/translations/en.ts (truncated)",
-        "frontend/src/components/parent/LocationView.tsx (truncated)"
+        "frontend/src/i18n/translations/pt-BR.ts (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "Update pt-BR translations to match the new meaning.",
-      "reason": "pt-BR translation file is truncated and does not show the relevant live-location strings being updated, so completion cannot be confirmed from the diff summary.",
+      "id": "REQ-2",
+      "requirement": "Frontend phone input enforces digits-only normalization and validates exact mask length implied by (00)000000000; user-facing validation messages exist in i18n (en + pt-BR).",
+      "reason": "Digits-only normalization/length limiting exists (parsePhoneNumberInput/isValidPhoneNumber), but the diff summary does not show the required new i18n keys for phone pairing/OTP validation errors and labels used by the new UI (e.g., keys referenced like parentPhoneTitle/parentPhoneErrorEmpty/etc.). The translation files shown only include profile setup phone strings, not the broader new flow keys.",
       "evidence": [
+        "frontend/src/utils/phoneNumber.ts",
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+        "frontend/src/i18n/translations/en.ts (truncated)",
         "frontend/src/i18n/translations/pt-BR.ts (truncated)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Update Transparency & Policies content so it does not incorrectly state the app 'Does NOT collect data in the background' when background live sharing is enabled by the child.",
-      "reason": "The actual Transparency & Policies page/content changes are not shown in the diff summary (only a high-level file summary entry exists, without the specific statement change). Therefore it’s not verifiable that the incorrect claim was removed/updated.",
+      "requirement": "Backend enforces uniqueness of parent phone numbers across accounts; attempting to claim an existing number fails with a clear handled error; updates replace prior value maintaining uniqueness.",
+      "reason": "backend/main.mo adds phoneNumber field and new result variant #phoneNumberAlreadyLinked, but the diff summary does not show the actual uniqueness index/check logic, update semantics, or the specific error returned by saveCallerUserProfile when a duplicate is attempted.",
       "evidence": [
-        "frontend-file-summaries.txt (mentions frontend/src/pages/TransparencyPolicies.tsx but no quoted content)"
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "All new user-visible labels, button text, help text, and error messages for phone-based pairing and OTP verification are sourced from i18n keys (en.ts and pt-BR.ts); no hard-coded Portuguese strings in React components.",
+      "reason": "New components call many new i18n keys (e.g., parentPhoneTitle/parentPhoneDescription/parentPhoneErrorInvalid, pairing phone/OTP messages), but the diff summary does not show those keys added to en.ts and pt-BR.ts. Additionally, user-visible toasts in useSaveCallerUserProfile are hard-coded English strings rather than i18n-sourced.",
+      "evidence": [
+        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/i18n/translations/en.ts (truncated)",
+        "frontend/src/i18n/translations/pt-BR.ts (truncated)",
+        "frontend/src/hooks/useQueries.ts"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "App-wide i18n expansion/translation refactors across many pages (parent dashboard, child home, admin panel, schedule editor, etc.).",
-      "reason": "BuildRequest only requires copy updates related to live location sharing and transparency/policies; broad translation coverage changes are not requested.",
+      "description": "Added broad automatic polling/refetch behavior for multiple queries/components (children list, activities, locations, etc.).",
+      "reason": "The BuildRequest focuses on pairing/phone/SMS + i18n; general polling for dashboard data is not requested.",
       "evidence": [
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "frontend/src/pages/parent/ParentDashboard.tsx",
         "frontend-file-summaries.txt"
       ]
     },
     {
-      "description": "Theme-token-based styling and theme toggle related UI adjustments.",
-      "reason": "Not part of the requested background live location/PWA/copy scope.",
+      "description": "Theme-token-based styling and various UI/translation overhauls across unrelated pages (Admin panel, Transparency policies, etc.).",
+      "reason": "Not requested by the BuildRequest; only pairing/phone-based flow and related i18n strings were requested.",
       "evidence": [
         "frontend-file-summaries.txt",
-        "frontend/src/components/layout/AppHeader.tsx"
+        "frontend/src/i18n/translations/en.ts (truncated)",
+        "frontend/src/i18n/translations/pt-BR.ts (truncated)"
       ]
     },
     {
-      "description": "Service worker asset caching/offline fetch handling for '/', '/index.html', and logo asset.",
-      "reason": "REQ-2 asks for PWA support and SW registration/sync attempts; offline caching strategy is not explicitly requested (though it may be incidental to PWA).",
+      "description": "Introduced backend migration system (backend/migration.mo) and applied it on upgrade.",
+      "reason": "Migration was allowed only if strictly necessary; the diff summary does not provide evidence it was strictly necessary, so it appears potentially extra relative to the request.",
       "evidence": [
-        "frontend/public/sw.js"
-      ]
-    },
-    {
-      "description": "Parent location view enhancements: last-update age calculation and stale update warnings.",
-      "reason": "Not explicitly requested by requirements/AC (copy/limitations notice is requested, but this monitoring UX is additional).",
-      "evidence": [
-        "frontend/src/components/parent/LocationView.tsx"
+        "backend/migration.mo",
+        "backend/main.mo"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.68,
   "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/index.html",
-    "frontend/public/manifest.webmanifest",
-    "frontend/public/sw.js",
-    "frontend/src/components/child/ChildCheckIn.tsx",
-    "frontend/src/components/layout/AppHeader.tsx",
-    "frontend/src/components/parent/LocationView.tsx",
-    "frontend/src/hooks/useLiveLocationSharing.ts",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/components/child/PairWithParentCard.tsx",
+    "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
-    "frontend/src/pwa/registerServiceWorker.ts",
-    "frontend/src/utils/liveLocationCapabilities.ts",
-    "frontend/src/utils/locationUpdateQueue.ts",
+    "frontend/src/pages/parent/ParentDashboard.tsx",
+    "frontend/src/utils/phoneNumber.ts",
     "project_state.json"
   ]
 }

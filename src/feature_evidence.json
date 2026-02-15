@@ -2,14 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-best-effort-background-live-location-sharing-so-that-after-a-child-enables-live-location-sharing-location-updates-can-continue-even-when-the-app-is-not-in-the-foreground-and-where-the-platform-supports-it-even-after-the-tab-app-ui-is-closed",
-      "featureTitle": "Implement best-effort background live location sharing so that, after a child enables live location sharing, location updates can continue even when the app is not in the foreground (and, where the platform supports it, even after the tab/app UI is closed).",
+      "featureId": "feature-add-a-new-pairing-option-for-children-to-link-to-a-parent-guardian-by-entering-the-parent-s-phone-number-in-the-format-00-000000000-which-triggers-an-sms-verification-flow-and-then-connects-the-logins-creates-the-same-parent-child-relationship-as-the-existing-pairing-code-flow",
+      "featureTitle": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
       "files": [
-        "frontend/src/components/child/ChildCheckIn.tsx",
-        "frontend/src/components/parent/LocationView.tsx",
-        "frontend/src/hooks/useLiveLocationSharing.ts",
-        "frontend/src/utils/liveLocationCapabilities.ts",
-        "frontend/src/utils/locationUpdateQueue.ts"
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/phoneNumber.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,31 +16,8 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-pwa-support-web-app-manifest-service-worker-registration-and-attempt-periodic-background-sync-approaches-where-available-to-continue-submitting-location-updates-when-the-ui-is-closed-while-keeping-behavior-safe-and-permission-respecting",
-      "featureTitle": "Add PWA support (web app manifest + service worker registration) and attempt periodic/background sync approaches where available, to continue submitting location updates when the UI is closed, while keeping behavior safe and permission-respecting.",
-      "files": [
-        "frontend/index.html",
-        "frontend/public/manifest.webmanifest",
-        "frontend/public/sw.js",
-        "frontend/src/hooks/useLiveLocationSharing.ts",
-        "frontend/src/pwa/registerServiceWorker.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-2"
@@ -50,10 +25,34 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-all-user-facing-copy-and-transparency-consent-messaging-to-accurately-reflect-the-new-background-behavior-including-the-transparency-policy-section-that-currently-states-the-app-does-not-collect-data-in-the-background",
-      "featureTitle": "Update all user-facing copy and transparency/consent messaging to accurately reflect the new background behavior, including the transparency policy section that currently states the app does not collect data in the background.",
+      "featureId": "feature-extend-the-user-profile-setup-editing-experience-so-a-parent-guardian-can-provide-and-later-update-their-phone-number-for-phone-based-pairing-without-breaking-existing-profiles",
+      "featureTitle": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
       "files": [
-        "frontend/src/components/child/ChildCheckIn.tsx",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+        "frontend/src/pages/parent/ParentDashboard.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "invite-links@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-adjust-frontend-i18n-strings-english-and-pt-br-for-the-new-phone-based-pairing-flow-and-for-any-new-updated-validation-and-error-states-introduced-by-the-fixed-6-digit-pairing-backend-behavior",
+      "featureTitle": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
+      "files": [
+        "frontend/src/components/child/PairWithParentCard.tsx",
+        "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
         "frontend/src/i18n/translations/en.ts",
         "frontend/src/i18n/translations/pt-BR.ts"
       ],
@@ -64,10 +63,11 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-4"
       ],
       "confidence": "high"
     }

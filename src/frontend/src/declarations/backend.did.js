@@ -27,6 +27,23 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const PairWithParentResult = IDL.Variant({
+  'alreadyUsed' : IDL.Null,
+  'parentIdNotProvided' : IDL.Null,
+  'phoneVerificationExpired' : IDL.Null,
+  'notAChild' : IDL.Null,
+  'codeExpired' : IDL.Null,
+  'sameFamily' : IDL.Null,
+  'phoneVerificationInitiated' : IDL.Null,
+  'parentNotFound' : IDL.Null,
+  'alreadyPaired' : IDL.Null,
+  'parentNotParent' : IDL.Null,
+  'invalidCode' : IDL.Null,
+  'phoneVerificationSuccess' : IDL.Null,
+  'success' : IDL.Null,
+  'phoneVerificationFailed' : IDL.Null,
+  'phoneNumberAlreadyLinked' : IDL.Null,
+});
 export const RSVP = IDL.Record({
   'name' : IDL.Text,
   'inviteCode' : IDL.Text,
@@ -38,12 +55,26 @@ export const AppRole = IDL.Variant({
   'child' : IDL.Null,
   'parent' : IDL.Null,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'role' : AppRole,
+  'phoneNumber' : IDL.Opt(IDL.Text),
+});
 export const ActionType = IDL.Variant({
+  'phonePairingInitiated' : IDL.Null,
+  'phonePairingCompleted' : IDL.Null,
   'pairingCreated' : IDL.Null,
   'filterChanged' : IDL.Null,
   'accountDisabled' : IDL.Null,
   'scheduleChanged' : IDL.Null,
+});
+export const PhonePairingInitiatedDetails = IDL.Record({
+  'phoneNumber' : IDL.Text,
+  'parentId' : IDL.Principal,
+});
+export const PhonePairingCompletedDetails = IDL.Record({
+  'childId' : IDL.Principal,
+  'parentId' : IDL.Principal,
 });
 export const PairingDetails = IDL.Record({
   'child' : IDL.Principal,
@@ -80,6 +111,8 @@ export const ScheduleChangeDetails = IDL.Record({
   'newConfig' : ScheduleConfig,
 });
 export const AuditLogDetails = IDL.Variant({
+  'phonePairingInitiated' : PhonePairingInitiatedDetails,
+  'phonePairingCompleted' : PhonePairingCompletedDetails,
   'pairingCreated' : PairingDetails,
   'filterChanged' : FilterChangeDetails,
   'accountDisabled' : AccountDisabledDetails,
@@ -102,9 +135,15 @@ export const idlService = IDL.Service({
   'addActivity' : IDL.Func([ActivityEntry], [], []),
   'addLocation' : IDL.Func([LocationEntry], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'completePhonePairing' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [PairWithParentResult],
+      [],
+    ),
   'disableAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   'enableAccount' : IDL.Func([IDL.Principal], [], []),
   'generateInviteCode' : IDL.Func([], [IDL.Text], []),
+  'generatePairingCode' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
   'getActivities' : IDL.Func(
       [IDL.Principal],
       [IDL.Vec(ActivityEntry)],
@@ -170,6 +209,8 @@ export const idlService = IDL.Service({
     ),
   'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
+  'pairWithParentViaPhone' : IDL.Func([IDL.Text], [PairWithParentResult], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'setAdminPassword' : IDL.Func([IDL.Text], [], []),
   'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),
@@ -205,6 +246,23 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const PairWithParentResult = IDL.Variant({
+    'alreadyUsed' : IDL.Null,
+    'parentIdNotProvided' : IDL.Null,
+    'phoneVerificationExpired' : IDL.Null,
+    'notAChild' : IDL.Null,
+    'codeExpired' : IDL.Null,
+    'sameFamily' : IDL.Null,
+    'phoneVerificationInitiated' : IDL.Null,
+    'parentNotFound' : IDL.Null,
+    'alreadyPaired' : IDL.Null,
+    'parentNotParent' : IDL.Null,
+    'invalidCode' : IDL.Null,
+    'phoneVerificationSuccess' : IDL.Null,
+    'success' : IDL.Null,
+    'phoneVerificationFailed' : IDL.Null,
+    'phoneNumberAlreadyLinked' : IDL.Null,
+  });
   const RSVP = IDL.Record({
     'name' : IDL.Text,
     'inviteCode' : IDL.Text,
@@ -216,12 +274,26 @@ export const idlFactory = ({ IDL }) => {
     'child' : IDL.Null,
     'parent' : IDL.Null,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : AppRole });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'role' : AppRole,
+    'phoneNumber' : IDL.Opt(IDL.Text),
+  });
   const ActionType = IDL.Variant({
+    'phonePairingInitiated' : IDL.Null,
+    'phonePairingCompleted' : IDL.Null,
     'pairingCreated' : IDL.Null,
     'filterChanged' : IDL.Null,
     'accountDisabled' : IDL.Null,
     'scheduleChanged' : IDL.Null,
+  });
+  const PhonePairingInitiatedDetails = IDL.Record({
+    'phoneNumber' : IDL.Text,
+    'parentId' : IDL.Principal,
+  });
+  const PhonePairingCompletedDetails = IDL.Record({
+    'childId' : IDL.Principal,
+    'parentId' : IDL.Principal,
   });
   const PairingDetails = IDL.Record({
     'child' : IDL.Principal,
@@ -258,6 +330,8 @@ export const idlFactory = ({ IDL }) => {
     'newConfig' : ScheduleConfig,
   });
   const AuditLogDetails = IDL.Variant({
+    'phonePairingInitiated' : PhonePairingInitiatedDetails,
+    'phonePairingCompleted' : PhonePairingCompletedDetails,
     'pairingCreated' : PairingDetails,
     'filterChanged' : FilterChangeDetails,
     'accountDisabled' : AccountDisabledDetails,
@@ -280,9 +354,15 @@ export const idlFactory = ({ IDL }) => {
     'addActivity' : IDL.Func([ActivityEntry], [], []),
     'addLocation' : IDL.Func([LocationEntry], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'completePhonePairing' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [PairWithParentResult],
+        [],
+      ),
     'disableAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
     'enableAccount' : IDL.Func([IDL.Principal], [], []),
     'generateInviteCode' : IDL.Func([], [IDL.Text], []),
+    'generatePairingCode' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
     'getActivities' : IDL.Func(
         [IDL.Principal],
         [IDL.Vec(ActivityEntry)],
@@ -348,6 +428,8 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
+    'pairWithParentViaPhone' : IDL.Func([IDL.Text], [PairWithParentResult], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'setAdminPassword' : IDL.Func([IDL.Text], [], []),
     'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),

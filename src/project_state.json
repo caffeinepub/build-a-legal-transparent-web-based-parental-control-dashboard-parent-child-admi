@@ -1,34 +1,36 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Enable real-time sharing to work even when the app is not open, by running in the background.",
+  "summary": "Projeto focado em ajustar o fluxo de verificação por código (6 dígitos) e adicionar vinculação de contas Filho ↔ Pai/Mãe via número de celular com confirmação por SMS para conectar logins.",
   "architectural_notes": [
-    "Real-time sharing should support background execution (platform-appropriate background service/tasks and permissions)."
+    "Vinculação Filho ↔ Pai/Mãe baseada em número de celular com verificação por SMS; somente após confirmação o vínculo (e conexão de logins) é efetivado."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Fluxo atual de código/OTP não está correto e não aparenta ter sido ajustado para 6 dígitos."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-implement-best-effort-background-live-location-sharing-so-that-after-a-child-enables-live-location-sharing-location-updates-can-continue-even-when-the-app-is-not-in-the-foreground-and-where-the-platform-supports-it-even-after-the-tab-app-ui-is-closed",
-      "title": "Implement best-effort background live location sharing so that, after a child enables live location sharing, location updates can continue even when the app is not in the foreground (and, where the platform supports it, even after the tab/app UI is closed).",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-pwa-support-web-app-manifest-service-worker-registration-and-attempt-periodic-background-sync-approaches-where-available-to-continue-submitting-location-updates-when-the-ui-is-closed-while-keeping-behavior-safe-and-permission-respecting",
-      "title": "Add PWA support (web app manifest + service worker registration) and attempt periodic/background sync approaches where available, to continue submitting location updates when the UI is closed, while keeping behavior safe and permission-respecting.",
+      "id": "feature-add-a-new-pairing-option-for-children-to-link-to-a-parent-guardian-by-entering-the-parent-s-phone-number-in-the-format-00-000000000-which-triggers-an-sms-verification-flow-and-then-connects-the-logins-creates-the-same-parent-child-relationship-as-the-existing-pairing-code-flow",
+      "title": "Add a new pairing option for children to link to a parent/guardian by entering the parent’s phone number in the format (00)000000000, which triggers an SMS verification flow and then connects the logins (creates the same parent↔child relationship as the existing pairing-code flow).",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-all-user-facing-copy-and-transparency-consent-messaging-to-accurately-reflect-the-new-background-behavior-including-the-transparency-policy-section-that-currently-states-the-app-does-not-collect-data-in-the-background",
-      "title": "Update all user-facing copy and transparency/consent messaging to accurately reflect the new background behavior, including the transparency policy section that currently states the app does not collect data in the background.",
+      "id": "feature-extend-the-user-profile-setup-editing-experience-so-a-parent-guardian-can-provide-and-later-update-their-phone-number-for-phone-based-pairing-without-breaking-existing-profiles",
+      "title": "Extend the user profile setup/editing experience so a parent/guardian can provide (and later update) their phone number for phone-based pairing, without breaking existing profiles.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-adjust-frontend-i18n-strings-english-and-pt-br-for-the-new-phone-based-pairing-flow-and-for-any-new-updated-validation-and-error-states-introduced-by-the-fixed-6-digit-pairing-backend-behavior",
+      "title": "Add/adjust frontend i18n strings (English and pt-BR) for the new phone-based pairing flow and for any new/updated validation and error states introduced by the fixed 6-digit pairing backend behavior.",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -36,12 +38,26 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Allow real-time sharing to continue in the background (app does not need to be open).",
+      "summary": "Ajustar o fluxo para usar corretamente código de verificação de 6 dígitos (corrigir comportamento atual que não reflete a alteração).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Criar opção de vincular conta do Filho com Pai/Mãe via número de celular: Filho informa celular do Pai/Mãe, sistema envia SMS ao Pai/Mãe, e após validação do SMS as contas/logins ficam conectados.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Fix the pairing-code flow end-to-end so the backend generates a numeric code that is exactly 6 digits (as Text) and pairing only accepts exactly 6 digits, ensuring the current UI’s 6-digit constraints actually work with the backend.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Enable best-effort background live location sharing (no need to keep the app open)",
+  "projectName": "Fix 6-digit pairing flow and add parent/child linking via phone number + SMS verification",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

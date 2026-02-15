@@ -16,7 +16,7 @@ export default function ActivityView({ childId }: ActivityViewProps) {
           This data was voluntarily submitted by your child with their explicit consent. No hidden monitoring occurs.
         </AlertDescription>
       </Alert>
-      <ActivityHistoryList childId={childId} showTransparencyLabel={true} />
+      <ActivityHistoryList childId={childId} showTransparencyLabel={true} refetchInterval={15000} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry } from '../backend';
+import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 import { toast } from 'sonner';
 
@@ -57,7 +57,7 @@ export function useIsCallerAdmin() {
   });
 }
 
-export function useGetMyChildren() {
+export function useGetMyChildren(options?: { refetchInterval?: number }) {
   const { actor, isFetching } = useActor();
 
   return useQuery<Principal[]>({
@@ -67,6 +67,7 @@ export function useGetMyChildren() {
       return actor.getMyChildren();
     },
     enabled: !!actor && !isFetching,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -83,7 +84,7 @@ export function useGetMyParent() {
   });
 }
 
-export function useGetActivities(childId: Principal | null) {
+export function useGetActivities(childId: Principal | null, options?: { refetchInterval?: number }) {
   const { actor, isFetching } = useActor();
 
   return useQuery<ActivityEntry[]>({
@@ -93,6 +94,7 @@ export function useGetActivities(childId: Principal | null) {
       return actor.getActivities(childId);
     },
     enabled: !!actor && !isFetching && !!childId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -379,4 +381,142 @@ export function useSetLiveLocationSharing() {
       toast.error(`Failed to update location sharing: ${error.message}`);
     },
   });
+}
+
+export function useGeneratePairingCode() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.generatePairingCode();
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to generate pairing code: ${error.message}`);
+    },
+  });
+}
+
+export function usePairWithParent() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (code: string): Promise<PairWithParentResult> => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.pairWithParent(code);
+    },
+    onSuccess: (result) => {
+      if (result === 'success') {
+        queryClient.invalidateQueries({ queryKey: ['myParent'] });
+        queryClient.refetchQueries({ queryKey: ['myParent'] });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Pairing failed: ${error.message}`);
+    },
+  });
+}
+
+export function usePairWithParentViaPhone() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (phoneNumber: string): Promise<PairWithParentResult> => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.pairWithParentViaPhone(phoneNumber);
+    },
+    onError: (error: Error) => {
+      toast.error(`Phone pairing failed: ${error.message}`);
+    },
+  });
+}
+
+export function useCompletePhonePairing() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ phoneNumber, verificationCode }: { phoneNumber: string; verificationCode: string }): Promise<PairWithParentResult> => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.completePhonePairing(phoneNumber, verificationCode);
+    },
+    onSuccess: (result) => {
+      if (result === 'phoneVerificationSuccess') {
+        queryClient.invalidateQueries({ queryKey: ['myParent'] });
+        queryClient.refetchQueries({ queryKey: ['myParent'] });
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`OTP verification failed: ${error.message}`);
+    },
+  });
+}
+
+export function useGetAllRSVPs(enabled: boolean = true) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['allRSVPs'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllRSVPs();
+    },
+    enabled: !!actor && !isFetching && enabled,
+  });
+}
+
+export function useGetInviteCodes(enabled: boolean = true) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['inviteCodes'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getInviteCodes();
+    },
+    enabled: !!actor && !isFetching && enabled,
+  });
+}
+
+export function useGenerateInviteCode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.generateInviteCode();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inviteCodes'] });
+      toast.success('Invite code generated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to generate invite code: ${error.message}`);
+    },
+  });
+}
+
+export function useSubmitRSVP() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ name, attending, inviteCode }: { name: string; attending: boolean; inviteCode: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.submitRSVP(name, attending, inviteCode);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allRSVPs'] });
+      toast.success('RSVP submitted');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to submit RSVP: ${error.message}`);
+    },
+  });
+}
+
+export function useIsCurrentUserAdmin() {
+  return useIsCallerAdmin();
 }

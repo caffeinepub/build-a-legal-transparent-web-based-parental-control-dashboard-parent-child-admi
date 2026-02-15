@@ -1,23 +1,26 @@
 import { useGetLocations } from '../../hooks/useQueries';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MapPin } from 'lucide-react';
+import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import type { Principal } from '@icp-sdk/core/principal';
 
 interface LocationHistoryListProps {
   childId: Principal | null;
-  showTransparencyLabel: boolean;
+  showTransparencyLabel?: boolean;
+  refetchInterval?: number;
 }
 
-export default function LocationHistoryList({ childId, showTransparencyLabel }: LocationHistoryListProps) {
-  const { data: locations = [], isLoading } = useGetLocations(childId);
+export default function LocationHistoryList({ childId, showTransparencyLabel = false, refetchInterval }: LocationHistoryListProps) {
+  const { identity } = useInternetIdentity();
+  const effectiveChildId = childId || (identity ? identity.getPrincipal() : null);
+  const { data: locations = [], isLoading } = useGetLocations(effectiveChildId, { refetchInterval });
 
   if (isLoading) {
-    return <p className="text-muted-foreground text-center py-8">Loading...</p>;
+    return <div className="text-center py-8 text-muted-foreground">Loading locations...</div>;
   }
 
   if (locations.length === 0) {
-    return <p className="text-muted-foreground text-center py-8">No locations shared yet</p>;
+    return <div className="text-center py-8 text-muted-foreground">No locations submitted yet</div>;
   }
 
   const sortedLocations = [...locations].sort((a, b) => Number(b.timestamp - a.timestamp));
@@ -25,29 +28,24 @@ export default function LocationHistoryList({ childId, showTransparencyLabel }: 
   return (
     <div className="space-y-4">
       {showTransparencyLabel && (
-        <Badge variant="outline" className="text-xs">
-          Child-submitted data with explicit consent
+        <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+          Voluntarily shared by child
         </Badge>
       )}
-      <div className="border rounded-lg">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Coordinates</TableHead>
+              <TableHead>Latitude</TableHead>
+              <TableHead>Longitude</TableHead>
               <TableHead>Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedLocations.map((location, idx) => (
-              <TableRow key={idx}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-mono">
-                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-                    </span>
-                  </div>
-                </TableCell>
+            {sortedLocations.map((location, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-mono">{location.latitude.toFixed(6)}</TableCell>
+                <TableCell className="font-mono">{location.longitude.toFixed(6)}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {new Date(Number(location.timestamp) / 1_000_000).toLocaleString()}
                 </TableCell>

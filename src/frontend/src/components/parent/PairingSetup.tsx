@@ -2,24 +2,29 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, Link2, AlertTriangle } from 'lucide-react';
+import { Copy, Link2, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '../../hooks/useI18n';
+import { useGeneratePairingCode } from '../../hooks/useQueries';
 
 export default function PairingSetup() {
   const { t } = useI18n();
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const generateCode = useGeneratePairingCode();
 
-  const handleGenerateCode = () => {
-    const mockCode = `PAIR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-    setGeneratedCode(mockCode);
-    toast.info(t('pairingBackendNote'));
+  const handleGenerateCode = async () => {
+    try {
+      const code = await generateCode.mutateAsync();
+      setGeneratedCode(code);
+    } catch (error) {
+      // Error already handled by mutation
+      setGeneratedCode(null);
+    }
   };
 
   const handleCopyCode = () => {
     if (generatedCode) {
-      const url = `${window.location.origin}?pairingCode=${generatedCode}`;
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(generatedCode);
       toast.success(t('pairingCopied'));
     }
   };
@@ -42,14 +47,19 @@ export default function PairingSetup() {
         </Alert>
 
         {!generatedCode ? (
-          <Button onClick={handleGenerateCode} className="w-full bg-amber-600 hover:bg-amber-700">
+          <Button 
+            onClick={handleGenerateCode} 
+            className="w-full bg-amber-600 hover:bg-amber-700"
+            disabled={generateCode.isPending}
+          >
+            {generateCode.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {t('pairingGenerateButton')}
           </Button>
         ) : (
           <div className="space-y-3">
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground mb-2">{t('pairingCodeLabel')}</p>
-              <p className="text-2xl font-mono font-bold text-center">{generatedCode}</p>
+              <p className="text-2xl font-mono font-bold text-center break-all">{generatedCode}</p>
             </div>
             <Button onClick={handleCopyCode} variant="outline" className="w-full">
               <Copy className="w-4 h-4 mr-2" />

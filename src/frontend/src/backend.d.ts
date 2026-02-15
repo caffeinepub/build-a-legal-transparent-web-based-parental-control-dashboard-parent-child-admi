@@ -11,15 +11,23 @@ export interface ScheduleChangeDetails {
     child: Principal;
     newConfig: ScheduleConfig;
 }
-export interface AccountDisabledDetails {
-    account: Principal;
-    reason: string;
+export interface PhonePairingInitiatedDetails {
+    phoneNumber: string;
+    parentId: Principal;
+}
+export interface ContentCategory {
+    name: string;
+    enabled: boolean;
 }
 export type Time = bigint;
 export interface DayTimeWindow {
     endHour: bigint;
     dayOfWeek: bigint;
     startHour: bigint;
+}
+export interface AccountDisabledDetails {
+    account: Principal;
+    reason: string;
 }
 export interface ScheduleConfig {
     allowedHours: Array<DayTimeWindow>;
@@ -37,6 +45,12 @@ export interface ContentFilterConfig {
     allowlist: Array<string>;
 }
 export type AuditLogDetails = {
+    __kind__: "phonePairingInitiated";
+    phonePairingInitiated: PhonePairingInitiatedDetails;
+} | {
+    __kind__: "phonePairingCompleted";
+    phonePairingCompleted: PhonePairingCompletedDetails;
+} | {
     __kind__: "pairingCreated";
     pairingCreated: PairingDetails;
 } | {
@@ -55,16 +69,16 @@ export interface LocationEntry {
     longitude: number;
     timestamp: Time;
 }
-export interface InviteCode {
-    created: Time;
-    code: string;
-    used: boolean;
-}
 export interface RSVP {
     name: string;
     inviteCode: string;
     timestamp: Time;
     attending: boolean;
+}
+export interface InviteCode {
+    created: Time;
+    code: string;
+    used: boolean;
 }
 export interface FilterChangeDetails {
     child: Principal;
@@ -81,15 +95,18 @@ export interface PairingDetails {
     child: Principal;
     parent: Principal;
 }
-export interface ContentCategory {
-    name: string;
-    enabled: boolean;
-}
 export interface UserProfile {
     name: string;
     role: AppRole;
+    phoneNumber?: string;
+}
+export interface PhonePairingCompletedDetails {
+    childId: Principal;
+    parentId: Principal;
 }
 export enum ActionType {
+    phonePairingInitiated = "phonePairingInitiated",
+    phonePairingCompleted = "phonePairingCompleted",
     pairingCreated = "pairingCreated",
     filterChanged = "filterChanged",
     accountDisabled = "accountDisabled",
@@ -100,6 +117,23 @@ export enum AppRole {
     child = "child",
     parent = "parent"
 }
+export enum PairWithParentResult {
+    alreadyUsed = "alreadyUsed",
+    parentIdNotProvided = "parentIdNotProvided",
+    phoneVerificationExpired = "phoneVerificationExpired",
+    notAChild = "notAChild",
+    codeExpired = "codeExpired",
+    sameFamily = "sameFamily",
+    phoneVerificationInitiated = "phoneVerificationInitiated",
+    parentNotFound = "parentNotFound",
+    alreadyPaired = "alreadyPaired",
+    parentNotParent = "parentNotParent",
+    invalidCode = "invalidCode",
+    phoneVerificationSuccess = "phoneVerificationSuccess",
+    success = "success",
+    phoneVerificationFailed = "phoneVerificationFailed",
+    phoneNumberAlreadyLinked = "phoneNumberAlreadyLinked"
+}
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -109,9 +143,11 @@ export interface backendInterface {
     addActivity(entry: ActivityEntry): Promise<void>;
     addLocation(entry: LocationEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    completePhonePairing(phoneNumber: string, verificationCode: string): Promise<PairWithParentResult>;
     disableAccount(account: Principal, reason: string): Promise<void>;
     enableAccount(account: Principal): Promise<void>;
     generateInviteCode(): Promise<string>;
+    generatePairingCode(): Promise<string | null>;
     getActivities(childId: Principal): Promise<Array<ActivityEntry>>;
     getAggregatedMetrics(): Promise<{
         totalParents: bigint;
@@ -135,6 +171,8 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
+    pairWithParent(code: string): Promise<PairWithParentResult>;
+    pairWithParentViaPhone(phoneNumber: string): Promise<PairWithParentResult>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setAdminPassword(newPassword: string): Promise<void>;
     setLiveLocationSharing(enabled: boolean): Promise<void>;

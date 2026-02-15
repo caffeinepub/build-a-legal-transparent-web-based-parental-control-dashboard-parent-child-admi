@@ -1,118 +1,92 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Best-effort background live location sharing with PWA support and updated transparency copy",
+  "title": "Phone-based parent/child pairing UI with OTP and parent phone profile support",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Enable best-effort periodic live location updates while the app is backgrounded, and clearly communicate limitations when closed/unsupported without changing backend-controlled enabled state.",
-      "acceptanceCriteria": [
-        "When a child enables Live Location Sharing, the app continues attempting periodic location updates while the page is backgrounded (e.g., another tab/app is in front) without requiring the user to keep the page focused.",
-        "If the platform/browser does not support continuing execution after the app is closed, the UI communicates that limitation clearly (i.e., no misleading promise of always-on background sharing).",
-        "Live Location Sharing state remains controlled by the backend flag (useGetLiveLocationSharingStatus / useSetLiveLocationSharing) and is not silently toggled off just because a capture attempt failed locally."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useLiveLocationSharing.ts",
-          "operation": "modify",
-          "description": "Refactor live sharing to be resilient in background-tab scenarios: use best-effort scheduling (including Page Visibility awareness) and/or geolocation watch mode as appropriate, avoid stopping local sharing attempts on transient capture/submit failures, and decouple UI 'actively capturing' status from the backend-enabled flag so failures do not imply the backend toggle changed."
-        },
-        {
-          "path": "frontend/src/utils/liveLocationCapabilities.ts",
-          "operation": "create",
-          "description": "Add a small capability-detection utility to determine whether the current browser context is likely to keep running in background tabs and whether it can support PWA/service-worker assistance; return a concise status that the UI can use to show accurate limitations messaging."
-        },
-        {
-          "path": "frontend/src/utils/locationUpdateQueue.ts",
-          "operation": "create",
-          "description": "Implement a lightweight, permission-respecting queue for pending location updates (e.g., when offline or when submission fails) so the app can retry later; ensure queueing only happens when Live Location Sharing is enabled via the existing toggle."
-        },
-        {
-          "path": "frontend/src/components/child/ChildCheckIn.tsx",
-          "operation": "modify",
-          "description": "Update the Live Location Sharing panel to: (1) show background/closed-app limitations based on capability detection, (2) show a clear 'best-effort' status when enabled even if a recent capture fails, and (3) avoid implying the feature turned off unless the backend flag is disabled."
-        },
-        {
-          "path": "frontend/src/components/parent/LocationView.tsx",
-          "operation": "modify",
-          "description": "Adjust parent-side live sharing description text usage to align with best-effort background behavior and potential closed-app limitations (e.g., clarify that updates may pause depending on the child's device/browser)."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Add installable PWA support with manifest + service worker registration and implement best-effort background-capable queuing/retry mechanisms where available, with clear fallbacks when unsupported.",
+      "summary": "Add child pairing option via parent phone number with SMS OTP verification, alongside existing 6-digit code pairing, including validation and UI error handling.",
       "acceptanceCriteria": [
-        "The frontend includes an installable PWA manifest and registers a service worker from the React app entry flow (without modifying any immutable paths).",
-        "Where supported by the browser, the app uses a background-capable mechanism (e.g., service worker + background/periodic sync) to queue and/or submit location updates when Live Location Sharing is enabled.",
-        "On browsers that do not support background/periodic sync, the app falls back to foreground/background-tab operation only and shows a clear status/notice."
+        "Frontend: The child pairing area offers two choices: (1) pair via 6-digit code (existing), (2) pair via parent phone number (new).",
+        "Frontend: The phone input enforces digits-only normalization and validates the exact mask length implied by (00)000000000 before submission; user-facing validation messages exist in i18n (en + pt-BR).",
+        "Frontend: After the child enters the OTP correctly, the backend links the child to that parent (same internal link structure used by the current pairing flow), and the child UI updates to the paired state (getMyParent reflects the parent).",
+        "Backend: Incorrect OTP, expired OTP, too many attempts, unknown/unregistered parent phone, or child already paired are all handled with explicit result codes and corresponding UI error messages."
       ],
       "file_operations": [
         {
-          "path": "frontend/public/manifest.webmanifest",
-          "operation": "create",
-          "description": "Create a PWA manifest declaring app name, start_url, display mode, theme/background colors, and icons referencing frontend/public/assets/generated/pc-logo.dim_256x256.png."
-        },
-        {
-          "path": "frontend/public/assets/generated/pc-logo.dim_256x256.png",
-          "operation": "create",
-          "description": "Add the generated logo asset at the required path so it can be referenced by the web app manifest."
-        },
-        {
-          "path": "frontend/public/sw.js",
-          "operation": "create",
-          "description": "Create a service worker that supports app-shell caching and (where available) background sync triggers for retrying queued location submissions; keep behavior safe and permission-respecting by only acting on queued updates created while the user had explicitly enabled live sharing."
-        },
-        {
-          "path": "frontend/src/pwa/registerServiceWorker.ts",
-          "operation": "create",
-          "description": "Add a small registration helper that registers the service worker, reports support/registration status, and exposes helpers to request background sync/periodic sync where supported."
-        },
-        {
-          "path": "frontend/src/main.tsx",
+          "path": "frontend/src/components/child/PairWithParentCard.tsx",
           "operation": "modify",
-          "description": "Wire service worker registration into the React app bootstrap flow (after initial render) using the new registerServiceWorker helper; ensure it does not rely on immutable paths and fails safely on unsupported browsers."
+          "description": "Extend the child pairing card UI to offer two selectable pairing methods (existing 6-digit code and new phone-number + OTP flow). Add a two-step phone pairing UX: (1) enter parent phone number in digits-only normalized form and submit to initiate verification, (2) enter 6-digit OTP and submit to complete verification. Keep the existing 6-digit code path intact and ensure paired state updates via existing getMyParent query behavior. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/index.html",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Link the PWA manifest and add any required meta tags (e.g., theme-color) so the app is installable and provides correct PWA metadata."
+          "description": "Add React Query mutations for phone pairing: a hook to initiate phone pairing (calling pairWithParentViaPhone) and a hook to complete OTP verification (calling completePhonePairing). On success, invalidate/refetch myParent (and relevant relationship queries) so the child UI transitions to paired state without manual refresh. Map PairWithParentResult codes related to phone verification into handled UI-consumable outcomes. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useLiveLocationSharing.ts",
+          "path": "frontend/src/utils/phoneNumber.ts",
+          "operation": "create",
+          "description": "Create utilities for phone-number normalization and formatting: strip non-digits, enforce exact 11-digit length for the (00)000000000 mask, and provide a formatter for display. Use these helpers in the child phone pairing UI and parent profile phone field to ensure consistent validation. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/child/ChildHome.tsx",
           "operation": "modify",
-          "description": "Integrate queueing/retry signals for PWA/background support: when live sharing is enabled, enqueue failed submissions for later retry and (when supported) request a background sync trigger so queued updates can be retried with the UI closed."
+          "description": "Ensure the updated pairing UI remains properly wired into the child home experience (PairWithParentCard shown when not paired). If the phone flow introduces additional local state, confirm it resets appropriately when myParent becomes available. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Update user-facing copy (EN and pt-BR) and transparency/policy text to accurately reflect best-effort background behavior and platform limitations.",
+      "summary": "Allow parents/guardians to provide and update a phone number in their profile for phone-based pairing, with validation and without disrupting existing users.",
       "acceptanceCriteria": [
-        "English translations are updated for Live Location Sharing helper text so it no longer claims sharing only works while the app is open (e.g., update liveLocationActiveInfo, liveLocationForegroundNote, and parent-side live sharing description).",
-        "Portuguese (pt-BR) translations are updated to match the new meaning.",
-        "The Transparency & Policies content is updated so it does not incorrectly state the app 'Does NOT collect data in the background' when background live sharing is enabled by the child."
+        "Frontend: Parents see a phone number field during profile setup or in an obvious profile/account area, with validation matching the required phone format; children do not need to provide a phone number for this feature to work.",
+        "Existing users without a phone number can continue using the app and the existing 6-digit pairing-code flow unchanged."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "operation": "modify",
+          "description": "Add an optional phone number field for parent/guardian role during initial profile setup. Validate against the required (00)000000000 mask length via shared normalization (digits-only, exactly 11 digits). Do not require phone for children. Save phoneNumber into the UserProfile only when provided. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
+          "operation": "create",
+          "description": "Create a parent-facing account/profile card that displays the current phone number (if any) and allows adding/updating it. Use existing shadcn/ui composed components (Card, Input, Label, Button, Alert) without modifying frontend/src/components/ui. Leverage i18n strings and shared phone normalization utilities. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/parent/ParentDashboard.tsx",
+          "operation": "modify",
+          "description": "Wire ParentPhoneNumberCard into the parent dashboard in an obvious location (near pairing setup), so parents can add/update their phone number after onboarding. Ensure existing flows (pairing code generation, child selection) remain unchanged. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add/adjust i18n strings (en + pt-BR) for phone-based pairing, OTP verification, and updated pairing validation/error states.",
+      "acceptanceCriteria": [
+        "All new user-visible labels, button text, help text, and error messages for phone-based pairing and OTP verification are sourced from i18n keys (en.ts and pt-BR.ts).",
+        "No hard-coded Portuguese user-facing strings are introduced in React components."
       ],
       "file_operations": [
         {
           "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Update Live Location Sharing strings to reflect best-effort background operation (backgrounded tabs) and clearly state limitations when the app is fully closed or the browser restricts background execution; update liveLocationActiveInfo, liveLocationForegroundNote, and liveLocationParentActiveDescription accordingly, and adjust transparencyNotDoL2 so it no longer incorrectly claims no background collection when live sharing is enabled."
+          "description": "Add English i18n keys for: phone pairing option labels, phone input label/placeholder/help, OTP step label/placeholder/help, submit/resend/cancel actions if present, and explicit error messages corresponding to phone pairing/OTP result codes (e.g., parentNotFound, phoneVerificationExpired, phoneVerificationFailed, too many attempts if exposed, alreadyPaired, phoneNumberAlreadyLinked). Also add parent phone profile field labels and validation messages. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/i18n/translations/pt-BR.ts",
           "operation": "modify",
-          "description": "Update pt-BR Live Location Sharing strings to match the updated English meaning (best-effort background behavior + clear closed-app limitations), and adjust the Transparency & Policies copy so it no longer incorrectly states that the app does not collect data in the background when the child has enabled live sharing."
+          "description": "Add Portuguese (Brazil) equivalents for the new phone pairing + OTP + parent phone profile keys introduced in en.ts, ensuring all user-visible strings used by the new/updated UI are translated and referenced via i18n. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/TransparencyPolicies.tsx",
+          "path": "frontend/src/components/child/PairWithParentCard.tsx",
           "operation": "modify",
-          "description": "Ensure the Transparency & Policies UI presents the updated translation content without implying unconditional background tracking; if needed, adjust section ordering/emphasis to keep consent and limitations clear while still matching existing translation keys."
+          "description": "Replace/extend any new user-visible strings added for the phone pairing + OTP flow with i18n keys (no hard-coded Portuguese). Ensure validation and error rendering uses i18n messages. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/child/ChildCheckIn.tsx",
+          "path": "frontend/src/components/parent/ParentPhoneNumberCard.tsx",
           "operation": "modify",
-          "description": "Update helper/notice copy usage in the Live Location Sharing panel so it aligns with new translations and emphasizes explicit opt-in, best-effort behavior, and platform limitations (no misleading always-on promise)."
+          "description": "Ensure the parent phone profile UI uses i18n keys for all labels, help text, and validation/errors (no hard-coded Portuguese). Verify the component's usage instructions before implementing."
         }
       ]
     }

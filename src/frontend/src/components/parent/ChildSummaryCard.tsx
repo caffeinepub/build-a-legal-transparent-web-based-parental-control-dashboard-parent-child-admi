@@ -1,7 +1,7 @@
 import { useGetActivities, useGetLocations } from '../../hooks/useQueries';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, AlertCircle } from 'lucide-react';
+import { Clock, MapPin } from 'lucide-react';
 import type { Principal } from '@icp-sdk/core/principal';
 
 interface ChildSummaryCardProps {
@@ -11,8 +11,8 @@ interface ChildSummaryCardProps {
 }
 
 export default function ChildSummaryCard({ childId, isSelected, onSelect }: ChildSummaryCardProps) {
-  const { data: activities = [] } = useGetActivities(childId);
-  const { data: locations = [] } = useGetLocations(childId);
+  const { data: activities = [] } = useGetActivities(childId, { refetchInterval: 15000 });
+  const { data: locations = [] } = useGetLocations(childId, { refetchInterval: 15000 });
 
   const lastActivity = activities[activities.length - 1];
   const lastCheckIn = lastActivity ? new Date(Number(lastActivity.timestamp) / 1_000_000) : null;

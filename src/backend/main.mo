@@ -1,18 +1,21 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Text "mo:core/Text";
+import Nat "mo:core/Nat";
+import Nat8 "mo:core/Nat8";
 import Time "mo:core/Time";
 import Array "mo:core/Array";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Random "mo:core/Random";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import InviteLinksModule "invite-links/invite-links-module";
 
-
-
+// Apply migration on upgrade
+(with migration = Migration.run)
 actor {
   // Authorization
   let accessControlState = AccessControl.initState();
@@ -28,6 +31,7 @@ actor {
   public type UserProfile = {
     name : Text;
     role : AppRole;
+    phoneNumber : ?Text;
   };
 
   public type AppRole = {
@@ -85,6 +89,8 @@ actor {
     #scheduleChanged;
     #filterChanged;
     #accountDisabled;
+    #phonePairingInitiated;
+    #phonePairingCompleted;
   };
 
   public type AuditLogDetails = {
@@ -92,6 +98,8 @@ actor {
     #scheduleChanged : ScheduleChangeDetails;
     #filterChanged : FilterChangeDetails;
     #accountDisabled : AccountDisabledDetails;
+    #phonePairingInitiated : PhonePairingInitiatedDetails;
+    #phonePairingCompleted : PhonePairingCompletedDetails;
   };
 
   public type PairingDetails = {
@@ -114,6 +122,50 @@ actor {
     reason : Text;
   };
 
+  public type PhonePairingInitiatedDetails = {
+    parentId : Principal;
+    phoneNumber : Text;
+  };
+
+  public type PhonePairingCompletedDetails = {
+    parentId : Principal;
+    childId : Principal;
+  };
+
+  public type PairingCodeData = {
+    parentId : Principal;
+    created : Time.Time;
+    expires : Time.Time;
+    isUsed : Bool;
+  };
+
+  public type PhoneVerificationData = {
+    parentId : Principal;
+    verificationCode : Text;
+    created : Time.Time;
+    expires : Time.Time;
+    isVerified : Bool;
+  };
+
+  // Pairing Code Result Type
+  public type PairWithParentResult = {
+    #success;
+    #parentNotFound;
+    #parentIdNotProvided;
+    #sameFamily;
+    #notAChild;
+    #alreadyPaired;
+    #alreadyUsed;
+    #parentNotParent;
+    #invalidCode;
+    #codeExpired;
+    #phoneVerificationInitiated;
+    #phoneVerificationFailed;
+    #phoneVerificationSuccess;
+    #phoneVerificationExpired;
+    #phoneNumberAlreadyLinked;
+  };
+
   // State
   let userProfiles = Map.empty<Principal, UserProfile>();
   let parentChildLinks = Map.empty<Principal, List.List<Principal>>(); // parent -> list of children
@@ -125,6 +177,8 @@ actor {
   let auditLogs = Map.empty<Principal, List.List<AuditLogEntry>>();
   let disabledAccounts = Map.empty<Principal, Bool>();
   let liveLocationSharing = Map.empty<Principal, Bool>();
+  let pairingCodes = Map.empty<Text, PairingCodeData>();
+  let phoneVerifications = Map.empty<Text, PhoneVerificationData>(); // phoneNumber -> verificationData
 
   // Admin Password Management
   public shared ({ caller }) func setAdminPassword(newPassword : Text) : async () {
@@ -639,7 +693,311 @@ actor {
     childParentLinks.get(caller);
   };
 
+  // ==== Pairing Code Generation and Redemption ====
+  public shared ({ caller }) func generatePairingCode() : async ?Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can generate pairing codes");
+    };
+
+    // Only parents can create pairing codes
+    switch (userProfiles.get(caller)) {
+      case (?parent) {
+        if (parent.role == #parent) {
+          let code = await generateSixDigitCode();
+          let newCodeData : PairingCodeData = {
+            parentId = caller;
+            created = Time.now();
+            expires = Time.now() + 60_000_000_000; // Expire after 60 seconds
+            isUsed = false;
+          };
+          pairingCodes.add(code, newCodeData);
+          return ?code;
+        };
+      };
+      case (null) {};
+    };
+    null;
+  };
+
+  func validatePairingCode(code : Text) : ?PairingCodeData {
+    // Validate that code is exactly 6 digits
+    if (code.size() != 6) {
+      return null;
+    };
+
+    // Validate that all characters are digits
+    for (char in code.chars()) {
+      if (char < '0' or char > '9') {
+        return null;
+      };
+    };
+
+    switch (pairingCodes.get(code)) {
+      case (null) { null };
+      case (?codeData) {
+        // Check if code is already used or expired
+        if (codeData.isUsed or Time.now() > codeData.expires) {
+          return null;
+        };
+        ?codeData;
+      };
+    };
+  };
+
+  public shared ({ caller }) func pairWithParent(code : Text) : async PairWithParentResult {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can pair with a parent");
+    };
+
+    // Validate code format before proceeding
+    if (code.size() != 6) {
+      return #invalidCode;
+    };
+
+    for (char in code.chars()) {
+      if (char < '0' or char > '9') {
+        return #invalidCode;
+      };
+    };
+
+    // Make sure only children can pair with a parent
+    switch (userProfiles.get(caller)) {
+      case (?profile) {
+        if (profile.role != #child) {
+          return #notAChild;
+        };
+      };
+      case (null) { return #notAChild };
+    };
+
+    // Check if child is already paired
+    switch (childParentLinks.get(caller)) {
+      case (?_) { return #alreadyPaired };
+      case (null) {};
+    };
+
+    func createPairing(codeData : PairingCodeData) : PairWithParentResult {
+      // Cannot pair with oneself
+      if (codeData.parentId == caller) {
+        return #sameFamily;
+      };
+
+      // Create the pairing
+      childParentLinks.add(caller, codeData.parentId);
+
+      let children = switch (parentChildLinks.get(codeData.parentId)) {
+        case (?existingChildren) { existingChildren };
+        case (null) { List.empty<Principal>() };
+      };
+      children.add(caller);
+      parentChildLinks.add(codeData.parentId, children);
+
+      // Mark code as used
+      let updatedCodeData = { codeData with isUsed = true };
+      pairingCodes.add(code, updatedCodeData);
+
+      // Add audit log entry
+      let auditEntry : AuditLogEntry = {
+        action = #pairingCreated;
+        executor = caller;
+        timestamp = Time.now();
+        details = #pairingCreated({
+          parent = codeData.parentId;
+          child = caller;
+        });
+      };
+      addAuditLogEntry(caller, auditEntry);
+      addAuditLogEntry(codeData.parentId, auditEntry);
+
+      #success;
+    };
+
+    switch (validatePairingCode(code)) {
+      case (?codeData) {
+        switch (userProfiles.get(codeData.parentId)) {
+          case (?parentProfile) {
+            if (parentProfile.role != #parent) {
+              return #parentNotParent;
+            };
+          };
+          case (null) { return #parentNotFound };
+        };
+        createPairing(codeData);
+      };
+      case (null) { #invalidCode };
+    };
+  };
+
+  // ==== Phone-based Pairing Initiate ====
+  public shared ({ caller }) func pairWithParentViaPhone(phoneNumber : Text) : async PairWithParentResult {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can pair with a parent");
+    };
+
+    // Validate phone number format (must be (00)000000000)
+    if (not isValidPhoneNumber(phoneNumber)) {
+      return #invalidCode;
+    };
+
+    // Make sure only children can pair with a parent
+    switch (userProfiles.get(caller)) {
+      case (?profile) {
+        if (profile.role != #child) {
+          return #notAChild;
+        };
+      };
+      case (null) { return #notAChild };
+    };
+
+    // Check if child is already paired
+    switch (childParentLinks.get(caller)) {
+      case (?_) { return #alreadyPaired };
+      case (null) {};
+    };
+
+    // Find parent by phone number
+    let parent = findParentByPhoneNumber(phoneNumber);
+
+    switch (parent) {
+      case (?parentId) {
+        // Cannot pair with oneself
+        if (parentId == caller) {
+          return #sameFamily;
+        };
+
+        // Initiate phone verification
+        let verificationCode = await generateSixDigitCode();
+        phoneVerifications.add(
+          phoneNumber,
+          {
+            parentId;
+            verificationCode;
+            created = Time.now();
+            expires = Time.now() + 300_000_000_000; // 5 minutes
+            isVerified = false;
+          },
+        );
+
+        // Add audit log entry
+        let auditEntry : AuditLogEntry = {
+          action = #phonePairingInitiated;
+          executor = parentId;
+          timestamp = Time.now();
+          details = #phonePairingInitiated({
+            parentId;
+            phoneNumber;
+          });
+        };
+        addAuditLogEntry(caller, auditEntry);
+        addAuditLogEntry(parentId, auditEntry);
+
+        #phoneVerificationInitiated;
+      };
+      case (null) { #parentNotFound };
+    };
+  };
+
+  // ==== Phone-based Pairing Complete ====
+  public shared ({ caller }) func completePhonePairing(phoneNumber : Text, verificationCode : Text) : async PairWithParentResult {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can complete phone pairing");
+    };
+
+    // Validate phone number format
+    if (not isValidPhoneNumber(phoneNumber)) {
+      return #invalidCode;
+    };
+
+    // Validate verification code format (6 digits)
+    if (verificationCode.size() != 6) {
+      return #invalidCode;
+    };
+
+    switch (phoneVerifications.get(phoneNumber)) {
+      case (?verificationData) {
+        // Check verification code match
+        if (verificationData.verificationCode == verificationCode) {
+          // Check if code is still valid
+          if (Time.now() > verificationData.expires) {
+            return #phoneVerificationExpired;
+          };
+
+          // Mark verification as used
+          let updatedVerificationData = { verificationData with isVerified = true };
+          phoneVerifications.add(phoneNumber, updatedVerificationData);
+
+          // Complete pairing
+          switch (userProfiles.get(caller)) {
+            case (?profile) {
+              if (profile.role != #child) {
+                return #notAChild;
+              };
+            };
+            case (null) { return #notAChild };
+          };
+
+          switch (childParentLinks.get(caller)) {
+            case (?_) { return #alreadyPaired };
+            case (null) {};
+          };
+
+          childParentLinks.add(caller, verificationData.parentId);
+
+          let children = switch (parentChildLinks.get(verificationData.parentId)) {
+            case (?existingChildren) { existingChildren };
+            case (null) { List.empty<Principal>() };
+          };
+          children.add(caller);
+          parentChildLinks.add(verificationData.parentId, children);
+
+          // Add audit log entry
+          let auditEntry : AuditLogEntry = {
+            action = #phonePairingCompleted;
+            executor = caller;
+            timestamp = Time.now();
+            details = #phonePairingCompleted({
+              parentId = verificationData.parentId;
+              childId = caller;
+            });
+          };
+          addAuditLogEntry(caller, auditEntry);
+          addAuditLogEntry(verificationData.parentId, auditEntry);
+
+          #phoneVerificationSuccess;
+        } else {
+          #invalidCode;
+        };
+      };
+      case (null) { #phoneVerificationFailed };
+    };
+  };
+
   // Helper functions
+  func isValidPhoneNumber(phoneNumber : Text) : Bool {
+    phoneNumber.size() == 13;
+  };
+
+  func findParentByPhoneNumber(phoneNumber : Text) : ?Principal {
+    var foundParent : ?Principal = null;
+    for ((principal, profile) in userProfiles.entries()) {
+      switch (profile.role) {
+        case (#parent) {
+          switch (profile.phoneNumber) {
+            case (?number) {
+              if (number == phoneNumber) {
+                foundParent := ?principal;
+              };
+            };
+            case (null) {};
+          };
+        };
+        case (#child) {};
+        case (#admin) {};
+      };
+    };
+    foundParent;
+  };
+
   func addAuditLogEntry(account : Principal, entry : AuditLogEntry) {
     let existingList = switch (auditLogs.get(account)) {
       case (?list) { list };
@@ -661,5 +1019,40 @@ actor {
       case (?disabled) { disabled };
       case (null) { false };
     };
+  };
+
+  func generateSixDigitCode() : async Text {
+    let randomBlob = await Random.blob();
+    let bytes = randomBlob.toArray();
+
+    // Generate a number between 0 and 999999 using first 4 bytes
+    var num : Nat = 0;
+    let len = bytes.size();
+    if (len > 0) {
+      num := bytes[0].toNat();
+    };
+    if (len > 1) {
+      num := num * 256 + bytes[1].toNat();
+    };
+    if (len > 2) {
+      num := num * 256 + bytes[2].toNat();
+    };
+    if (len > 3) {
+      num := num * 256 + bytes[3].toNat();
+    };
+
+    // Modulo to get 6-digit range (0-999999)
+    let code = num % 1_000_000;
+
+    // Pad with leading zeros to ensure exactly 6 digits
+    let codeText = code.toText();
+    let padding = 6 - codeText.size();
+    var result = "";
+    var i = 0;
+    while (i < padding) {
+      result := result # "0";
+      i += 1;
+    };
+    result # codeText;
   };
 };

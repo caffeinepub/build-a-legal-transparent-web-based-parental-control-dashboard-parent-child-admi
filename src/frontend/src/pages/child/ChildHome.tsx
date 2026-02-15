@@ -2,19 +2,22 @@ import { useGetCallerUserProfile, useGetMyParent } from '../../hooks/useQueries'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info, AlertTriangle } from 'lucide-react';
+import { Info } from 'lucide-react';
 import ChildCheckIn from '../../components/child/ChildCheckIn';
 import ActivityHistoryList from '../../components/child/ActivityHistoryList';
 import LocationHistoryList from '../../components/child/LocationHistoryList';
 import ScheduleReadOnly from '../../components/schedule/ScheduleReadOnly';
 import ContentFilterReadOnly from '../../components/filters/ContentFilterReadOnly';
 import AlertsPanelChild from '../../components/alerts/AlertsPanelChild';
+import PairWithParentCard from '../../components/child/PairWithParentCard';
 import { useI18n } from '../../hooks/useI18n';
 
 export default function ChildHome() {
   const { t } = useI18n();
   const { data: profile } = useGetCallerUserProfile();
-  const { data: parentId } = useGetMyParent();
+  const { data: parentId, isLoading: parentLoading, isFetched: parentFetched } = useGetMyParent();
+
+  const showPairingCard = !parentId && !parentLoading && parentFetched;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -37,14 +40,7 @@ export default function ChildHome() {
         </div>
       </Alert>
 
-      {!parentId && (
-        <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="text-amber-900 dark:text-amber-100 text-sm">
-            {t('childHomeNoPairingAlert')}
-          </AlertDescription>
-        </Alert>
-      )}
+      {showPairingCard && <PairWithParentCard />}
 
       <Tabs defaultValue="checkin">
         <TabsList className="grid w-full grid-cols-5">

@@ -8,19 +8,36 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield } from 'lucide-react';
 import { AppRole } from '../../backend';
+import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber } from '../../utils/phoneNumber';
 
 export default function ProfileSetupDialog() {
   const [name, setName] = useState('');
   const [role, setRole] = useState<'parent' | 'child'>('parent');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const saveProfile = useSaveCallerUserProfile();
   const { t } = useI18n();
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = parsePhoneNumberInput(e.target.value);
+    setPhoneNumber(parsed);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     const appRole: AppRole = role === 'parent' ? AppRole.parent : AppRole.child;
-    saveProfile.mutate({ name: name.trim(), role: appRole });
+    
+    // Only include phone number for parents if provided and valid
+    const phoneNumberValue = role === 'parent' && phoneNumber && isValidPhoneNumber(phoneNumber)
+      ? `(${phoneNumber.slice(0, 2)})${phoneNumber.slice(2)}`
+      : undefined;
+
+    saveProfile.mutate({ 
+      name: name.trim(), 
+      role: appRole,
+      phoneNumber: phoneNumberValue,
+    });
   };
 
   return (
@@ -71,6 +88,24 @@ export default function ProfileSetupDialog() {
                 </div>
               </RadioGroup>
             </div>
+
+            {role === 'parent' && (
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">{t('profileSetupPhoneLabel')}</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  inputMode="numeric"
+                  value={formatPhoneNumber(phoneNumber)}
+                  onChange={handlePhoneChange}
+                  placeholder={t('profileSetupPhonePlaceholder')}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('profileSetupPhoneHelp')}
+                </p>
+              </div>
+            )}
 
             <Button
               type="submit"

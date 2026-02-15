@@ -14,7 +14,9 @@ export interface AccountDisabledDetails {
   'account' : Principal,
   'reason' : string,
 }
-export type ActionType = { 'pairingCreated' : null } |
+export type ActionType = { 'phonePairingInitiated' : null } |
+  { 'phonePairingCompleted' : null } |
+  { 'pairingCreated' : null } |
   { 'filterChanged' : null } |
   { 'accountDisabled' : null } |
   { 'scheduleChanged' : null };
@@ -28,7 +30,11 @@ export interface ActivityEntry {
 export type AppRole = { 'admin' : null } |
   { 'child' : null } |
   { 'parent' : null };
-export type AuditLogDetails = { 'pairingCreated' : PairingDetails } |
+export type AuditLogDetails = {
+    'phonePairingInitiated' : PhonePairingInitiatedDetails
+  } |
+  { 'phonePairingCompleted' : PhonePairingCompletedDetails } |
+  { 'pairingCreated' : PairingDetails } |
   { 'filterChanged' : FilterChangeDetails } |
   { 'accountDisabled' : AccountDisabledDetails } |
   { 'scheduleChanged' : ScheduleChangeDetails };
@@ -64,7 +70,30 @@ export interface LocationEntry {
   'longitude' : number,
   'timestamp' : Time,
 }
+export type PairWithParentResult = { 'alreadyUsed' : null } |
+  { 'parentIdNotProvided' : null } |
+  { 'phoneVerificationExpired' : null } |
+  { 'notAChild' : null } |
+  { 'codeExpired' : null } |
+  { 'sameFamily' : null } |
+  { 'phoneVerificationInitiated' : null } |
+  { 'parentNotFound' : null } |
+  { 'alreadyPaired' : null } |
+  { 'parentNotParent' : null } |
+  { 'invalidCode' : null } |
+  { 'phoneVerificationSuccess' : null } |
+  { 'success' : null } |
+  { 'phoneVerificationFailed' : null } |
+  { 'phoneNumberAlreadyLinked' : null };
 export interface PairingDetails { 'child' : Principal, 'parent' : Principal }
+export interface PhonePairingCompletedDetails {
+  'childId' : Principal,
+  'parentId' : Principal,
+}
+export interface PhonePairingInitiatedDetails {
+  'phoneNumber' : string,
+  'parentId' : Principal,
+}
 export interface RSVP {
   'name' : string,
   'inviteCode' : string,
@@ -80,7 +109,11 @@ export interface ScheduleConfig {
   'dailyLimitMinutes' : bigint,
 }
 export type Time = bigint;
-export interface UserProfile { 'name' : string, 'role' : AppRole }
+export interface UserProfile {
+  'name' : string,
+  'role' : AppRole,
+  'phoneNumber' : [] | [string],
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -89,9 +122,11 @@ export interface _SERVICE {
   'addActivity' : ActorMethod<[ActivityEntry], undefined>,
   'addLocation' : ActorMethod<[LocationEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'completePhonePairing' : ActorMethod<[string, string], PairWithParentResult>,
   'disableAccount' : ActorMethod<[Principal, string], undefined>,
   'enableAccount' : ActorMethod<[Principal], undefined>,
   'generateInviteCode' : ActorMethod<[], string>,
+  'generatePairingCode' : ActorMethod<[], [] | [string]>,
   'getActivities' : ActorMethod<[Principal], Array<ActivityEntry>>,
   'getAggregatedMetrics' : ActorMethod<
     [],
@@ -118,6 +153,8 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isAccountDisabled' : ActorMethod<[Principal], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'pairWithParent' : ActorMethod<[string], PairWithParentResult>,
+  'pairWithParentViaPhone' : ActorMethod<[string], PairWithParentResult>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'setAdminPassword' : ActorMethod<[string], undefined>,
   'setLiveLocationSharing' : ActorMethod<[boolean], undefined>,
