@@ -1,148 +1,70 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T17:14:22.291Z",
+  "generatedAt": "2026-02-17T18:07:44.645Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 7,
-    "implemented": 6,
+    "total": 5,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Make the user identity area in the app header (the row showing \"{user name} • {role}\") clickable and open a dropdown menu (suspended list) matching the UI shown in the provided screenshot.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/layout/AppHeader.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/account/UserAvatar.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/layout/AppHeader.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/account/UserAvatar.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Populate the header dropdown menu with at least these items (English labels): \"Change profile photo\", \"Change password\", and \"Delete account\"; also add additional useful account actions that fit the app (for example: \"Edit profile\", \"Manage phone number\", \"View transparency & policies\", \"Logout\").",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Implement \"Change profile photo\": allow the user to pick an image file, preview it, and save it as the user’s profile photo so it displays in the header next to the app logo/user info (fallback to initials if no photo).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/account/UserAvatar.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/layout/AppHeader.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/account/UserAvatar.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/layout/AppHeader.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement \"Change password\" in a way that matches Internet Identity authentication: the menu action should guide the user to change their Internet Identity settings (open the Internet Identity management page in a new tab) and explain that passwords are managed by Internet Identity.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/account/ChangePasswordDialog.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/account/ChangePasswordDialog.tsx",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Implement \"Delete account\" end-to-end: add a backend method to delete the caller’s account and associated data, and add a frontend confirmation dialog that requires explicit confirmation before deletion.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/account/DeleteAccountDialog.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/account/DeleteAccountDialog.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/account/DeleteAccountDialog.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/account/AccountDropdown.tsx",
-          "frontend/src/components/account/DeleteAccountDialog.tsx",
-          "frontend/src/i18n/translations/en.ts",
-          "frontend/src/i18n/translations/pt-BR.ts"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Update the Motoko data model and frontend types to support storing an optional profile photo for the user (e.g., an optional field on UserProfile), and perform any required state migration safely according to the project’s migration policy.",
+        "summary": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-7",
-        "summary": "Add/extend React Query hooks needed for the new account actions (save profile photo, delete account) and ensure queries that depend on the current profile are invalidated appropriately after each action.",
+        "id": "REQ-2",
+        "summary": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/layout/AppHeader.tsx"
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/layout/AppHeader.tsx"
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/blob-storage/Mixin.mo",
-    "backend/blob-storage/Storage.mo",
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/account/AccountDropdown.tsx",
-    "frontend/src/components/account/ChangePasswordDialog.tsx",
-    "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
-    "frontend/src/components/account/DeleteAccountDialog.tsx",
-    "frontend/src/components/account/UserAvatar.tsx",
-    "frontend/src/components/layout/AppHeader.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/components/admin/AdminPasswordGate.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/i18n/index.ts",
-    "frontend/src/i18n/translations/en.ts",
-    "frontend/src/i18n/translations/pt-BR.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

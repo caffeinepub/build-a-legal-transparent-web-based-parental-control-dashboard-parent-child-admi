@@ -2,113 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-make-the-user-identity-area-in-the-app-header-the-row-showing-user-name-role-clickable-and-open-a-dropdown-menu-suspended-list-matching-the-ui-shown-in-the-provided-screenshot",
-      "featureTitle": "Make the user identity area in the app header (the row showing \"{user name} • {role}\") clickable and open a dropdown menu (suspended list) matching the UI shown in the provided screenshot.",
+      "featureId": "feature-update-the-frontend-admin-password-submission-s-to-treat-liderdoprojetox1-as-the-correct-password-and-ensure-successful-verification-grants-access-i-e-passing-the-admin-gate-opening-the-leader-experience-when-the-backend-confirms-the-password-is-valid",
+      "featureTitle": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
       "files": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/components/account/UserAvatar.tsx",
-        "frontend/src/components/layout/AppHeader.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-populate-the-header-dropdown-menu-with-at-least-these-items-english-labels-change-profile-photo-change-password-and-delete-account-also-add-additional-useful-account-actions-that-fit-the-app-for-example-edit-profile-manage-phone-number-view-transparency-policies-logout",
-      "featureTitle": "Populate the header dropdown menu with at least these items (English labels): \"Change profile photo\", \"Change password\", and \"Delete account\"; also add additional useful account actions that fit the app (for example: \"Edit profile\", \"Manage phone number\", \"View transparency & policies\", \"Logout\").",
-      "files": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-change-profile-photo-allow-the-user-to-pick-an-image-file-preview-it-and-save-it-as-the-user-s-profile-photo-so-it-displays-in-the-header-next-to-the-app-logo-user-info-fallback-to-initials-if-no-photo",
-      "featureTitle": "Implement \"Change profile photo\": allow the user to pick an image file, preview it, and save it as the user’s profile photo so it displays in the header next to the app logo/user info (fallback to initials if no photo).",
-      "files": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
-        "frontend/src/components/account/UserAvatar.tsx",
-        "frontend/src/components/layout/AppHeader.tsx",
+        "frontend/src/components/admin/AdminPasswordGate.tsx",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
         "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-change-password-in-a-way-that-matches-internet-identity-authentication-the-menu-action-should-guide-the-user-to-change-their-internet-identity-settings-open-the-internet-identity-management-page-in-a-new-tab-and-explain-that-passwords-are-managed-by-internet-identity",
-      "featureTitle": "Implement \"Change password\" in a way that matches Internet Identity authentication: the menu action should guide the user to change their Internet Identity settings (open the Internet Identity management page in a new tab) and explain that passwords are managed by Internet Identity.",
-      "files": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/components/account/ChangePasswordDialog.tsx",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-delete-account-end-to-end-add-a-backend-method-to-delete-the-caller-s-account-and-associated-data-and-add-a-frontend-confirmation-dialog-that-requires-explicit-confirmation-before-deletion",
-      "featureTitle": "Implement \"Delete account\" end-to-end: add a backend method to delete the caller’s account and associated data, and add a frontend confirmation dialog that requires explicit confirmation before deletion.",
-      "files": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/components/account/DeleteAccountDialog.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -123,29 +22,6 @@
       ],
       "testIds": [
         "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-extend-react-query-hooks-needed-for-the-new-account-actions-save-profile-photo-delete-account-and-ensure-queries-that-depend-on-the-current-profile-are-invalidated-appropriately-after-each-action",
-      "featureTitle": "Add/extend React Query hooks needed for the new account actions (save profile photo, delete account) and ensure queries that depend on the current profile are invalidated appropriately after each action.",
-      "files": [
-        "frontend/src/components/layout/AppHeader.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-7"
       ],
       "confidence": "high"
     }

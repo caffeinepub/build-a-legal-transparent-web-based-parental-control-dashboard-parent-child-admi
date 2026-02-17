@@ -1,140 +1,102 @@
 {
   "kind": "build_request",
-  "title": "Add account dropdown menu on profile header with profile photo, password, and delete account actions",
+  "title": "Fix leader/admin password validation so 'Liderdoprojetox1' grants access",
   "projectName": "Parental Control",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Make the user identity area in the app header (the row showing \"{user name} • {role}\") clickable and open a dropdown menu (suspended list) matching the UI shown in the provided screenshot.",
-      "target": "frontend",
+      "text": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "faça com que ao clicar no campo na imagem abra abra a lista sustensa com as seguintes opções: Mudar (foto de perfil), Mudar Senha, Excluir conta e mais opções que você achar útil de colocar, crie oque conseguir de melhor"
+          "A senha ainda está dando incorreta mesmo estando certa, certifiquese que ao inserir a senha Liderdoprojetox1 o app abre para o lider"
         ]
       },
       "acceptanceCriteria": [
-        "When the current user is logged in and a profile exists, clicking the \"name • role\" line in the header opens a dropdown menu anchored to that area.",
-        "The dropdown is keyboard accessible (Enter/Space to open, Esc to close) and closes when clicking outside.",
-        "When no userProfile exists (not logged in / not set up), the dropdown trigger is not shown."
+        "Calling backend.verifyAdminPassword(\"Liderdoprojetox1\") as an authenticated user returns true.",
+        "The previous incorrect behavior (returning false for \"Liderdoprojetox1\") no longer occurs."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Populate the header dropdown menu with at least these items (English labels): \"Change profile photo\", \"Change password\", and \"Delete account\"; also add additional useful account actions that fit the app (for example: \"Edit profile\", \"Manage phone number\", \"View transparency & policies\", \"Logout\").",
-      "target": "frontend",
+      "text": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "Mudar (foto de perfil), Mudar Senha, Excluir conta e mais opções que você achar útil de colocar"
+          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
         ]
       },
       "acceptanceCriteria": [
-        "Dropdown includes menu items labeled exactly (in English): \"Change profile photo\", \"Change password\", \"Delete account\".",
-        "At least 2 additional useful account actions are included, and none of them are admin-only unless the current user is an admin.",
-        "All menu labels are translated via the existing i18n system (new keys added to translation files)."
+        "In backend/main.mo, the adminPassword default value is exactly \"Liderdoprojetox1\" (no trailing punctuation).",
+        "A fresh deploy with empty state allows admin/leader access using \"Liderdoprojetox1\"."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Implement \"Change profile photo\": allow the user to pick an image file, preview it, and save it as the user’s profile photo so it displays in the header next to the app logo/user info (fallback to initials if no photo).",
-      "target": "both",
+      "text": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "Mudar (foto de perfil)"
+          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking \"Change profile photo\" opens a dialog with file picker and preview.",
-        "After saving, the header shows the new profile photo for the current user without requiring a full page refresh.",
-        "If the user clears/removes the photo, the header falls back to an initials/avatar placeholder.",
-        "The saved photo is persisted for the user (survives reload and new sessions)."
+        "Submitting the admin/leader password \"Liderdoprojetox1\" via the existing profile setup admin flow results in the caller principal being allowlisted and able to save role=#admin without an Unauthorized error."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Implement \"Change password\" in a way that matches Internet Identity authentication: the menu action should guide the user to change their Internet Identity settings (open the Internet Identity management page in a new tab) and explain that passwords are managed by Internet Identity.",
-      "target": "frontend",
+      "text": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "Mudar Senha"
+          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking \"Change password\" opens a dialog or confirm step that explains password changes are handled via Internet Identity.",
-        "The UI provides a button that opens the Internet Identity page in a new tab/window.",
-        "No attempt is made to store or change a separate app password in the canister for regular users."
+        "Upgrading a canister whose stored admin password equals \"Liderdoprojetox1;\" results in the stored admin password becoming exactly \"Liderdoprojetox1\" after upgrade.",
+        "Upgrading a canister whose stored admin password is already \"Liderdoprojetox1\" leaves it unchanged.",
+        "Allowlisted admin principals remain intact across the upgrade."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Implement \"Delete account\" end-to-end: add a backend method to delete the caller’s account and associated data, and add a frontend confirmation dialog that requires explicit confirmation before deletion.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ],
-        "quotes": [
-          "Excluir conta"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Clicking \"Delete account\" opens a destructive confirmation dialog (cannot be triggered accidentally).",
-        "On confirmation, the frontend calls a backend method that removes the caller’s profile and all associated stored records (including links, schedules, filters, activities, locations, audit logs, and disabled flags where applicable).",
-        "After successful deletion, the UI clears relevant cached queries and returns the user to a logged-out / onboarding state.",
-        "If deletion fails, the user sees a clear error message and no partial UI state is shown as successful."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Update the Motoko data model and frontend types to support storing an optional profile photo for the user (e.g., an optional field on UserProfile), and perform any required state migration safely according to the project’s migration policy.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-user-1"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend compiles with the updated UserProfile type including an optional profile photo field.",
-        "Existing users without a photo remain valid and can still load their profile.",
-        "If stable state requires upgrading, a migration is provided so existing state can be upgraded without data loss."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Add/extend React Query hooks needed for the new account actions (save profile photo, delete account) and ensure queries that depend on the current profile are invalidated appropriately after each action.",
+      "text": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-4"
+        ],
+        "quotes": [
+          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
         ]
       },
       "acceptanceCriteria": [
-        "A mutation exists for deleting the current account and invalidates/clears relevant queries (at minimum: currentUserProfile, myChildren, myParent, schedule/contentFilter/activities/locations where applicable).",
-        "A mutation exists for updating/saving the profile (including the photo) and the header updates immediately after success."
+        "In the AdminPasswordGate screen, entering \"Liderdoprojetox1\" and submitting results in the success state (gate passed) rather than the \"incorrect password\" error.",
+        "In the ProfileSetupDialog admin role flow, entering \"Liderdoprojetox1\" allows completion of the flow without showing an \"incorrect password\" error."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only shadcn components); compose them from feature components instead.",
-    "Keep all Motoko logic in the single actor in backend/main.mo; do not introduce additional canisters/services.",
-    "Do not implement third-party authentication or password storage; regular user authentication remains Internet Identity."
+    "Do not modify files under frontend/src/components/ui (compose them instead).",
+    "Do not modify any frontend paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing real-time menu updates via WebSockets or push notifications.",
-    "Adding external image hosting; profile photos must be stored within existing app storage constraints.",
-    "Building a full admin accounts management UI (unrelated to the dropdown request)."
+    "Adding new authentication providers or third-party auth (only Internet Identity remains).",
+    "Implementing any new admin dashboard features beyond fixing the password validation/access flow."
   ],
   "imageRequirements": {
     "required": [],

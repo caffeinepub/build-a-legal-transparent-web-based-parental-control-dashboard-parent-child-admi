@@ -23,8 +23,17 @@ export default function AdminPasswordGate() {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Trim whitespace from password before verification
+    const trimmedPassword = password.trim();
+    
+    if (!trimmedPassword) {
+      toast.error(t('adminPasswordGateIncorrect'));
+      return;
+    }
+    
     try {
-      const isValid = await verifyPassword.mutateAsync(password);
+      const isValid = await verifyPassword.mutateAsync(trimmedPassword);
       if (isValid) {
         passGate();
         toast.success(t('adminPasswordGateSuccess'));
@@ -38,16 +47,25 @@ export default function AdminPasswordGate() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) {
+    
+    // Trim whitespace from passwords
+    const trimmedOldPassword = oldPassword.trim();
+    const trimmedNewPassword = newPassword.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
+    
+    if (trimmedNewPassword !== trimmedConfirmPassword) {
       toast.error(t('adminPasswordGatePasswordMismatch'));
       return;
     }
-    if (newPassword.length < 8) {
+    if (trimmedNewPassword.length < 8) {
       toast.error(t('adminPasswordGatePasswordTooShort'));
       return;
     }
     try {
-      await changePassword.mutateAsync({ oldPassword, newPassword });
+      await changePassword.mutateAsync({ 
+        oldPassword: trimmedOldPassword, 
+        newPassword: trimmedNewPassword 
+      });
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -96,7 +114,7 @@ export default function AdminPasswordGate() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={verifyPassword.isPending || !password}
+                  disabled={verifyPassword.isPending || !password.trim()}
                 >
                   {verifyPassword.isPending ? t('adminPasswordGateVerifying') : t('adminPasswordGateVerifyButton')}
                 </Button>
@@ -146,7 +164,7 @@ export default function AdminPasswordGate() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={changePassword.isPending || !oldPassword || !newPassword || !confirmPassword}
+                    disabled={changePassword.isPending || !oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()}
                   >
                     {changePassword.isPending ? t('adminPasswordGateChanging') : t('adminPasswordGateChangeButton')}
                   </Button>

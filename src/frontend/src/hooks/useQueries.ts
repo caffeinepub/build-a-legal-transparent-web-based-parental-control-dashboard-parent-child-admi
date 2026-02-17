@@ -448,7 +448,9 @@ export function useVerifyAdminPassword() {
   return useMutation({
     mutationFn: async (password: string) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.verifyAdminPassword(password);
+      // Ensure password is trimmed before sending to backend
+      const trimmedPassword = password.trim();
+      return actor.verifyAdminPassword(trimmedPassword);
     },
   });
 }
@@ -459,13 +461,37 @@ export function useChangeAdminPassword() {
   return useMutation({
     mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
       if (!actor) throw new Error('Actor not available');
-      await actor.changeAdminPassword(oldPassword, newPassword);
+      // Ensure passwords are trimmed before sending to backend
+      const trimmedOldPassword = oldPassword.trim();
+      const trimmedNewPassword = newPassword.trim();
+      await actor.changeAdminPassword(trimmedOldPassword, trimmedNewPassword);
     },
     onSuccess: () => {
       toast.success('Admin password changed successfully');
     },
     onError: (error: Error) => {
       toast.error(`Failed to change password: ${error.message}`);
+    },
+  });
+}
+
+export function useAddAllowlistedAdminPrincipal() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ password, principal }: { password: string; principal: Principal }) => {
+      if (!actor) throw new Error('Actor not available');
+      // Ensure password is trimmed before sending to backend
+      const trimmedPassword = password.trim();
+      await actor.addAllowlistedAdminPrincipal(trimmedPassword, principal);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAllowlistedAdmin'] });
+    },
+    onError: (error: Error) => {
+      throw error;
     },
   });
 }

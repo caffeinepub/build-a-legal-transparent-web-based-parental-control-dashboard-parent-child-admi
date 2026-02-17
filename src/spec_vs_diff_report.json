@@ -1,77 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T17:14:22.286Z",
-  "summary": "Implements a header account dropdown, dialogs for change photo/password/delete account, adds i18n keys, adds optional `photo` field to `UserProfile`, and adds React Query mutations. However, several acceptance criteria and backend endpoints/data-deletion scope are not evidenced in the diff, and there are multiple unrelated changes/features added.",
+  "generatedAt": "2026-02-17T18:07:44.642Z",
+  "summary": "Backend default admin password was set to \"Liderdoprojetox1\" and a migration module was added to update stored \"Liderdoprojetox1;\" to \"Liderdoprojetox1\" on upgrade. Frontend admin-password entry flows were adjusted to trim whitespace before sending to backend and to proceed on backend success. However, the diff summary does not include evidence that backend password verification and admin allowlisting functions were updated to accept \"Liderdoprojetox1\".",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Include at least 2 additional useful account actions beyond the required three, with labels translated via i18n.",
-      "reason": "Dropdown includes the three required items plus only one additional action (\"View transparency & policies\"); other suggested/required additional actions like Edit profile / Manage phone number / Logout are not present as menu items.",
+      "id": "REQ-1",
+      "requirement": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
+      "reason": "The provided backend/main.mo diff snippet shows the adminPassword default value change, but does not show verifyAdminPassword implementation or any change to its comparison logic. With the diff truncated and no explicit mention of verifyAdminPassword changes, this requirement cannot be confirmed as implemented.",
       "evidence": [
-        "frontend/src/components/account/AccountDropdown.tsx",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts"
+        "backend/main.mo (truncated; does not show verifyAdminPassword)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Support clearing/removing the profile photo by saving a null/removed state so the header falls back to initials/avatar placeholder.",
-      "reason": "The remove flow appears to upload an empty blob (`ExternalBlob.fromBytes(new Uint8Array(0))`) rather than persisting `null`/absence; diff does not show backend logic interpreting this as removal, so persistence of 'no photo' state is not evidenced.",
+      "requirement": "Update backend allowlisting/admin-grant functions that compare password text so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal via the profile setup admin flow.",
+      "reason": "Frontend ProfileSetupDialog calls useAddAllowlistedAdminPrincipal with the provided password, but the diff summary does not show any backend changes to addAllowlistedAdminPrincipal/addAllowlistedAdmin/revoke functions or their password comparison logic. Therefore implementation cannot be verified from the provided evidence.",
       "evidence": [
-        "frontend/src/components/account/ChangeProfilePhotoDialog.tsx"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Backend method deletes the caller’s account and all associated stored records (links, schedules, filters, activities, locations, audit logs, disabled flags, etc.).",
-      "reason": "Frontend calls `actor.deleteCallerAccount()`, but the diff summary for `backend/main.mo` is truncated before any `deleteCallerAccount` implementation and does not evidence deletion of the full set of associated records.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Persist profile photo end-to-end (backend method to save photo) and have the header show it without refresh.",
-      "reason": "Frontend calls `actor.saveProfilePhoto(blob)` and invalidates `currentUserProfile`, but the diff summary for `backend/main.mo` is truncated and does not show any `saveProfilePhoto` method or storage/persistence logic for the uploaded photo.",
-      "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "backend/main.mo"
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "backend/main.mo (truncated; does not show allowlisting functions)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Introduces a \"New Strict Admin Password\" with a hardcoded value in the backend actor state.",
-      "reason": "BuildRequest explicitly focuses on account dropdown actions and forbids third-party auth/password storage; adding an app-level admin password is not requested and is unrelated to the dropdown requirements.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Adds/changes multiple unrelated frontend behaviors (automatic polling/real-time-ish updates across parent/child views, pairing code clipboard behavior, admin panel layout changes).",
-      "reason": "Non-goals include real-time menu updates, and the BuildRequest does not request broader dashboard polling or admin panel changes.",
+      "description": "Multiple unrelated frontend feature/behavior changes (admin panel layout changes, polling intervals, pairing code copy behavior, transparency modal translation changes, child check-in/location sharing messaging updates, etc.).",
+      "reason": "The BuildRequest scope is limited to fixing leader/admin password validation/access flow. The modified frontend-file-summaries.txt describes many additional changes not requested in any REQ and explicitly outside the non-goals ('no new admin dashboard features beyond fixing the password validation/access flow').",
       "evidence": [
         "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.63,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/account/AccountDropdown.tsx",
-    "frontend/src/components/account/ChangePasswordDialog.tsx",
-    "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
-    "frontend/src/components/account/DeleteAccountDialog.tsx",
-    "frontend/src/components/account/UserAvatar.tsx",
-    "frontend/src/components/layout/AppHeader.tsx",
+    "frontend/src/components/admin/AdminPasswordGate.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/i18n/index.ts",
-    "frontend/src/i18n/translations/en.ts",
-    "frontend/src/i18n/translations/pt-BR.ts",
     "project_state.json"
   ]
 }

@@ -2,55 +2,19 @@
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
   "summary": "New project",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "architectural_notes": [
+    "Role-based access/login: when role 'ADMINISTRADOR' (and/or leader) is selected, app should validate password and open the correct role view (leader access expected for password 'Liderdoprojetox1')."
+  ],
+  "known_issues": [
+    "Login/auth: password validation reports 'incorrect' even when the correct password is entered (expected: entering 'Liderdoprojetox1' should open the app for the leader)."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-make-the-user-identity-area-in-the-app-header-the-row-showing-user-name-role-clickable-and-open-a-dropdown-menu-suspended-list-matching-the-ui-shown-in-the-provided-screenshot",
-      "title": "Make the user identity area in the app header (the row showing \"{user name} • {role}\") clickable and open a dropdown menu (suspended list) matching the UI shown in the provided screenshot.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-populate-the-header-dropdown-menu-with-at-least-these-items-english-labels-change-profile-photo-change-password-and-delete-account-also-add-additional-useful-account-actions-that-fit-the-app-for-example-edit-profile-manage-phone-number-view-transparency-policies-logout",
-      "title": "Populate the header dropdown menu with at least these items (English labels): \"Change profile photo\", \"Change password\", and \"Delete account\"; also add additional useful account actions that fit the app (for example: \"Edit profile\", \"Manage phone number\", \"View transparency & policies\", \"Logout\").",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-change-profile-photo-allow-the-user-to-pick-an-image-file-preview-it-and-save-it-as-the-user-s-profile-photo-so-it-displays-in-the-header-next-to-the-app-logo-user-info-fallback-to-initials-if-no-photo",
-      "title": "Implement \"Change profile photo\": allow the user to pick an image file, preview it, and save it as the user’s profile photo so it displays in the header next to the app logo/user info (fallback to initials if no photo).",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-change-password-in-a-way-that-matches-internet-identity-authentication-the-menu-action-should-guide-the-user-to-change-their-internet-identity-settings-open-the-internet-identity-management-page-in-a-new-tab-and-explain-that-passwords-are-managed-by-internet-identity",
-      "title": "Implement \"Change password\" in a way that matches Internet Identity authentication: the menu action should guide the user to change their Internet Identity settings (open the Internet Identity management page in a new tab) and explain that passwords are managed by Internet Identity.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-delete-account-end-to-end-add-a-backend-method-to-delete-the-caller-s-account-and-associated-data-and-add-a-frontend-confirmation-dialog-that-requires-explicit-confirmation-before-deletion",
-      "title": "Implement \"Delete account\" end-to-end: add a backend method to delete the caller’s account and associated data, and add a frontend confirmation dialog that requires explicit confirmation before deletion.",
+      "id": "feature-update-the-frontend-admin-password-submission-s-to-treat-liderdoprojetox1-as-the-correct-password-and-ensure-successful-verification-grants-access-i-e-passing-the-admin-gate-opening-the-leader-experience-when-the-backend-confirms-the-password-is-valid",
+      "title": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
       "reqIds": [
         "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-extend-react-query-hooks-needed-for-the-new-account-actions-save-profile-photo-delete-account-and-ensure-queries-that-depend-on-the-current-profile-are-invalidated-appropriately-after-each-action",
-      "title": "Add/extend React Query hooks needed for the new account actions (save profile photo, delete account) and ensure queries that depend on the current profile are invalidated appropriately after each action.",
-      "reqIds": [
-        "REQ-7"
       ],
       "version": 1
     }
@@ -58,20 +22,37 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add a dropdown menu when clicking the profile/account field with options: Change profile photo, Change password, Delete account, and other useful account actions",
-      "reqIds": [],
+      "summary": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     },
     {
-      "id": "AR-7",
-      "summary": "Update the Motoko data model and frontend types to support storing an optional profile photo for the user (e.g., an optional field on UserProfile), and perform any required state migration safely according to the project’s migration policy.",
+      "id": "AR-2",
+      "summary": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
       "reqIds": [
-        "REQ-6"
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
+      "reqIds": [
+        "REQ-4"
       ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
   "projectName": "Parental Control",
   "clarification_mode": "instant",
   "clarification_rounds": 0
