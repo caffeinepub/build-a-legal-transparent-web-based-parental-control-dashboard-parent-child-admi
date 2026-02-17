@@ -29,6 +29,18 @@ export interface ActivityEntry {
   'notes' : string,
   'timestamp' : Time,
 }
+export interface AdminDashboardMetrics {
+  'totalUsersEverLoggedIn' : bigint,
+  'totalContentFiltersConfigured' : bigint,
+  'totalSchedulesConfigured' : bigint,
+  'activeSessionsEstimate' : bigint,
+  'totalAdmins' : bigint,
+  'totalPendingPairings' : bigint,
+  'totalDisabledAccounts' : bigint,
+  'totalParents' : bigint,
+  'totalChildren' : bigint,
+  'totalParentChildLinks' : bigint,
+}
 export type AppRole = { 'admin' : null } |
   { 'child' : null } |
   { 'parent' : null };
@@ -143,24 +155,17 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'acceptPendingPairing' : ActorMethod<[bigint], PairWithParentResult>,
   'addActivity' : ActorMethod<[ActivityEntry], undefined>,
+  'addAllowlistedAdmin' : ActorMethod<[string, Principal], undefined>,
+  'addAllowlistedAdminPrincipal' : ActorMethod<[string, Principal], undefined>,
   'addLocation' : ActorMethod<[LocationEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'disableAccount' : ActorMethod<[Principal, string], undefined>,
-  'enableAccount' : ActorMethod<[Principal], undefined>,
+  'changeAdminPassword' : ActorMethod<[string, string], undefined>,
   'generateInviteCode' : ActorMethod<[], string>,
   'generatePairingCode' : ActorMethod<[], [] | [string]>,
   'getActivities' : ActorMethod<[Principal], Array<ActivityEntry>>,
-  'getAggregatedMetrics' : ActorMethod<
-    [],
-    {
-      'totalParents' : bigint,
-      'totalChildren' : bigint,
-      'totalUsers' : bigint,
-      'totalPairings' : bigint,
-    }
-  >,
+  'getAdminDashboardMetrics' : ActorMethod<[], AdminDashboardMetrics>,
   'getAllRSVPs' : ActorMethod<[], Array<RSVP>>,
-  'getAllUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
+  'getAllowlistedAdminPrincipals' : ActorMethod<[], Array<Principal>>,
   'getAuditLog' : ActorMethod<[Principal], Array<AuditLogEntry>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -170,17 +175,21 @@ export interface _SERVICE {
   'getLocations' : ActorMethod<[Principal], Array<LocationEntry>>,
   'getMyChildren' : ActorMethod<[], Array<Principal>>,
   'getMyParent' : ActorMethod<[], [] | [Principal]>,
-  'getParentChildLinks' : ActorMethod<[], Array<[Principal, Array<Principal>]>>,
   'getPendingPairingRequests' : ActorMethod<[], Array<PendingPairingRequest>>,
   'getSchedule' : ActorMethod<[Principal], [] | [ScheduleConfig]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'isAccountDisabled' : ActorMethod<[Principal], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isCallerAllowlistedAdmin' : ActorMethod<[], boolean>,
+  'isPrincipalAllowlistedAdmin' : ActorMethod<[Principal], boolean>,
   'pairWithParent' : ActorMethod<[string], PairWithParentResult>,
-  'pairWithParentViaPhone' : ActorMethod<[string], PairWithParentResult>,
+  'recordHeartbeat' : ActorMethod<[], undefined>,
+  'removeAllowlistedAdminPrincipal' : ActorMethod<
+    [string, Principal],
+    undefined
+  >,
   'requestPairingWithParent' : ActorMethod<[Principal], PairWithParentResult>,
+  'revokeAllowlistedAdmin' : ActorMethod<[string, Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'setAdminPassword' : ActorMethod<[string], undefined>,
   'setLiveLocationSharing' : ActorMethod<[boolean], undefined>,
   'submitRSVP' : ActorMethod<[string, boolean, string], undefined>,
   'updateContentFilter' : ActorMethod<

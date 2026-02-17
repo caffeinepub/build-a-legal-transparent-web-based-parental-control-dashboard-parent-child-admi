@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link2, CheckCircle2, Loader2, Smartphone, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '../../hooks/useI18n';
-import { usePairWithParent, useGetMyParent, usePairWithParentViaPhone } from '../../hooks/useQueries';
+import { usePairWithParent, useGetMyParent, useRequestPairingWithParent } from '../../hooks/useQueries';
 import { PairWithParentResult } from '../../backend';
 import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber, formatPhoneNumberForBackend } from '../../utils/phoneNumber';
+import { Principal } from '@icp-sdk/core/principal';
 
 export default function PairWithParentCard() {
   const { t } = useI18n();
@@ -21,7 +22,7 @@ export default function PairWithParentCard() {
   const [localSuccess, setLocalSuccess] = useState(false);
   
   const pairMutation = usePairWithParent();
-  const pairViaPhoneMutation = usePairWithParentViaPhone();
+  const requestPairingMutation = useRequestPairingWithParent();
   const { data: parentId, isLoading: parentLoading, isFetched: parentFetched } = useGetMyParent({ 
     refetchInterval: phoneStep === 'pending' ? 3000 : undefined 
   });
@@ -131,37 +132,12 @@ export default function PairWithParentCard() {
     setValidationError('');
 
     try {
-      const formattedPhone = formatPhoneNumberForBackend(phoneNumber);
-      const result = await pairViaPhoneMutation.mutateAsync(formattedPhone);
-      
-      if (result === 'pendingLinkRequest') {
-        setPhoneStep('pending');
-        toast.success(t('pendingPairingRequestSent'));
-      } else {
-        const errorMessages: Record<PairWithParentResult, string> = {
-          success: '',
-          invalidCode: t('pairingPhoneErrorInvalid'),
-          parentNotFound: t('pairingPhoneErrorParentNotFound'),
-          alreadyPaired: t('pairingChildErrorAlreadyPaired'),
-          notAChild: t('pairingChildErrorNotChild'),
-          sameFamily: t('pairingChildErrorSameFamily'),
-          phoneVerificationInitiated: '',
-          phoneVerificationFailed: t('pairingPhoneErrorGeneric'),
-          phoneVerificationSuccess: '',
-          phoneVerificationExpired: t('pairingPhoneErrorGeneric'),
-          phoneNumberAlreadyLinked: t('pairingPhoneErrorAlreadyLinked'),
-          codeExpired: t('pairingPhoneErrorGeneric'),
-          alreadyUsed: t('pairingPhoneErrorGeneric'),
-          parentNotParent: t('pairingPhoneErrorGeneric'),
-          parentIdNotProvided: t('pairingPhoneErrorGeneric'),
-          pendingLinkRequest: '',
-          unexpectedError: t('pairingPhoneErrorGeneric'),
-        };
-        
-        toast.error(errorMessages[result] || t('pairingPhoneErrorGeneric'));
-      }
+      // Note: This is a placeholder - we need to find the parent by phone number first
+      // For now, we'll show an error that this feature requires additional backend support
+      toast.error('Phone-based pairing requires finding parent by phone number. Please use pairing code instead.');
+      setValidationError(t('pairingPhoneErrorGeneric'));
     } catch (error) {
-      // Error already handled by mutation
+      // Error already handled
     }
   };
 
@@ -206,7 +182,7 @@ export default function PairWithParentCard() {
         <Tabs defaultValue="code" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="code">{t('pairingMethodCode')}</TabsTrigger>
-            <TabsTrigger value="phone">{t('pairingMethodPhone')}</TabsTrigger>
+            <TabsTrigger value="phone" disabled>{t('pairingMethodPhone')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="code" className="space-y-4 mt-4">
@@ -254,82 +230,11 @@ export default function PairWithParentCard() {
           </TabsContent>
 
           <TabsContent value="phone" className="space-y-4 mt-4">
-            {phoneStep === 'phone' ? (
-              <>
-                <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-                  <AlertDescription className="text-blue-900 dark:text-blue-100 text-sm">
-                    {t('pairingPhoneHelp')}
-                  </AlertDescription>
-                </Alert>
-
-                <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">{t('pairingPhoneLabel')}</Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      inputMode="numeric"
-                      value={formatPhoneNumber(phoneNumber)}
-                      onChange={handlePhoneChange}
-                      placeholder={t('pairingPhonePlaceholder')}
-                      disabled={pairViaPhoneMutation.isPending}
-                      className="font-mono text-lg"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t('pairingPhoneFormat')}
-                    </p>
-                    {validationError && (
-                      <p className="text-sm text-destructive">{validationError}</p>
-                    )}
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={pairViaPhoneMutation.isPending || !isValidPhoneNumber(phoneNumber)}
-                  >
-                    {pairViaPhoneMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t('pairingPhoneSubmitting')}
-                      </>
-                    ) : (
-                      <>
-                        <Smartphone className="w-4 h-4 mr-2" />
-                        {t('pairingPhoneSubmitButton')}
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </>
-            ) : (
-              <>
-                <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
-                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <AlertDescription className="text-amber-900 dark:text-amber-100">
-                    <p className="font-semibold mb-1">{t('pendingPairingWaitingTitle')}</p>
-                    <p className="text-sm">{t('pendingPairingWaitingDescription')}</p>
-                  </AlertDescription>
-                </Alert>
-
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-amber-600 dark:text-amber-400" />
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setPhoneStep('phone');
-                    setPhoneNumber('');
-                    setValidationError('');
-                  }}
-                >
-                  {t('cancel')}
-                </Button>
-              </>
-            )}
+            <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+              <AlertDescription className="text-amber-900 dark:text-amber-100 text-sm">
+                Phone-based pairing is not yet available. Please use the pairing code method.
+              </AlertDescription>
+            </Alert>
           </TabsContent>
         </Tabs>
       </CardContent>

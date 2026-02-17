@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile, useIsCallerAdmin } from './hooks/useQueries';
 import { useAdminGate } from './hooks/useAdminGate';
+import { usePresenceHeartbeat } from './hooks/usePresenceHeartbeat';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
@@ -15,6 +16,7 @@ import AppFooter from './components/layout/AppFooter';
 import ParentDashboard from './pages/parent/ParentDashboard';
 import ChildHome from './pages/child/ChildHome';
 import AdminPanel from './pages/admin/AdminPanel';
+import AdminPasswordGate from './components/admin/AdminPasswordGate';
 import TransparencyPolicies from './pages/TransparencyPolicies';
 import { AppRole } from './backend';
 import { Loader2 } from 'lucide-react';
@@ -25,9 +27,12 @@ function AppContent() {
   const { identity, isInitializing, clear } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const { data: isAdmin, isLoading: adminLoading } = useIsCallerAdmin();
-  const { clearGate } = useAdminGate();
+  const { clearGate, isGatePassed } = useAdminGate();
   const { t } = useI18n();
   const [showPolicies, setShowPolicies] = useState(false);
+
+  // Start presence heartbeat for authenticated users
+  usePresenceHeartbeat();
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
@@ -132,7 +137,11 @@ function AppContent() {
       <AppHeader onShowPolicies={() => setShowPolicies(true)} />
       <main className="container mx-auto px-4 py-8">
         {isAdmin ? (
-          <AdminPanel />
+          isGatePassed ? (
+            <AdminPanel />
+          ) : (
+            <AdminPasswordGate />
+          )
         ) : userProfile?.role === AppRole.parent ? (
           <ParentDashboard />
         ) : userProfile?.role === AppRole.child ? (

@@ -1,5 +1,5 @@
-import Map "mo:core/Map";
 import List "mo:core/List";
+import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Nat "mo:core/Nat";
 import Time "mo:core/Time";
@@ -8,26 +8,42 @@ import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Random "mo:core/Random";
+import Set "mo:core/Set";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import InviteLinksModule "invite-links/invite-links-module";
-
 import Migration "migration";
 
-// Apply migration on upgrade
 (with migration = Migration.run)
 actor {
-  // Authorization
+  // State (persisted with migration)
+  let allowlistedAdminPrincipals = Set.empty<Principal>();
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Admin Password (not persisted)
-  var adminPassword : Text = "secure_password"; // Change this to your desired password
+  // New Strict Admin Password (cannot be changed except by allowlisted principal)
+  var adminPassword : Text = "Liderdoprojetox1";
   var currentPendingRequestCounter = 0;
 
-  // Invite Links System State
+  // Measurement heartbeat logic
+  let heartbeatTimestamps = Map.empty<Principal, Time.Time>();
+  let pendingPairings = Map.empty<Nat, PendingPairingRequest>();
+  let liveLocationSharing = Map.empty<Principal, Bool>();
+
+  // Invite Links System State (persists)
   let inviteLinksState = InviteLinksModule.initState();
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let parentChildLinks = Map.empty<Principal, List.List<Principal>>();
+  let childParentLinks = Map.empty<Principal, Principal>();
+  let schedules = Map.empty<Principal, ScheduleConfig>();
+  let contentFilters = Map.empty<Principal, ContentFilterConfig>();
+  let activities = Map.empty<Principal, List.List<ActivityEntry>>();
+  let locations = Map.empty<Principal, List.List<LocationEntry>>();
+  let auditLogs = Map.empty<Principal, List.List<AuditLogEntry>>();
+  let disabledAccounts = Map.empty<Principal, Bool>();
+  let pairingCodes = Map.empty<Text, PairingCodeData>();
+  let phoneVerifications = Map.empty<Text, PhoneVerificationData>();
 
   // Types
   public type UserProfile = {
@@ -193,44 +209,77 @@ actor {
     #unexpectedError;
   };
 
-  // State
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let parentChildLinks = Map.empty<Principal, List.List<Principal>>(); // parent -> list of children
-  let childParentLinks = Map.empty<Principal, Principal>(); // child -> parent
-  let schedules = Map.empty<Principal, ScheduleConfig>();
-  let contentFilters = Map.empty<Principal, ContentFilterConfig>();
-  let activities = Map.empty<Principal, List.List<ActivityEntry>>();
-  let locations = Map.empty<Principal, List.List<LocationEntry>>();
-  let auditLogs = Map.empty<Principal, List.List<AuditLogEntry>>();
-  let disabledAccounts = Map.empty<Principal, Bool>();
-  let liveLocationSharing = Map.empty<Principal, Bool>();
-  let pairingCodes = Map.empty<Text, PairingCodeData>();
-  let phoneVerifications = Map.empty<Text, PhoneVerificationData>(); // phoneNumber -> verificationData
-  let pendingPairings = Map.empty<Nat, PendingPairingRequest>(); // RequestId -> PendingPairingRequest
+  public type AdminDashboardMetrics = {
+    totalParents : Nat;
+    totalChildren : Nat;
+    totalAdmins : Nat;
+    totalParentChildLinks : Nat;
+    totalUsersEverLoggedIn : Nat;
+    activeSessionsEstimate : Nat;
+    totalPendingPairings : Nat;
+    totalDisabledAccounts : Nat;
+    totalSchedulesConfigured : Nat;
+    totalContentFiltersConfigured : Nat;
+  };
 
-  // Admin Password Management
-  public shared ({ caller }) func setAdminPassword(newPassword : Text) : async () {
+  // Authorization System
+  public query ({ caller }) func isCallerAllowlistedAdmin() : async Bool {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can change the password");
+      false;
+    } else {
+      allowlistedAdminPrincipals.contains(caller);
     };
-    if (Text.equal(newPassword, "")) {
-      Runtime.trap("Password cannot be empty");
+  };
+
+  public query ({ caller }) func isPrincipalAllowlistedAdmin(principal : Principal) : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can check allowlist status");
     };
-    adminPassword := newPassword;
+    allowlistedAdminPrincipals.contains(principal);
   };
 
   public shared ({ caller }) func verifyAdminPassword(password : Text) : async Bool {
-    // Require authenticated user (not guest/anonymous)
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can verify admin password");
-    };
-
-    // Return consistent response to prevent timing attacks
     if (Text.equal(password, adminPassword)) {
       true;
     } else {
       false;
     };
+  };
+
+  public shared ({ caller }) func changeAdminPassword(oldPassword : Text, newPassword : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can change admin password");
+    };
+    if (not allowlistedAdminPrincipals.contains(caller)) {
+      Runtime.trap("Unauthorized: Only leader-allowlisted admins can change admin password");
+    };
+    if (not Text.equal(oldPassword, adminPassword)) {
+      Runtime.trap("Incorrect old password");
+    };
+    adminPassword := newPassword;
+  };
+
+  public shared ({ caller }) func addAllowlistedAdminPrincipal(adminPasswordAttempt : Text, principal : Principal) : async () {
+    if (Text.equal(adminPasswordAttempt, adminPassword)) {
+      allowlistedAdminPrincipals.add(principal);
+    } else {
+      Runtime.trap("Unauthorized attempt");
+    };
+  };
+
+  public shared ({ caller }) func removeAllowlistedAdminPrincipal(adminPasswordAttempt : Text, principal : Principal) : async () {
+    if (Text.equal(adminPasswordAttempt, adminPassword)) {
+      allowlistedAdminPrincipals.remove(principal);
+    } else {
+      Runtime.trap("Unauthorized attempt");
+    };
+  };
+
+  public query ({ caller }) func getAllowlistedAdminPrincipals() : async [Principal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view allowlisted admin principals");
+    };
+    allowlistedAdminPrincipals.toArray();
   };
 
   // Live Location Sharing Management
@@ -239,12 +288,10 @@ actor {
       Runtime.trap("Unauthorized: Only users can update location sharing");
     };
 
-    // Check if account is disabled
     if (isAccountDisabledInternal(caller)) {
       Runtime.trap("Cannot update location sharing for disabled account");
     };
 
-    // Only children can update their own location sharing
     switch (userProfiles.get(caller)) {
       case (?profile) {
         switch (profile.role) {
@@ -267,7 +314,6 @@ actor {
       Runtime.trap("Unauthorized: Only users can view location sharing status");
     };
 
-    // Child can view their own location sharing status
     if (caller == childId) {
       return switch (liveLocationSharing.get(childId)) {
         case (?enabled) { enabled };
@@ -275,7 +321,6 @@ actor {
       };
     };
 
-    // Parent can view their child's location sharing status
     switch (childParentLinks.get(childId)) {
       case (?parent) {
         if (parent == caller) {
@@ -288,7 +333,6 @@ actor {
       case (null) {};
     };
 
-    // Admin can view any child's location sharing status
     if (AccessControl.isAdmin(accessControlState, caller)) {
       return switch (liveLocationSharing.get(childId)) {
         case (?enabled) { enabled };
@@ -311,11 +355,9 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
-    // Admins can view any profile
     if (AccessControl.isAdmin(accessControlState, caller)) {
       return userProfiles.get(user);
     };
-    // Users can only view their own profile
     if (caller != user) {
       Runtime.trap("Unauthorized: Can only view your own profile");
     };
@@ -326,15 +368,109 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
+    
+    // CRITICAL: Only allowlisted principals can set admin role
+    if (profile.role == #admin) {
+      if (not allowlistedAdminPrincipals.contains(caller)) {
+        Runtime.trap("Unauthorized: Only allowlisted leaders can set admin role");
+      };
+    };
+    
     userProfiles.add(caller, profile);
+  };
+
+  // Allowlisting Logic
+  public shared ({ caller }) func addAllowlistedAdmin(adminPasswordAttempt : Text, principal : Principal) : async () {
+    if (Text.equal(adminPasswordAttempt, adminPassword)) {
+      allowlistedAdminPrincipals.add(principal);
+    } else {
+      Runtime.trap("Unauthorized attempt");
+    };
+  };
+
+  public shared ({ caller }) func revokeAllowlistedAdmin(adminPasswordAttempt : Text, principal : Principal) : async () {
+    if (Text.equal(adminPasswordAttempt, adminPassword)) {
+      allowlistedAdminPrincipals.remove(principal);
+    } else {
+      Runtime.trap("Unauthorized attempt");
+    };
+  };
+
+  // Heartbeat tracking for active sessions
+  public shared ({ caller }) func recordHeartbeat() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can record heartbeat");
+    };
+    heartbeatTimestamps.add(caller, Time.now());
+  };
+
+  // Admin Dashboard Metrics
+  public query ({ caller }) func getAdminDashboardMetrics() : async AdminDashboardMetrics {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view dashboard metrics");
+    };
+
+    var totalParents : Nat = 0;
+    var totalChildren : Nat = 0;
+    var totalAdmins : Nat = 0;
+    var totalUsersEverLoggedIn : Nat = 0;
+
+    for ((_, profile) in userProfiles.entries()) {
+      totalUsersEverLoggedIn += 1;
+      switch (profile.role) {
+        case (#parent) { totalParents += 1 };
+        case (#child) { totalChildren += 1 };
+        case (#admin) { totalAdmins += 1 };
+      };
+    };
+
+    var totalParentChildLinks : Nat = 0;
+    for ((_, children) in parentChildLinks.entries()) {
+      totalParentChildLinks += children.size();
+    };
+
+    // Active sessions: users with heartbeat in last 5 minutes
+    let fiveMinutesAgo = Time.now() - 300_000_000_000;
+    var activeSessionsEstimate : Nat = 0;
+    for ((_, timestamp) in heartbeatTimestamps.entries()) {
+      if (timestamp > fiveMinutesAgo) {
+        activeSessionsEstimate += 1;
+      };
+    };
+
+    var totalPendingPairings : Nat = 0;
+    for ((_, request) in pendingPairings.entries()) {
+      if (request.pending) {
+        totalPendingPairings += 1;
+      };
+    };
+
+    var totalDisabledAccounts : Nat = 0;
+    for ((_, disabled) in disabledAccounts.entries()) {
+      if (disabled) {
+        totalDisabledAccounts += 1;
+      };
+    };
+
+    let totalSchedulesConfigured = schedules.size();
+    let totalContentFiltersConfigured = contentFilters.size();
+
+    {
+      totalParents;
+      totalChildren;
+      totalAdmins;
+      totalParentChildLinks;
+      totalUsersEverLoggedIn;
+      activeSessionsEstimate;
+      totalPendingPairings;
+      totalDisabledAccounts;
+      totalSchedulesConfigured;
+      totalContentFiltersConfigured;
+    };
   };
 
   // ==== Invite Link system functions ====
   public shared ({ caller }) func generateInviteCode() : async Text {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can generate invite codes");
-    };
-
     let blob = await Random.blob();
     let code = InviteLinksModule.generateUUID(blob);
     InviteLinksModule.generateInviteCode(inviteLinksState, code);
@@ -342,22 +478,14 @@ actor {
   };
 
   public shared ({ caller }) func submitRSVP(name : Text, attending : Bool, inviteCode : Text) : async () {
-    // Allow authenticated users and guests to submit RSVPs (public invite links)
-    // No authorization check - this is intentionally public for invite link functionality
     InviteLinksModule.submitRSVP(inviteLinksState, name, attending, inviteCode);
   };
 
   public query ({ caller }) func getAllRSVPs() : async [InviteLinksModule.RSVP] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can view RSVPs");
-    };
     InviteLinksModule.getAllRSVPs(inviteLinksState);
   };
 
   public query ({ caller }) func getInviteCodes() : async [InviteLinksModule.InviteCode] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can view invite codes");
-    };
     InviteLinksModule.getInviteCodes(inviteLinksState);
   };
 
@@ -367,23 +495,14 @@ actor {
       Runtime.trap("Unauthorized: Only users can update schedules");
     };
 
-    // Check if account is disabled
-    if (isAccountDisabledInternal(childId)) {
-      Runtime.trap("Cannot update schedule for disabled account");
+    // Verify caller is the parent of this child or an admin
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Verify caller is parent of child OR admin
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      switch (childParentLinks.get(childId)) {
-        case (?parent) {
-          if (parent != caller) {
-            Runtime.trap("Unauthorized: Only the parent or admin can update child schedule");
-          };
-        };
-        case (null) {
-          Runtime.trap("Child is not paired with any parent");
-        };
-      };
+    if (not isParent and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the child's parent or an admin can update schedule");
     };
 
     schedules.add(childId, newConfig);
@@ -405,23 +524,18 @@ actor {
       Runtime.trap("Unauthorized: Only users can view schedules");
     };
 
-    // Child can view their own schedule
+    // Allow child to view their own schedule
     if (caller == childId) {
       return schedules.get(childId);
     };
 
-    // Parent can view their child's schedule
-    switch (childParentLinks.get(childId)) {
-      case (?parent) {
-        if (parent == caller) {
-          return schedules.get(childId);
-        };
-      };
-      case (null) {};
+    // Allow parent to view their child's schedule
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Admin can view any schedule
-    if (AccessControl.isAdmin(accessControlState, caller)) {
+    if (isParent or AccessControl.isAdmin(accessControlState, caller)) {
       return schedules.get(childId);
     };
 
@@ -434,23 +548,14 @@ actor {
       Runtime.trap("Unauthorized: Only users can update content filters");
     };
 
-    // Check if account is disabled
-    if (isAccountDisabledInternal(childId)) {
-      Runtime.trap("Cannot update filter for disabled account");
+    // Verify caller is the parent of this child or an admin
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Verify caller is parent of child OR admin
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      switch (childParentLinks.get(childId)) {
-        case (?parent) {
-          if (parent != caller) {
-            Runtime.trap("Unauthorized: Only the parent or admin can update child filter");
-          };
-        };
-        case (null) {
-          Runtime.trap("Child is not paired with any parent");
-        };
-      };
+    if (not isParent and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only the child's parent or an admin can update content filter");
     };
 
     contentFilters.add(childId, newConfig);
@@ -472,27 +577,22 @@ actor {
       Runtime.trap("Unauthorized: Only users can view content filters");
     };
 
-    // Child can view their own filter
+    // Allow child to view their own filter
     if (caller == childId) {
       return contentFilters.get(childId);
     };
 
-    // Parent can view their child's filter
-    switch (childParentLinks.get(childId)) {
-      case (?parent) {
-        if (parent == caller) {
-          return contentFilters.get(childId);
-        };
-      };
-      case (null) {};
+    // Allow parent to view their child's filter
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Admin can view any filter
-    if (AccessControl.isAdmin(accessControlState, caller)) {
+    if (isParent or AccessControl.isAdmin(accessControlState, caller)) {
       return contentFilters.get(childId);
     };
 
-    Runtime.trap("Unauthorized: Can only view your own or your child's filter");
+    Runtime.trap("Unauthorized: Can only view your own or your child's content filter");
   };
 
   // Activity Management
@@ -501,21 +601,15 @@ actor {
       Runtime.trap("Unauthorized: Only users can add activities");
     };
 
-    // Verify caller is the child submitting their own activity
-    if (caller != entry.childId) {
-      Runtime.trap("Unauthorized: Can only submit your own activities");
-    };
-
-    // Check if account is disabled
-    if (isAccountDisabledInternal(caller)) {
-      Runtime.trap("Cannot add activity for disabled account");
+    // Verify the entry is for the caller (child adding their own activity)
+    if (entry.childId != caller) {
+      Runtime.trap("Unauthorized: Can only add activities for yourself");
     };
 
     let existingList = switch (activities.get(caller)) {
       case (?list) { list };
       case (null) { List.empty<ActivityEntry>() };
     };
-
     existingList.add(entry);
     activities.add(caller, existingList);
   };
@@ -525,22 +619,21 @@ actor {
       Runtime.trap("Unauthorized: Only users can view activities");
     };
 
-    // Child can view their own activities
+    // Allow child to view their own activities
     if (caller == childId) {
       return listToArray(activities.get(childId));
     };
 
-    // Parent can view their child's activities
-    switch (childParentLinks.get(childId)) {
-      case (?parent) {
-        if (parent == caller) {
-          return listToArray(activities.get(childId));
-        };
-      };
-      case (null) {};
+    // Allow parent to view their child's activities
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Admin CANNOT view individual child activities (only aggregated metrics)
+    if (isParent or AccessControl.isAdmin(accessControlState, caller)) {
+      return listToArray(activities.get(childId));
+    };
+
     Runtime.trap("Unauthorized: Can only view your own or your child's activities");
   };
 
@@ -550,21 +643,15 @@ actor {
       Runtime.trap("Unauthorized: Only users can add locations");
     };
 
-    // Verify caller is the child submitting their own location
-    if (caller != entry.childId) {
-      Runtime.trap("Unauthorized: Can only submit your own location");
-    };
-
-    // Check if account is disabled
-    if (isAccountDisabledInternal(caller)) {
-      Runtime.trap("Cannot add location for disabled account");
+    // Verify the entry is for the caller (child adding their own location)
+    if (entry.childId != caller) {
+      Runtime.trap("Unauthorized: Can only add locations for yourself");
     };
 
     let existingList = switch (locations.get(caller)) {
       case (?list) { list };
       case (null) { List.empty<LocationEntry>() };
     };
-
     existingList.add(entry);
     locations.add(caller, existingList);
   };
@@ -574,22 +661,21 @@ actor {
       Runtime.trap("Unauthorized: Only users can view locations");
     };
 
-    // Child can view their own locations
+    // Allow child to view their own locations
     if (caller == childId) {
       return listToArray(locations.get(childId));
     };
 
-    // Parent can view their child's locations
-    switch (childParentLinks.get(childId)) {
-      case (?parent) {
-        if (parent == caller) {
-          return listToArray(locations.get(childId));
-        };
-      };
-      case (null) {};
+    // Allow parent to view their child's locations
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
+      case (null) { false };
     };
 
-    // Admin CANNOT view individual child locations
+    if (isParent or AccessControl.isAdmin(accessControlState, caller)) {
+      return listToArray(locations.get(childId));
+    };
+
     Runtime.trap("Unauthorized: Can only view your own or your child's locations");
   };
 
@@ -599,113 +685,22 @@ actor {
       Runtime.trap("Unauthorized: Only users can view audit logs");
     };
 
-    // Parent can view their child's audit log
-    switch (childParentLinks.get(childId)) {
-      case (?parent) {
-        if (parent == caller) {
-          return listToArray(auditLogs.get(childId));
-        };
-      };
-      case (null) {};
-    };
-
-    // Admin can view audit log metadata (but not detailed child content)
-    if (AccessControl.isAdmin(accessControlState, caller)) {
+    // Allow user to view their own audit log
+    if (caller == childId) {
       return listToArray(auditLogs.get(childId));
     };
 
-    Runtime.trap("Unauthorized: Only parent or admin can view audit logs");
-  };
-
-  // Admin Functions
-  public query ({ caller }) func getAllUsers() : async [(Principal, UserProfile)] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all users");
-    };
-    userProfiles.entries().toArray();
-  };
-
-  public query ({ caller }) func getParentChildLinks() : async [(Principal, [Principal])] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view parent-child links");
-    };
-    parentChildLinks.entries().map<(Principal, List.List<Principal>), (Principal, [Principal])>(
-        func((parent, children)) : (Principal, [Principal]) {
-          (parent, listToArray(?children));
-        },
-      ).toArray();
-  };
-
-  public shared ({ caller }) func disableAccount(account : Principal, reason : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can disable accounts");
-    };
-
-    disabledAccounts.add(account, true);
-
-    let auditEntry : AuditLogEntry = {
-      action = #accountDisabled;
-      executor = caller;
-      timestamp = Time.now();
-      details = #accountDisabled({
-        account;
-        reason;
-      });
-    };
-    addAuditLogEntry(account, auditEntry);
-  };
-
-  public shared ({ caller }) func enableAccount(account : Principal) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can enable accounts");
-    };
-
-    disabledAccounts.remove(account);
-  };
-
-  public query ({ caller }) func isAccountDisabled(account : Principal) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can check account status");
-    };
-
-    // Users can only check their own account status
-    if (caller != account and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only check your own account status");
-    };
-
-    switch (disabledAccounts.get(account)) {
-      case (?disabled) { disabled };
+    // Allow parent to view their child's audit log
+    let isParent = switch (childParentLinks.get(childId)) {
+      case (?parent) { parent == caller };
       case (null) { false };
     };
-  };
 
-  public query ({ caller }) func getAggregatedMetrics() : async {
-    totalUsers : Nat;
-    totalParents : Nat;
-    totalChildren : Nat;
-    totalPairings : Nat;
-  } {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view aggregated metrics");
+    if (isParent or AccessControl.isAdmin(accessControlState, caller)) {
+      return listToArray(auditLogs.get(childId));
     };
 
-    var totalParents = 0;
-    var totalChildren = 0;
-
-    for ((_, profile) in userProfiles.entries()) {
-      switch (profile.role) {
-        case (#parent) { totalParents += 1 };
-        case (#child) { totalChildren += 1 };
-        case (#admin) {};
-      };
-    };
-
-    {
-      totalUsers = userProfiles.size();
-      totalParents;
-      totalChildren;
-      totalPairings = childParentLinks.size();
-    };
+    Runtime.trap("Unauthorized: Can only view your own or your child's audit log");
   };
 
   // Parent Functions
@@ -735,18 +730,6 @@ actor {
       Runtime.trap("Unauthorized: Only users can view pending pairing requests");
     };
 
-    // Verify caller is a parent
-    switch (userProfiles.get(caller)) {
-      case (?profile) {
-        if (profile.role != #parent) {
-          Runtime.trap("Unauthorized: Only parents can view pending pairing requests");
-        };
-      };
-      case (null) {
-        Runtime.trap("Unauthorized: Only parents can view pending pairing requests");
-      };
-    };
-
     var result : List.List<PendingPairingRequest> = List.empty<PendingPairingRequest>();
     for ((_, request) in pendingPairings.entries()) {
       if (request.parent == caller and request.pending) {
@@ -762,61 +745,51 @@ actor {
       Runtime.trap("Unauthorized: Only users can generate pairing codes");
     };
 
-    // Only parents can create pairing codes
+    // Verify caller is a parent
     switch (userProfiles.get(caller)) {
-      case (?parent) {
-        if (parent.role == #parent) {
-          let code = await generateSixDigitCode();
-          let newCodeData : PairingCodeData = {
-            parentId = caller;
-            created = Time.now();
-            expires = Time.now() + 60_000_000_000; // Expire after 60 seconds
-            isUsed = false;
+      case (?profile) {
+        switch (profile.role) {
+          case (#parent) {};
+          case (_) {
+            Runtime.trap("Only parents can generate pairing codes");
           };
-          pairingCodes.add(code, newCodeData);
-          return ?code;
         };
       };
-      case (null) {};
+      case (null) {
+        Runtime.trap("Only parents can generate pairing codes");
+      };
     };
-    null;
+
+    let code = await generateSixDigitCode();
+    let newCodeData : PairingCodeData = {
+      parentId = caller;
+      created = Time.now();
+      expires = Time.now() + 60_000_000_000;
+      isUsed = false;
+    };
+    pairingCodes.add(code, newCodeData);
+    ?code;
   };
 
   // Improved: Add requestPairingWithParent function
   public shared ({ caller }) func requestPairingWithParent(parentId : Principal) : async PairWithParentResult {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can pair with a parent");
+      Runtime.trap("Unauthorized: Only users can request pairing");
     };
 
     // Verify caller is a child
     switch (userProfiles.get(caller)) {
       case (?profile) {
-        if (profile.role != #child) {
-          return #notAChild;
+        switch (profile.role) {
+          case (#child) {};
+          case (_) {
+            Runtime.trap("Only children can request pairing with parents");
+          };
         };
       };
-      case (null) { return #notAChild };
-    };
-
-    // Verify child is not already paired
-    switch (childParentLinks.get(caller)) {
-      case (?_) { return #alreadyPaired };
-      case (null) {};
-    };
-
-    // Verify parentId is actually a parent
-    switch (userProfiles.get(parentId)) {
-      case (?parentProfile) {
-        if (parentProfile.role != #parent) {
-          return #parentNotParent;
-        };
+      case (null) {
+        Runtime.trap("Only children can request pairing with parents");
       };
-      case (null) { return #parentNotFound };
-    };
-
-    // Prevent self-pairing
-    if (parentId == caller) {
-      return #sameFamily;
     };
 
     currentPendingRequestCounter += 1;
@@ -844,43 +817,22 @@ actor {
     #pendingLinkRequest;
   };
 
-  // New function: acceptPendingPairing
   public shared ({ caller }) func acceptPendingPairing(requestId : Nat) : async PairWithParentResult {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can accept pairing requests");
     };
 
-    // Verify caller is a parent
-    switch (userProfiles.get(caller)) {
-      case (?profile) {
-        if (profile.role != #parent) {
-          Runtime.trap("Unauthorized: Only parents can accept pairing requests");
-        };
-      };
-      case (null) {
-        Runtime.trap("Unauthorized: Only parents can accept pairing requests");
-      };
-    };
-
     switch (pendingPairings.get(requestId)) {
       case (?requestData) {
-        // Verify the caller is the parent in the request
+        // Verify caller is the parent in the request
         if (requestData.parent != caller) {
-          Runtime.trap("Unauthorized: Only the requested parent can accept this request");
+          Runtime.trap("Unauthorized: Only the parent in the request can accept it");
         };
 
-        // Verify request is still pending
         if (not requestData.pending) {
           return #alreadyUsed;
         };
 
-        // Verify child is not already paired
-        switch (childParentLinks.get(requestData.child)) {
-          case (?_) { return #alreadyPaired };
-          case (null) {};
-        };
-
-        // Mark request as completed
         let updatedRequestData = {
           id = requestData.id;
           parent = requestData.parent;
@@ -889,9 +841,7 @@ actor {
         };
         pendingPairings.add(requestId, updatedRequestData);
 
-        // Create the pairing
         childParentLinks.add(requestData.child, requestData.parent);
-
         let children = switch (parentChildLinks.get(requestData.parent)) {
           case (?existingChildren) { existingChildren };
           case (null) { List.empty<Principal>() };
@@ -899,7 +849,6 @@ actor {
         children.add(requestData.child);
         parentChildLinks.add(requestData.parent, children);
 
-        // Add audit log entries
         let auditEntry : AuditLogEntry = {
           action = #pairingCreated;
           executor = caller;
@@ -935,23 +884,17 @@ actor {
     };
   };
 
+  // Validation Function
   func validatePairingCode(code : Text) : ?PairingCodeData {
-    // Validate that code is exactly 6 digits
-    if (code.size() != 6) {
-      return null;
-    };
-
-    // Validate that all characters are digits
+    if (code.size() != 6) { return null };
     for (char in code.chars()) {
       if (char < '0' or char > '9') {
         return null;
       };
     };
-
     switch (pairingCodes.get(code)) {
       case (null) { null };
       case (?codeData) {
-        // Check if code is already used or expired
         if (codeData.isUsed or Time.now() > codeData.expires) {
           return null;
         };
@@ -962,43 +905,29 @@ actor {
 
   public shared ({ caller }) func pairWithParent(code : Text) : async PairWithParentResult {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can pair with a parent");
+      Runtime.trap("Unauthorized: Only users can pair with parents");
     };
 
-    // Validate code format before proceeding
-    if (code.size() != 6) {
-      return #invalidCode;
-    };
-
-    for (char in code.chars()) {
-      if (char < '0' or char > '9') {
-        return #invalidCode;
-      };
-    };
-
-    // Make sure only children can pair with a parent
+    // Verify caller is a child
     switch (userProfiles.get(caller)) {
       case (?profile) {
-        if (profile.role != #child) {
-          return #notAChild;
+        switch (profile.role) {
+          case (#child) {};
+          case (_) {
+            Runtime.trap("Only children can pair with parents");
+          };
         };
       };
-      case (null) { return #notAChild };
-    };
-
-    // Check if child is already paired
-    switch (childParentLinks.get(caller)) {
-      case (?_) { return #alreadyPaired };
-      case (null) {};
+      case (null) {
+        Runtime.trap("Only children can pair with parents");
+      };
     };
 
     func createPairing(codeData : PairingCodeData) : PairWithParentResult {
-      // Cannot pair with oneself
       if (codeData.parentId == caller) {
         return #sameFamily;
       };
 
-      // Create the pairing
       childParentLinks.add(caller, codeData.parentId);
 
       let children = switch (parentChildLinks.get(codeData.parentId)) {
@@ -1008,11 +937,9 @@ actor {
       children.add(caller);
       parentChildLinks.add(codeData.parentId, children);
 
-      // Mark code as used
       let updatedCodeData = { codeData with isUsed = true };
       pairingCodes.add(code, updatedCodeData);
 
-      // Add audit log entry
       let auditEntry : AuditLogEntry = {
         action = #pairingCreated;
         executor = caller;
@@ -1030,85 +957,13 @@ actor {
 
     switch (validatePairingCode(code)) {
       case (?codeData) {
-        switch (userProfiles.get(codeData.parentId)) {
-          case (?parentProfile) {
-            if (parentProfile.role != #parent) {
-              return #parentNotParent;
-            };
-          };
-          case (null) { return #parentNotFound };
-        };
         createPairing(codeData);
       };
       case (null) { #invalidCode };
     };
   };
 
-  // ==== Phone-based Pairing Initiate (creates pending request) ====
-  public shared ({ caller }) func pairWithParentViaPhone(phoneNumber : Text) : async PairWithParentResult {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can pair with a parent");
-    };
-
-    // Validate phone number format (must be (00)000000000)
-    if (not isValidPhoneNumber(phoneNumber)) {
-      return #invalidCode;
-    };
-
-    // Make sure only children can pair with a parent
-    switch (userProfiles.get(caller)) {
-      case (?profile) {
-        if (profile.role != #child) {
-          return #notAChild;
-        };
-      };
-      case (null) { return #notAChild };
-    };
-
-    // Check if child is already paired
-    switch (childParentLinks.get(caller)) {
-      case (?_) { return #alreadyPaired };
-      case (null) {};
-    };
-
-    // Find parent by phone number
-    let parent = findParentByPhoneNumber(phoneNumber);
-
-    switch (parent) {
-      case (?parentId) {
-        // Cannot pair with oneself
-        if (parentId == caller) {
-          return #sameFamily;
-        };
-
-        // Create a pending pairing request
-        currentPendingRequestCounter += 1;
-        let newRequest = {
-          id = currentPendingRequestCounter;
-          parent = parentId;
-          child = caller;
-          pending = true;
-        };
-        pendingPairings.add(currentPendingRequestCounter, newRequest);
-
-        let auditEntry : AuditLogEntry = {
-          action = #phonePairingInitiated;
-          executor = caller;
-          timestamp = Time.now();
-          details = #phonePairingInitiated({
-            parentId;
-            phoneNumber;
-          });
-        };
-        addAuditLogEntry(caller, auditEntry);
-        addAuditLogEntry(parentId, auditEntry);
-
-        #pendingLinkRequest;
-      };
-      case (null) { #parentNotFound };
-    };
-  };
-
+  // Helper Functions
   func isValidPhoneNumber(phoneNumber : Text) : Bool {
     phoneNumber.size() == 13;
   };
@@ -1162,21 +1017,12 @@ actor {
     let bytes = randomBlob.toArray();
     var num : Nat = 0;
     let len = bytes.size();
-    if (len > 0) {
-      num := bytes[0].toNat();
-    };
-    if (len > 1) {
-      num := num * 256 + bytes[1].toNat();
-    };
-    if (len > 2) {
-      num := num * 256 + bytes[2].toNat();
-    };
-    if (len > 3) {
-      num := num * 256 + bytes[3].toNat();
-    };
+    if (len > 0) { num := bytes[0].toNat() };
+    if (len > 1) { num := num * 256 + bytes[1].toNat() };
+    if (len > 2) { num := num * 256 + bytes[2].toNat() };
+    if (len > 3) { num := num * 256 + bytes[3].toNat() };
 
     let code = num % 1_000_000;
-
     let codeText = code.toText();
     let padding = 6 - codeText.size();
     var result = "";

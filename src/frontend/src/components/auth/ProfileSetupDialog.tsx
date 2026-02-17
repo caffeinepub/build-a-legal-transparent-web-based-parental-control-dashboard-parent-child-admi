@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSaveCallerUserProfile } from '../../hooks/useQueries';
 import { useI18n } from '../../hooks/useI18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,16 +6,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield } from 'lucide-react';
+import { Shield, AlertCircle } from 'lucide-react';
 import { AppRole } from '../../backend';
-import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber } from '../../utils/phoneNumber';
+import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber, normalizePhoneNumber } from '../../utils/phoneNumber';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const ALLOWLISTED_EMAILS = [
+  'tigguinrodrigues@gmail.com',
+  'tigguinclash@gmail.com',
+];
+
+const ALLOWLISTED_PHONE = '91980115950'; // Normalized format (digits only)
 
 export default function ProfileSetupDialog() {
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'parent' | 'child'>('parent');
+  const [role, setRole] = useState<'parent' | 'child' | 'admin'>('parent');
   const [phoneNumber, setPhoneNumber] = useState('');
   const saveProfile = useSaveCallerUserProfile();
   const { t } = useI18n();
+
+  // Check if the entered name or phone matches the allowlist
+  const isAllowlisted = useMemo(() => {
+    const nameLower = name.trim().toLowerCase();
+    const emailMatch = ALLOWLISTED_EMAILS.some(email => email.toLowerCase() === nameLower);
+    
+    const normalizedPhone = normalizePhoneNumber(phoneNumber);
+    const phoneMatch = normalizedPhone === ALLOWLISTED_PHONE;
+    
+    return emailMatch || phoneMatch;
+  }, [name, phoneNumber]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const parsed = parsePhoneNumberInput(e.target.value);
@@ -26,7 +45,14 @@ export default function ProfileSetupDialog() {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const appRole: AppRole = role === 'parent' ? AppRole.parent : AppRole.child;
+    let appRole: AppRole;
+    if (role === 'parent') {
+      appRole = AppRole.parent;
+    } else if (role === 'child') {
+      appRole = AppRole.child;
+    } else {
+      appRole = AppRole.admin;
+    }
     
     // Only include phone number for parents if provided and valid
     const phoneNumberValue = role === 'parent' && phoneNumber && isValidPhoneNumber(phoneNumber)
@@ -65,9 +91,27 @@ export default function ProfileSetupDialog() {
               />
             </div>
 
+            {role === 'parent' && (
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">{t('profileSetupPhoneLabel')}</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  inputMode="numeric"
+                  value={formatPhoneNumber(phoneNumber)}
+                  onChange={handlePhoneChange}
+                  placeholder={t('profileSetupPhonePlaceholder')}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('profileSetupPhoneHelp')}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Label>{t('profileSetupRoleLabel')}</Label>
-              <RadioGroup value={role} onValueChange={(v) => setRole(v as 'parent' | 'child')}>
+              <RadioGroup value={role} onValueChange={(v) => setRole(v as 'parent' | 'child' | 'admin')}>
                 <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer">
                   <RadioGroupItem value="parent" id="parent" />
                   <Label htmlFor="parent" className="flex-1 cursor-pointer">
@@ -86,26 +130,26 @@ export default function ProfileSetupDialog() {
                     </div>
                   </Label>
                 </div>
+                <div className={`flex items-center space-x-2 p-3 border rounded-lg ${isAllowlisted ? 'hover:bg-accent cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}>
+                  <RadioGroupItem value="admin" id="admin" disabled={!isAllowlisted} />
+                  <Label htmlFor="admin" className={`flex-1 ${isAllowlisted ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                    <div className="font-semibold">{t('profileSetupAdminTitle')}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('profileSetupAdminDesc')}
+                    </div>
+                  </Label>
+                </div>
               </RadioGroup>
+              
+              {!isAllowlisted && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {t('profileSetupAdminRestricted')}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
-
-            {role === 'parent' && (
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">{t('profileSetupPhoneLabel')}</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  inputMode="numeric"
-                  value={formatPhoneNumber(phoneNumber)}
-                  onChange={handlePhoneChange}
-                  placeholder={t('profileSetupPhonePlaceholder')}
-                  className="font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('profileSetupPhoneHelp')}
-                </p>
-              </div>
-            )}
 
             <Button
               type="submit"

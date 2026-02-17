@@ -1,155 +1,157 @@
 import { useState } from 'react';
+import { useVerifyAdminPassword, useChangeAdminPassword, useIsCallerAllowlistedAdmin } from '../../hooks/useQueries';
+import { useAdminGate } from '../../hooks/useAdminGate';
+import { useI18n } from '../../hooks/useI18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, AlertCircle } from 'lucide-react';
-import { useVerifyAdminPassword, useSetAdminPassword } from '../../hooks/useQueries';
-import { useAdminGate } from '../../hooks/useAdminGate';
-import { useI18n } from '../../hooks/useI18n';
+import { Shield, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AdminPasswordGate() {
-  const { t } = useI18n();
   const [password, setPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [verifyError, setVerifyError] = useState('');
-  const [changeError, setChangeError] = useState('');
-
-  const { passGate } = useAdminGate();
   const verifyPassword = useVerifyAdminPassword();
-  const setAdminPassword = useSetAdminPassword();
+  const changePassword = useChangeAdminPassword();
+  const { data: isAllowlisted, isLoading: allowlistLoading } = useIsCallerAllowlistedAdmin();
+  const { passGate } = useAdminGate();
+  const { t } = useI18n();
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    setVerifyError('');
-
     try {
       const isValid = await verifyPassword.mutateAsync(password);
       if (isValid) {
         passGate();
+        toast.success(t('adminPasswordGateSuccess'));
       } else {
-        setVerifyError(t('adminGateErrorIncorrect'));
+        toast.error(t('adminPasswordGateIncorrect'));
       }
-    } catch (error: any) {
-      setVerifyError(error.message || t('adminGateErrorIncorrect'));
+    } catch (error) {
+      toast.error(t('adminPasswordGateError'));
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setChangeError('');
-
     if (newPassword !== confirmPassword) {
-      setChangeError(t('adminGateErrorMismatch'));
+      toast.error(t('adminPasswordGatePasswordMismatch'));
       return;
     }
-
     if (newPassword.length < 8) {
-      setChangeError(t('adminGateErrorLength'));
+      toast.error(t('adminPasswordGatePasswordTooShort'));
       return;
     }
-
     try {
-      await setAdminPassword.mutateAsync(newPassword);
+      await changePassword.mutateAsync({ oldPassword, newPassword });
+      setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
-      setChangeError(error.message || t('adminGateErrorIncorrect'));
+    } catch (error) {
+      // Error toast is handled by the mutation
     }
   };
 
   return (
     <div className="max-w-md mx-auto mt-12">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-navy-600 dark:text-navy-400" />
-            {t('adminGateTitle')}
-          </CardTitle>
-          <CardDescription>{t('adminGateDescription')}</CardDescription>
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+            <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <CardTitle className="text-2xl">{t('adminPasswordGateTitle')}</CardTitle>
+          <CardDescription>
+            {t('adminPasswordGateDescription')}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="verify">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="verify">{t('adminGateTabVerify')}</TabsTrigger>
-              <TabsTrigger value="change">{t('adminGateTabChange')}</TabsTrigger>
+              <TabsTrigger value="verify">{t('adminPasswordGateTabVerify')}</TabsTrigger>
+              <TabsTrigger value="change" disabled={!isAllowlisted && !allowlistLoading}>
+                {t('adminPasswordGateTabChange')}
+              </TabsTrigger>
             </TabsList>
-
+            
             <TabsContent value="verify">
               <form onSubmit={handleVerify} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t('adminGatePasswordLabel')}</Label>
+                  <Label htmlFor="password">
+                    <Lock className="inline w-4 h-4 mr-2" />
+                    {t('adminPasswordGatePasswordLabel')}
+                  </Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('adminGatePasswordPlaceholder')}
+                    placeholder={t('adminPasswordGatePasswordPlaceholder')}
                     required
                   />
                 </div>
-
-                {verifyError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="w-4 h-4" />
-                    <AlertDescription>{verifyError}</AlertDescription>
-                  </Alert>
-                )}
-
                 <Button
                   type="submit"
-                  className="w-full bg-navy-600 hover:bg-navy-700 text-white"
-                  disabled={verifyPassword.isPending}
+                  className="w-full"
+                  disabled={verifyPassword.isPending || !password}
                 >
-                  {verifyPassword.isPending ? t('adminGateVerifying') : t('adminGateAccessButton')}
+                  {verifyPassword.isPending ? t('adminPasswordGateVerifying') : t('adminPasswordGateVerifyButton')}
                 </Button>
               </form>
             </TabsContent>
-
+            
             <TabsContent value="change">
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">{t('adminGateNewPasswordLabel')}</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder={t('adminGateNewPasswordPlaceholder')}
-                    required
-                  />
+              {!isAllowlisted && !allowlistLoading ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  {t('adminPasswordGateChangeRestricted')}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">{t('adminGateConfirmPasswordLabel')}</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder={t('adminGateConfirmPasswordPlaceholder')}
-                    required
-                  />
-                </div>
-
-                {changeError && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="w-4 h-4" />
-                    <AlertDescription>{changeError}</AlertDescription>
-                  </Alert>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full bg-navy-600 hover:bg-navy-700 text-white"
-                  disabled={setAdminPassword.isPending}
-                >
-                  {setAdminPassword.isPending ? t('adminGateUpdating') : t('adminGateChangeButton')}
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="oldPassword">{t('adminPasswordGateOldPasswordLabel')}</Label>
+                    <Input
+                      id="oldPassword"
+                      type="password"
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder={t('adminPasswordGateOldPasswordPlaceholder')}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">{t('adminPasswordGateNewPasswordLabel')}</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder={t('adminPasswordGateNewPasswordPlaceholder')}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">{t('adminPasswordGateConfirmPasswordLabel')}</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder={t('adminPasswordGateConfirmPasswordPlaceholder')}
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={changePassword.isPending || !oldPassword || !newPassword || !confirmPassword}
+                  >
+                    {changePassword.isPending ? t('adminPasswordGateChanging') : t('adminPasswordGateChangeButton')}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

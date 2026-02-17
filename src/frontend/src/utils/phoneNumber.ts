@@ -49,3 +49,12 @@ export function parsePhoneNumberInput(value: string): string {
   const normalized = normalizePhoneNumber(value);
   return normalized.slice(0, 11); // Limit to 11 digits
 }
+
+/**
+ * Check if a phone number matches the allowlisted format
+ * Used for admin allowlist checking
+ */
+export function matchesAllowlistedPhone(value: string, allowlistedPhone: string): boolean {
+  const normalized = normalizePhoneNumber(value);
+  return normalized === allowlistedPhone;
+}

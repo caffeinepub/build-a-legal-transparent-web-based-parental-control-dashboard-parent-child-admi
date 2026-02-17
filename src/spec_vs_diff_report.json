@@ -1,114 +1,98 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T17:47:20.164Z",
-  "summary": "The diff partially implements an in-app pending pairing concept (new pendingPairings state + migration scaffolding, parent dashboard alert, and child-side “pending” polling), but key backend data/authorization requirements and parts of the frontend request/confirmation flow are not evidenced in the provided diff summary. The diff also includes numerous unrelated UI/translation/polling changes not requested.",
+  "generatedAt": "2026-02-17T16:09:08.278Z",
+  "summary": "Diff implements major parts of the requested ADMINISTRATOR role and expanded admin dashboard: new #admin role type on backend, default admin password string, new AdminPasswordGate UI, presence heartbeat hook, and expanded admin metrics cards. However, key backend enforcement details (leader allowlist checks by profile name/phone normalization, trapping on unauthorized admin saves, and restricting admin password changes to allowlisted leader admins) are not verifiable from the provided truncated backend diff summary. Several unrelated UI/feature changes (pairing UX, live location UI, polling tweaks, transparency page edits) appear outside the BuildRequest scope.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Store a pending confirmation request tied to (parentId, childId, phoneNumber, createdAt, status) when child submits a phone number that matches a parent; and block completion until parent confirms.",
-      "reason": "Pending request type shown only includes {id,parent,child,pending:Bool} with no phoneNumber, createdAt, or explicit status beyond a boolean; no evidence that phone-based pairing is blocked pending confirmation.",
+      "id": "REQ-2",
+      "requirement": "Backend must enforce that only leader-allowlisted accounts can save a profile with role #admin (trap/reject for non-allowlisted), and allowlist matching must support profile.name equals either allowlisted email and profile.phoneNumber equals “(91)980115950” after normalization.",
+      "reason": "The diff shows the new role variant (#admin) and new allowlistedAdminPrincipals state, but does not include (in the visible/truncated portion) the saveCallerUserProfile implementation or the explicit allowlist matching logic against profile.name / profile.phoneNumber with the specified normalization and trap behavior.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Backend exposes actor methods for (a) create request (child), (b) list pending requests for current parent, (c) confirm a specific request (parent).",
-      "reason": "The diff summary shows new frontend hooks (names referenced) and new pendingPairings state, but does not include any concrete actor method definitions/signatures in backend/main.mo (file is truncated before any relevant methods are shown).",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Only addressed parent (and admins if applicable) can view/act on the request; other users cannot read/confirm it.",
-      "reason": "No access-control logic for listing/confirming pending requests is shown in the provided backend diff excerpt; cannot verify restriction enforcement from the truncated summary.",
-      "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "Confirming a request creates the parent-child link, marks the request confirmed/closed, and records an audit log entry for traceability.",
-      "reason": "Although new audit log action types (#pendingRequestInitiated/#pendingRequestCompleted) appear in types, there is no visible implementation showing that confirmation mutates links, closes the request, and appends an audit entry.",
-      "evidence": [
-        "backend/main.mo",
+        "backend/main.mo (truncated)",
         "backend/migration.mo"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "All new user-facing text is in English and wired through existing i18n system (update English dictionary at minimum).",
-      "reason": "ParentDashboard uses new i18n keys (e.g., pendingPairingAlertTitle/Description/Confirming/ConfirmButton), but the diff excerpt of en.ts does not show these keys being added (file content shown is truncated and does not evidence the new entries).",
+      "id": "REQ-3",
+      "requirement": "Restrict admin-password changes so that only leader-allowlisted admins can change the admin password; other callers must be rejected; verifyAdminPassword must only return true for the correct password.",
+      "reason": "The default password value is visible, and the frontend includes a change-password UI gated by an allowlist query, but the backend methods (verifyAdminPassword / setAdminPassword) and their authorization checks are not shown in the truncated backend diff, so backend enforcement cannot be confirmed.",
       "evidence": [
-        "frontend/src/pages/parent/ParentDashboard.tsx",
-        "frontend/src/i18n/translations/en.ts"
+        "backend/main.mo (truncated)",
+        "frontend/src/components/admin/AdminPasswordGate.tsx (truncated)",
+        "frontend/src/hooks/useQueries.ts (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "Child phone pairing flow should create a pending confirmation request and show “pending parent confirmation” state; should not require SMS/OTP entry for this flow.",
-      "reason": "PairWithParentCard introduces a 'pending' step and polls useGetMyParent, but the diff excerpt does not show that submitting a phone number triggers creation of a pending request (vs initiating an OTP/verification flow) nor that OTP entry is removed/unused; code is truncated around result handling and the mutation still references usePairWithParentViaPhone.",
+      "id": "REQ-5",
+      "requirement": "Backend must expose an admin-only metrics query returning all requested counts including active sessions estimate computed from heartbeat timestamps within a recent window.",
+      "reason": "Frontend calls actor.getAdminDashboardMetrics() and sends actor.recordHeartbeat(), but the backend implementations for these methods, the admin-only restriction, and the windowed computation for “active sessions” are not visible in the truncated backend diff summary.",
       "evidence": [
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/hooks/usePresenceHeartbeat.ts",
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "id": "REQ-3",
-      "requirement": "React Query hooks in frontend/src/hooks/useQueries.ts support creating the request, fetching pending status (as needed), and confirming requests; and correctly invalidate ['myParent'] and ['myChildren'] after confirmation.",
-      "reason": "The diff summary mentions new hooks for pending pairing requests and accept mutation, but the provided useQueries.ts excerpt does not show these hook implementations nor their invalidation behavior (file truncated before new hooks).",
+      "id": "REQ-6",
+      "requirement": "All additional admin dashboard metrics must be available via an admin-only backend query and rendered on the admin dashboard, without exposing individual child activity/location records (aggregated only).",
+      "reason": "Frontend renders multiple additional metrics (e.g., pending pairings, disabled accounts, schedules/filters configured), but the backend-side admin-only query shape and any guarantees about aggregation-only (no individual record exposure) are not visible in the truncated backend diff summary.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+        "backend/main.mo (truncated)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Broad app-wide theme/token styling refactors and UI/UX changes unrelated to pending phone confirmation (e.g., App.tsx theme-token styling, login button styling changes, footer/header changes).",
-      "reason": "Not requested by REQ-1/2/3; these changes go beyond the in-app parent confirmation flow.",
+      "description": "Multiple unrelated UX/feature changes to child pairing flow (phone-based pairing steps, pending state polling, URL pairingCode handling) beyond adding ADMINISTRATOR role and admin metrics.",
+      "reason": "BuildRequest focuses on restricted ADMINISTRATOR role, admin password gate, presence heartbeat, and admin metrics; it does not request changes to child-parent pairing UX or related polling behaviors.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend/src/components/child/PairWithParentCard.tsx (truncated)",
+        "frontend-file-summaries.txt (PairWithParentCard, ChildHome, ParentDashboard entries)"
       ]
     },
     {
-      "description": "Large-scale translation/i18n rewrites across unrelated pages (AdminPanel, TransparencyPolicies) and additional Portuguese support work not scoped to the pending pairing feature.",
-      "reason": "BuildRequest only requires new text for this feature be in English via i18n; it does not request full translation coverage refactors across the app.",
+      "description": "Live location UI enhancements (badges, stale detection, Google Maps link, polling cadence changes) beyond admin-role/dashboard work.",
+      "reason": "Not requested by the BuildRequest; scope is admin access control and dashboard metrics.",
       "evidence": [
-        "frontend-file-summaries.txt",
-        "frontend/src/i18n/translations/pt-BR.ts"
+        "frontend/src/components/parent/LiveLocationMap.tsx (truncated)",
+        "frontend-file-summaries.txt (LocationView, LiveLocationMap entries)"
       ]
     },
     {
-      "description": "Added/changed polling behavior for activities, location views, child summary cards, and other monitoring components unrelated to pairing confirmation.",
-      "reason": "Not part of REQ-1/2/3; introduces additional automatic refetch behavior beyond the requested pending confirmation polling.",
+      "description": "General polling/refresh tweaks for parent/child activity and history components (15-second polling, etc.) outside the admin/dashboard requirements.",
+      "reason": "Not part of requested ADMINISTRATOR role additions or admin metrics expansion.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend-file-summaries.txt (ActivityView, ChildSummaryCard, ActivityHistoryList, LocationHistoryList entries)"
       ]
     },
     {
-      "description": "Changes to child check-in/live location sharing messaging and capability detection unrelated to phone pairing confirmation.",
-      "reason": "Not requested; BuildRequest explicitly focuses on in-app parent confirmation for phone-based linking.",
+      "description": "Edits to TransparencyPolicies content/translation and minor Tailwind class changes unrelated to admin role/metrics.",
+      "reason": "Not requested in BuildRequest.",
       "evidence": [
-        "frontend-file-summaries.txt"
+        "frontend-file-summaries.txt (TransparencyPolicies entry)"
       ]
     }
   ],
-  "confidence": 0.66,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "frontend/src/components/admin/AccountsTable.tsx",
+    "frontend/src/components/admin/AdminPasswordGate.tsx",
+    "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/child/PairWithParentCard.tsx",
+    "frontend/src/components/parent/LiveLocationMap.tsx",
+    "frontend/src/hooks/usePresenceHeartbeat.ts",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
-    "frontend/src/pages/parent/ParentDashboard.tsx",
+    "frontend/src/pages/admin/AdminPanel.tsx",
+    "frontend/src/utils/phoneNumber.ts",
     "project_state.json"
   ]
 }

@@ -13,7 +13,7 @@ interface LiveLocationMapProps {
 export default function LiveLocationMap({ childId }: LiveLocationMapProps) {
   const { t } = useI18n();
   const { data: locations = [], isLoading } = useGetLocations(childId, { refetchInterval: 10000 });
-  const { data: isLiveSharing = false } = useGetLiveLocationSharingStatus(childId, { refetchInterval: 10000 });
+  const { data: isLiveSharing = false } = useGetLiveLocationSharingStatus(childId);
 
   const latestLocation = locations.length > 0 ? locations[locations.length - 1] : null;
 

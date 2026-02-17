@@ -1,15 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Add an in-app parent confirmation step for phone-based parent-child linking so a child’s pairing request remains pending until the addressed parent confirms.
+**Goal:** Add a restricted ADMINISTRATOR role with a password-gated admin dashboard, and expand the dashboard with additional on-chain metrics including presence-based active users.
 
 **Planned changes:**
-- Backend: when a child submits a parent phone number that matches a registered parent, create and persist a pending confirmation request (parentId, childId, phoneNumber, createdAt, status) and prevent phone-based pairing completion until confirmed.
-- Backend: add actor methods to create a request (child), list pending requests for the current parent (parent), and confirm a request (parent), with proper access control so only the addressed parent (and admins, if applicable) can view/act.
-- Backend: on confirmation, create the parent-child link, mark the request confirmed/closed, and record an audit log entry.
-- Frontend (parent): show an alert/banner/card when there are pending phone confirmation requests and allow one-click confirmation; update UI via refetch/invalidation and show a success message.
-- Frontend (child): after submitting the phone number, show a “pending parent confirmation” state (no SMS/OTP entry) and poll/refetch until pairing is confirmed, then reflect the paired state.
-- Frontend: add/update React Query hooks in `frontend/src/hooks/useQueries.ts` to support request creation, pending-status fetching, and confirmation, invalidating keys like `['myParent']` and `['myChildren']` after confirmation.
-- Frontend: add any new user-facing strings in English via the existing i18n system (update the English dictionary at minimum).
+- Add an “ADMINISTRATOR” role option to profile creation, enabled only when the entered identifier matches the leader allowlist (specific emails or phone number), with clear UI messaging when restricted.
+- Enforce ADMINISTRATOR role restrictions on the backend so non-allowlisted users cannot save or become admins even if manipulating the frontend.
+- Set the default admin password to “Liderdoprojetox1” and restrict admin password changes to leader-allowlisted admin accounts only.
+- Add an ADMINISTRATOR access step: when backend recognizes the caller as admin, require a session-based password gate before showing the AdminPanel.
+- Expand admin dashboard metrics to show totals for Parent users, Child users, Parent→Child link count, total saved profiles (ever logged in), and “users currently with the platform open” via a lightweight heartbeat presence mechanism.
+- Add at least 3 additional admin metrics computed from existing on-chain state (aggregated only), and display them in the admin dashboard without exposing individual child records.
 
-**User-visible outcome:** A child can request linking by entering a parent’s phone number and will see a pending state until the parent confirms; the parent will see an in-app alert and can confirm the link with one click.
+**User-visible outcome:** Users can create an ADMINISTRATOR profile only with leader-allowlisted identifiers; admins must pass a password gate to access the dashboard, where they can view expanded platform-wide aggregated metrics including active/open users and additional computed counts.

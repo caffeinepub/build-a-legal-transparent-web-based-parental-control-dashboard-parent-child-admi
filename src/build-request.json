@@ -1,91 +1,133 @@
 {
   "kind": "build_request",
-  "title": "Add in-app parent confirmation notification when child submits parent phone number",
+  "title": "Add restricted ADMINISTRATOR role and expand admin dashboard metrics",
+  "projectName": "Parental Control",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
+      "text": "Add a third role option named “ADMINISTRATOR” to the profile creation flow, alongside Parent and Child, and allow selecting it only when the user-provided identifier matches the leader allowlist: email “tigguinrodrigues@gmail.com” or “tigguinclash@gmail.com”, or phone number “(91)980115950”.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "crie uma terceira opção com o nome ADMINISTRADOR, que pode ser acessada apenas pelo usuário Líder tigguinrodrigues@gmail.com e tigguinclash@gmail.com, e também pelo número (91)980115950"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Profile setup screen shows three role options: Parent, Child, ADMINISTRATOR.",
+        "ADMINISTRATOR can only be selected when the user has entered either one of the allowed emails in the Name field OR the allowed phone number in the phone field (normalized to the app’s phone format).",
+        "If the identifier is not allowlisted, the ADMINISTRATOR option is disabled and the UI explains that access is restricted to the leader account."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement backend enforcement for the ADMINISTRATOR role so that only leader-allowlisted accounts can save a profile with role #admin, and ensure non-allowlisted users cannot become admins even if they manipulate the frontend.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "ajuste somente: Quando o FILHO cadastra o número, o backend cria uma notificação interna. • O PAI/MÃE recebe um alerta na interface. • O PAI/MÃE confirma com um clique."
+          "que pode ser acessada apenas pelo usuário Líder tigguinrodrigues@gmail.com e tigguinclash@gmail.com, e também pelo número (91)980115950"
         ]
       },
       "acceptanceCriteria": [
-        "When a child initiates phone pairing with a valid phone number that belongs to a parent, the backend stores a new pending confirmation request tied to (parentId, childId, phoneNumber, createdAt, status).",
-        "Pending confirmation requests survive canister upgrades (if the app currently persists state, update migration accordingly per the project’s conditional migration policy).",
-        "A child cannot become paired to the parent via phone flow until the parent confirms the request.",
-        "Only the addressed parent (and admins, if applicable) can view/act on that confirmation request; other users cannot read or confirm it.",
-        "The backend exposes actor methods needed by the UI to (a) create the request (child action), (b) list pending requests for the current parent, and (c) confirm a specific request (parent action).",
-        "Confirming a request results in the parent-child link being created and the request marked as confirmed/closed, and the relevant audit log entry is recorded for traceability."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "O PAI/MÃE recebe um alerta na interface. • O PAI/MÃE confirma com um clique."
-        ]
-      },
-      "acceptanceCriteria": [
-        "In the parent experience (e.g., ParentDashboard), if there is at least one pending phone confirmation request for the logged-in parent, the UI displays a clear alert/banner/card indicating a child is requesting to link via phone number.",
-        "The alert includes a single primary action to confirm the request; clicking it triggers the backend confirm call and shows a success toast/message on completion.",
-        "After confirmation, parent UI updates without a full refresh (React Query invalidation/refetch) and the pending alert disappears.",
-        "All new user-facing text added for this feature is in English and wired through the existing i18n system (update the English dictionary at minimum)."
+        "If a non-allowlisted caller attempts to save a profile with role #admin, the backend rejects the call (traps) and the profile is not stored as admin.",
+        "If an allowlisted caller saves a profile with role #admin, the profile is stored and admin-only endpoints become accessible for that caller.",
+        "Leader allowlist matching supports: (a) profile.name equals either allowlisted email; (b) profile.phoneNumber equals “(91)980115950” (after normalization to the same stored format)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
+      "text": "Set the admin password to “Liderdoprojetox1” and restrict admin-password changes so that only leader-allowlisted admins can change the admin password (other admins, if any, must not be able to change it).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "com a senha: Liderdoprojetox1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Default admin password is “Liderdoprojetox1”.",
+        "verifyAdminPassword returns true only for the correct password.",
+        "setAdminPassword is allowed only for allowlisted leader admin accounts; other callers are rejected."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Require a dedicated ADMINISTRATOR access step in the UI: when the logged-in user is recognized as admin by the backend, show an admin password gate screen (password input) before rendering the AdminPanel; only after successful verification in the current session may the AdminPanel be shown.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Quando o FILHO cadastra o número, o backend cria uma notificação interna."
+          "com a senha: Liderdoprojetox1. faça com que ao acessar como ADMINISTRADOR, o Líder possa ter acesso ao Dashboard"
         ]
       },
       "acceptanceCriteria": [
-        "In the child pairing UI (PairWithParentCard), submitting a phone number that matches a parent creates a pending confirmation request and the UI indicates the request was sent and is awaiting parent confirmation.",
-        "The child UI does not require SMS/OTP entry to complete this confirmation flow.",
-        "Once the parent confirms, the child UI reflects that pairing is completed (e.g., by refetching useGetMyParent and showing the paired state card).",
-        "React Query hooks are added/updated in frontend/src/hooks/useQueries.ts to support creating the request, fetching pending status (as needed), and confirming requests; queries/mutations correctly invalidate existing keys like ['myParent'] and ['myChildren'] after confirmation."
+        "When isCallerAdmin is true and the session gate is not passed, the app shows the AdminPasswordGate component instead of AdminPanel.",
+        "After entering the correct admin password, the session is marked as passed (using the existing sessionStorage gate), and the AdminPanel becomes visible.",
+        "Logging out clears the admin gate session (existing behavior remains)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Expand the administrator dashboard metrics to include: total Parent users, total Child users, total Parent→Child link count (how many child logins are linked to a parent), total users who have ever logged in (interpreted as total saved profiles), and an estimate of how many users currently have the platform open (active sessions) based on a presence heartbeat.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Dashboard das quantidades de usuários PAI/MÃE e FILHO na plataforma, quantos loguin FILHO estão vinculados ao PAI/MÃE, quantos usuários fizeram loguin na plataforma, quantos estão com a plataforma aberta"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes an admin-only query (either extending getAggregatedMetrics or adding a new metrics query) that returns all requested counts.",
+        "“Total users who have ever logged in” is computed from stored user profiles (not from Internet Identity email, and not from external systems).",
+        "Frontend AdminPanel displays these metrics in the existing metrics cards section (AggregatedMetricsCards) or an equivalent admin metrics component.",
+        "The app implements a lightweight presence mechanism: the frontend periodically calls a backend method to record last-seen timestamps for the current principal; “users with platform open” is computed as users seen within a defined recent window (e.g., last 2–5 minutes) and is visible in the admin dashboard."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Add a small set of additional admin dashboard metrics that are fully computable from current on-chain state (no external services), and display them clearly in the admin dashboard.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "crie mais algumas informações pala ser disponibilizadas no dashboard"
+        ]
+      },
+      "acceptanceCriteria": [
+        "At least 3 additional metrics are implemented and displayed, chosen from available state such as: number of disabled accounts, number of pending pairing requests, number of parents with zero children, number of children not paired to any parent, total count of activity entries across all children (aggregated only), total count of location entries across all children (aggregated only).",
+        "All additional metrics are available via an admin-only backend query and are rendered on the admin dashboard.",
+        "No admin UI exposes individual child activity/location records (only aggregated counts), preserving existing privacy behavior."
       ]
     }
   ],
   "constraints": [
-    "Do not add SMS sending or any external SMS provider integration.",
-    "Do not attempt to keep the web app running after the browser is closed (no always-on background execution requirement).",
-    "Backend changes must conform to the single-actor Motoko architecture in backend/main.mo.",
-    "Do not modify files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT."
+    "Do not edit files under frontend/src/components/ui (shadcn components); compose them instead.",
+    "Do not edit frontend immutable paths listed by the system (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if stable-state upgrades are required.",
+    "Do not rely on third-party authentication or external databases/services; Internet Identity is the only auth mechanism.",
+    "Because Internet Identity does not provide verified email addresses, the allowlist must be enforced using data the app actually collects (profile name string and/or stored phone number)."
   ],
   "nonGoals": [
-    "Implementing real SMS delivery or OTP via SMS.",
-    "Implementing background execution when the browser/app is closed beyond existing PWA/service worker capabilities.",
-    "Adding real-time sockets/WebSocket-based notifications (use polling/refetch patterns already in use)."
+    "Implementing real email/password authentication or verifying ownership of the provided email addresses via external email systems.",
+    "Using SMS/telephony providers to verify the leader phone number outside the app’s existing on-chain mechanisms.",
+    "Real-time presence via WebSockets or push notifications (presence is best-effort via periodic polling/heartbeat)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

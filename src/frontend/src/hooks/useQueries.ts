@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult, PendingPairingRequest } from '../backend';
+import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult, PendingPairingRequest, AdminDashboardMetrics } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 import { toast } from 'sonner';
 
@@ -36,6 +36,8 @@ export function useSaveCallerUserProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+      queryClient.invalidateQueries({ queryKey: ['isCallerAllowlistedAdmin'] });
       toast.success('Profile saved successfully');
     },
     onError: (error: Error) => {
@@ -54,6 +56,33 @@ export function useIsCallerAdmin() {
       return actor.isCallerAdmin();
     },
     enabled: !!actor && !isFetching,
+  });
+}
+
+export function useIsCallerAllowlistedAdmin() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['isCallerAllowlistedAdmin'],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAllowlistedAdmin();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAdminDashboardMetrics() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<AdminDashboardMetrics>({
+    queryKey: ['adminDashboardMetrics'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAdminDashboardMetrics();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 }
 
@@ -226,7 +255,7 @@ export function useUpdateContentFilter() {
       toast.success('Content filter updated');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to update filter: ${error.message}`);
+      toast.error(`Failed to update content filter: ${error.message}`);
     },
   });
 }
@@ -241,83 +270,6 @@ export function useGetAuditLog(childId: Principal | null) {
       return actor.getAuditLog(childId);
     },
     enabled: !!actor && !isFetching && !!childId,
-  });
-}
-
-export function useGetAllUsers(enabled: boolean = true) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<[Principal, UserProfile][]>({
-    queryKey: ['allUsers'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllUsers();
-    },
-    enabled: !!actor && !isFetching && enabled,
-  });
-}
-
-export function useGetParentChildLinks(enabled: boolean = true) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<[Principal, Principal[]][]>({
-    queryKey: ['parentChildLinks'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getParentChildLinks();
-    },
-    enabled: !!actor && !isFetching && enabled,
-  });
-}
-
-export function useGetAggregatedMetrics(enabled: boolean = true) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery({
-    queryKey: ['aggregatedMetrics'],
-    queryFn: async () => {
-      if (!actor) return null;
-      return actor.getAggregatedMetrics();
-    },
-    enabled: !!actor && !isFetching && enabled,
-  });
-}
-
-export function useDisableAccount() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ account, reason }: { account: Principal; reason: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.disableAccount(account, reason);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      toast.success('Account disabled');
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to disable account: ${error.message}`);
-    },
-  });
-}
-
-export function useEnableAccount() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (account: Principal) => {
-      if (!actor) throw new Error('Actor not available');
-      await actor.enableAccount(account);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      toast.success('Account enabled');
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to enable account: ${error.message}`);
-    },
   });
 }
 
@@ -344,31 +296,35 @@ export function usePairWithParent() {
       if (!actor) throw new Error('Actor not available');
       return actor.pairWithParent(code);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myParent'] });
-      queryClient.invalidateQueries({ queryKey: ['myChildren'] });
+    onSuccess: (result) => {
+      if (result === 'success') {
+        queryClient.invalidateQueries({ queryKey: ['myParent'] });
+        toast.success('Successfully paired with parent!');
+      }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to pair with parent: ${error.message}`);
+      toast.error(`Failed to pair: ${error.message}`);
     },
   });
 }
 
-export function usePairWithParentViaPhone() {
+export function useRequestPairingWithParent() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (phoneNumber: string) => {
+    mutationFn: async (parentId: Principal) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.pairWithParentViaPhone(phoneNumber);
+      return actor.requestPairingWithParent(parentId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myParent'] });
-      queryClient.invalidateQueries({ queryKey: ['myChildren'] });
+    onSuccess: (result) => {
+      if (result === 'pendingLinkRequest') {
+        queryClient.invalidateQueries({ queryKey: ['myParent'] });
+        toast.success('Pairing request sent to parent');
+      }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to initiate phone pairing: ${error.message}`);
+      toast.error(`Failed to send pairing request: ${error.message}`);
     },
   });
 }
@@ -396,15 +352,29 @@ export function useAcceptPendingPairing() {
       if (!actor) throw new Error('Actor not available');
       return actor.acceptPendingPairing(requestId);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingPairingRequests'] });
-      queryClient.invalidateQueries({ queryKey: ['myChildren'] });
-      queryClient.invalidateQueries({ queryKey: ['myParent'] });
-      toast.success('Pairing request accepted successfully');
+    onSuccess: (result) => {
+      if (result === 'success') {
+        queryClient.invalidateQueries({ queryKey: ['pendingPairingRequests'] });
+        queryClient.invalidateQueries({ queryKey: ['myChildren'] });
+        toast.success('Pairing confirmed successfully!');
+      }
     },
     onError: (error: Error) => {
-      toast.error(`Failed to accept pairing request: ${error.message}`);
+      toast.error(`Failed to confirm pairing: ${error.message}`);
     },
+  });
+}
+
+export function useGetLiveLocationSharingStatus(childId: Principal | null) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<boolean>({
+    queryKey: ['liveLocationSharing', childId?.toString()],
+    queryFn: async () => {
+      if (!actor || !childId) return false;
+      return actor.getLiveLocationSharingStatus(childId);
+    },
+    enabled: !!actor && !isFetching && !!childId,
   });
 }
 
@@ -421,22 +391,8 @@ export function useSetLiveLocationSharing() {
       queryClient.invalidateQueries({ queryKey: ['liveLocationSharing'] });
     },
     onError: (error: Error) => {
-      toast.error(`Failed to update live location sharing: ${error.message}`);
+      toast.error(`Failed to update location sharing: ${error.message}`);
     },
-  });
-}
-
-export function useGetLiveLocationSharingStatus(childId: Principal | null, options?: { refetchInterval?: number }) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['liveLocationSharing', childId?.toString()],
-    queryFn: async () => {
-      if (!actor || !childId) return false;
-      return actor.getLiveLocationSharingStatus(childId);
-    },
-    enabled: !!actor && !isFetching && !!childId,
-    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -448,38 +404,35 @@ export function useVerifyAdminPassword() {
       if (!actor) throw new Error('Actor not available');
       return actor.verifyAdminPassword(password);
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to verify password: ${error.message}`);
-    },
   });
 }
 
-export function useSetAdminPassword() {
+export function useChangeAdminPassword() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (newPassword: string) => {
+    mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
       if (!actor) throw new Error('Actor not available');
-      await actor.setAdminPassword(newPassword);
+      await actor.changeAdminPassword(oldPassword, newPassword);
     },
     onSuccess: () => {
-      toast.success('Admin password updated');
+      toast.success('Admin password changed successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to update password: ${error.message}`);
+      toast.error(`Failed to change password: ${error.message}`);
     },
   });
 }
 
-export function useIsCurrentUserAdmin() {
+export function useGetUserProfile(userId: Principal | null) {
   const { actor, isFetching } = useActor();
 
-  return useQuery<boolean>({
-    queryKey: ['isCurrentUserAdmin'],
+  return useQuery<UserProfile | null>({
+    queryKey: ['userProfile', userId?.toString()],
     queryFn: async () => {
-      if (!actor) return false;
-      return actor.isCallerAdmin();
+      if (!actor || !userId) return null;
+      return actor.getUserProfile(userId);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !isFetching && !!userId,
   });
 }

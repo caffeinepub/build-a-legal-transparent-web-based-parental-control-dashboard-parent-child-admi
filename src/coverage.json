@@ -1,50 +1,99 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T17:47:20.167Z",
+  "generatedAt": "2026-02-17T16:09:08.282Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 2,
+    "total": 6,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
+        "summary": "Add a third role option named “ADMINISTRATOR” to the profile creation flow, alongside Parent and Child, and allow selecting it only when the user-provided identifier matches the leader allowlist: email “tigguinrodrigues@gmail.com” or “tigguinclash@gmail.com”, or phone number “(91)980115950”.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/utils/phoneNumber.ts",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "frontend/src/utils/phoneNumber.ts",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Implement backend enforcement for the ADMINISTRATOR role so that only leader-allowlisted accounts can save a profile with role #admin, and ensure non-allowlisted users cannot become admins even if they manipulate the frontend.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-2",
-        "summary": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
+        "id": "REQ-3",
+        "summary": "Set the admin password to “Liderdoprojetox1” and restrict admin-password changes so that only leader-allowlisted admins can change the admin password (other admins, if any, must not be able to change it).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Require a dedicated ADMINISTRATOR access step in the UI: when the logged-in user is recognized as admin by the backend, show an admin password gate screen (password input) before rendering the AdminPanel; only after successful verification in the current session may the AdminPanel be shown.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/parent/ParentDashboard.tsx",
-          "frontend/src/i18n/translations/en.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/parent/ParentDashboard.tsx",
-          "frontend/src/i18n/translations/en.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ]
       },
       {
-        "id": "REQ-3",
-        "summary": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
+        "id": "REQ-5",
+        "summary": "Expand the administrator dashboard metrics to include: total Parent users, total Child users, total Parent→Child link count (how many child logins are linked to a parent), total users who have ever logged in (interpreted as total saved profiles), and an estimate of how many users currently have the platform open (active sessions) based on a presence heartbeat.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/child/PairWithParentCard.tsx",
-          "frontend/src/i18n/translations/en.ts"
+          "frontend/src/hooks/usePresenceHeartbeat.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
         ],
         "matchedFiles": [
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/child/PairWithParentCard.tsx",
-          "frontend/src/i18n/translations/en.ts"
+          "frontend/src/hooks/usePresenceHeartbeat.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Add a small set of additional admin dashboard metrics that are fully computable from current on-chain state (no external services), and display them clearly in the admin dashboard.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts"
         ]
       }
     ]
@@ -53,18 +102,28 @@
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/admin/AccountsTable.tsx",
+    "frontend/src/components/admin/AdminPasswordGate.tsx",
+    "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
     "frontend/src/components/child/PairWithParentCard.tsx",
+    "frontend/src/components/parent/LiveLocationMap.tsx",
+    "frontend/src/config.ts",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/usePresenceHeartbeat.ts",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
-    "frontend/src/pages/parent/ParentDashboard.tsx",
+    "frontend/src/pages/admin/AdminPanel.tsx",
+    "frontend/src/utils/phoneNumber.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

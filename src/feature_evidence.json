@@ -2,12 +2,13 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-parent-facing-ui-alert-that-surfaces-pending-phone-confirmation-requests-and-allows-the-parent-to-confirm-with-one-click",
-      "featureTitle": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
+      "featureId": "feature-add-a-third-role-option-named-administrator-to-the-profile-creation-flow-alongside-parent-and-child-and-allow-selecting-it-only-when-the-user-provided-identifier-matches-the-leader-allowlist-email-tigguinrodrigues-gmail-com-or-tigguinclash-gmail-com-or-phone-number-91-980115950",
+      "featureTitle": "Add a third role option named “ADMINISTRATOR” to the profile creation flow, alongside Parent and Child, and allow selecting it only when the user-provided identifier matches the leader allowlist: email “tigguinrodrigues@gmail.com” or “tigguinclash@gmail.com”, or phone number “(91)980115950”.",
       "files": [
-        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
         "frontend/src/i18n/translations/en.ts",
-        "frontend/src/pages/parent/ParentDashboard.tsx"
+        "frontend/src/i18n/translations/pt-BR.ts",
+        "frontend/src/utils/phoneNumber.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -20,17 +21,17 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-child-phone-pairing-ui-flow-so-that-after-the-child-submits-the-parent-phone-number-the-ui-reflects-pending-parent-confirmation-state-instead-of-or-in-addition-to-the-current-otp-based-completion-step-and-keeps-polling-refetching-until-the-request-is-confirmed",
-      "featureTitle": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
+      "featureId": "feature-require-a-dedicated-administrator-access-step-in-the-ui-when-the-logged-in-user-is-recognized-as-admin-by-the-backend-show-an-admin-password-gate-screen-password-input-before-rendering-the-adminpanel-only-after-successful-verification-in-the-current-session-may-the-adminpanel-be-shown",
+      "featureTitle": "Require a dedicated ADMINISTRATOR access step in the UI: when the logged-in user is recognized as admin by the backend, show an admin password gate screen (password input) before rendering the AdminPanel; only after successful verification in the current session may the AdminPanel be shown.",
       "files": [
-        "frontend/src/components/child/PairWithParentCard.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/i18n/translations/en.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/admin/AdminPasswordGate.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,7 +44,58 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-3"
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-expand-the-administrator-dashboard-metrics-to-include-total-parent-users-total-child-users-total-parent-child-link-count-how-many-child-logins-are-linked-to-a-parent-total-users-who-have-ever-logged-in-interpreted-as-total-saved-profiles-and-an-estimate-of-how-many-users-currently-have-the-platform-open-active-sessions-based-on-a-presence-heartbeat",
+      "featureTitle": "Expand the administrator dashboard metrics to include: total Parent users, total Child users, total Parent→Child link count (how many child logins are linked to a parent), total users who have ever logged in (interpreted as total saved profiles), and an estimate of how many users currently have the platform open (active sessions) based on a presence heartbeat.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+        "frontend/src/hooks/usePresenceHeartbeat.ts",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts",
+        "frontend/src/pages/admin/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "invite-links@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-small-set-of-additional-admin-dashboard-metrics-that-are-fully-computable-from-current-on-chain-state-no-external-services-and-display-them-clearly-in-the-admin-dashboard",
+      "featureTitle": "Add a small set of additional admin dashboard metrics that are fully computable from current on-chain state (no external services), and display them clearly in the admin dashboard.",
+      "files": [
+        "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts",
+        "frontend/src/pages/admin/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "invite-links@3.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
       ],
       "confidence": "high"
     }

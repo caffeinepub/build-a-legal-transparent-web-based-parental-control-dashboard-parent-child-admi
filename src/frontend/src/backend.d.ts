@@ -100,6 +100,18 @@ export interface AccountDisabledDetails {
     account: Principal;
     reason: string;
 }
+export interface AdminDashboardMetrics {
+    totalUsersEverLoggedIn: bigint;
+    totalContentFiltersConfigured: bigint;
+    totalSchedulesConfigured: bigint;
+    activeSessionsEstimate: bigint;
+    totalAdmins: bigint;
+    totalPendingPairings: bigint;
+    totalDisabledAccounts: bigint;
+    totalParents: bigint;
+    totalChildren: bigint;
+    totalParentChildLinks: bigint;
+}
 export interface PendingPairingRequest {
     id: bigint;
     pending: boolean;
@@ -168,21 +180,17 @@ export enum UserRole {
 export interface backendInterface {
     acceptPendingPairing(requestId: bigint): Promise<PairWithParentResult>;
     addActivity(entry: ActivityEntry): Promise<void>;
+    addAllowlistedAdmin(adminPasswordAttempt: string, principal: Principal): Promise<void>;
+    addAllowlistedAdminPrincipal(adminPasswordAttempt: string, principal: Principal): Promise<void>;
     addLocation(entry: LocationEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    disableAccount(account: Principal, reason: string): Promise<void>;
-    enableAccount(account: Principal): Promise<void>;
+    changeAdminPassword(oldPassword: string, newPassword: string): Promise<void>;
     generateInviteCode(): Promise<string>;
     generatePairingCode(): Promise<string | null>;
     getActivities(childId: Principal): Promise<Array<ActivityEntry>>;
-    getAggregatedMetrics(): Promise<{
-        totalParents: bigint;
-        totalChildren: bigint;
-        totalUsers: bigint;
-        totalPairings: bigint;
-    }>;
+    getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>;
     getAllRSVPs(): Promise<Array<RSVP>>;
-    getAllUsers(): Promise<Array<[Principal, UserProfile]>>;
+    getAllowlistedAdminPrincipals(): Promise<Array<Principal>>;
     getAuditLog(childId: Principal): Promise<Array<AuditLogEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -192,17 +200,18 @@ export interface backendInterface {
     getLocations(childId: Principal): Promise<Array<LocationEntry>>;
     getMyChildren(): Promise<Array<Principal>>;
     getMyParent(): Promise<Principal | null>;
-    getParentChildLinks(): Promise<Array<[Principal, Array<Principal>]>>;
     getPendingPairingRequests(): Promise<Array<PendingPairingRequest>>;
     getSchedule(childId: Principal): Promise<ScheduleConfig | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
-    isAccountDisabled(account: Principal): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
+    isCallerAllowlistedAdmin(): Promise<boolean>;
+    isPrincipalAllowlistedAdmin(principal: Principal): Promise<boolean>;
     pairWithParent(code: string): Promise<PairWithParentResult>;
-    pairWithParentViaPhone(phoneNumber: string): Promise<PairWithParentResult>;
+    recordHeartbeat(): Promise<void>;
+    removeAllowlistedAdminPrincipal(adminPasswordAttempt: string, principal: Principal): Promise<void>;
     requestPairingWithParent(parentId: Principal): Promise<PairWithParentResult>;
+    revokeAllowlistedAdmin(adminPasswordAttempt: string, principal: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    setAdminPassword(newPassword: string): Promise<void>;
     setLiveLocationSharing(enabled: boolean): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;

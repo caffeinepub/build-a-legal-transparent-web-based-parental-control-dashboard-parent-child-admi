@@ -46,21 +46,23 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const AdminDashboardMetrics = IDL.Record({
+  'totalUsersEverLoggedIn' : IDL.Nat,
+  'totalContentFiltersConfigured' : IDL.Nat,
+  'totalSchedulesConfigured' : IDL.Nat,
+  'activeSessionsEstimate' : IDL.Nat,
+  'totalAdmins' : IDL.Nat,
+  'totalPendingPairings' : IDL.Nat,
+  'totalDisabledAccounts' : IDL.Nat,
+  'totalParents' : IDL.Nat,
+  'totalChildren' : IDL.Nat,
+  'totalParentChildLinks' : IDL.Nat,
+});
 export const RSVP = IDL.Record({
   'name' : IDL.Text,
   'inviteCode' : IDL.Text,
   'timestamp' : Time,
   'attending' : IDL.Bool,
-});
-export const AppRole = IDL.Variant({
-  'admin' : IDL.Null,
-  'child' : IDL.Null,
-  'parent' : IDL.Null,
-});
-export const UserProfile = IDL.Record({
-  'name' : IDL.Text,
-  'role' : AppRole,
-  'phoneNumber' : IDL.Opt(IDL.Text),
 });
 export const ActionType = IDL.Variant({
   'pendingRequestInitiated' : IDL.Null,
@@ -140,6 +142,16 @@ export const AuditLogEntry = IDL.Record({
   'details' : AuditLogDetails,
   'executor' : IDL.Principal,
 });
+export const AppRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'child' : IDL.Null,
+  'parent' : IDL.Null,
+});
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'role' : AppRole,
+  'phoneNumber' : IDL.Opt(IDL.Text),
+});
 export const InviteCode = IDL.Record({
   'created' : Time,
   'code' : IDL.Text,
@@ -156,10 +168,11 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'acceptPendingPairing' : IDL.Func([IDL.Nat], [PairWithParentResult], []),
   'addActivity' : IDL.Func([ActivityEntry], [], []),
+  'addAllowlistedAdmin' : IDL.Func([IDL.Text, IDL.Principal], [], []),
+  'addAllowlistedAdminPrincipal' : IDL.Func([IDL.Text, IDL.Principal], [], []),
   'addLocation' : IDL.Func([LocationEntry], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'disableAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
-  'enableAccount' : IDL.Func([IDL.Principal], [], []),
+  'changeAdminPassword' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'generateInviteCode' : IDL.Func([], [IDL.Text], []),
   'generatePairingCode' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
   'getActivities' : IDL.Func(
@@ -167,22 +180,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(ActivityEntry)],
       ['query'],
     ),
-  'getAggregatedMetrics' : IDL.Func(
-      [],
-      [
-        IDL.Record({
-          'totalParents' : IDL.Nat,
-          'totalChildren' : IDL.Nat,
-          'totalUsers' : IDL.Nat,
-          'totalPairings' : IDL.Nat,
-        }),
-      ],
-      ['query'],
-    ),
+  'getAdminDashboardMetrics' : IDL.Func([], [AdminDashboardMetrics], ['query']),
   'getAllRSVPs' : IDL.Func([], [IDL.Vec(RSVP)], ['query']),
-  'getAllUsers' : IDL.Func(
+  'getAllowlistedAdminPrincipals' : IDL.Func(
       [],
-      [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+      [IDL.Vec(IDL.Principal)],
       ['query'],
     ),
   'getAuditLog' : IDL.Func(
@@ -210,11 +212,6 @@ export const idlService = IDL.Service({
     ),
   'getMyChildren' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getMyParent' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
-  'getParentChildLinks' : IDL.Func(
-      [],
-      [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(IDL.Principal)))],
-      ['query'],
-    ),
   'getPendingPairingRequests' : IDL.Func(
       [],
       [IDL.Vec(PendingPairingRequest)],
@@ -230,17 +227,27 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isCallerAllowlistedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'isPrincipalAllowlistedAdmin' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Bool],
+      ['query'],
+    ),
   'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
-  'pairWithParentViaPhone' : IDL.Func([IDL.Text], [PairWithParentResult], []),
+  'recordHeartbeat' : IDL.Func([], [], []),
+  'removeAllowlistedAdminPrincipal' : IDL.Func(
+      [IDL.Text, IDL.Principal],
+      [],
+      [],
+    ),
   'requestPairingWithParent' : IDL.Func(
       [IDL.Principal],
       [PairWithParentResult],
       [],
     ),
+  'revokeAllowlistedAdmin' : IDL.Func([IDL.Text, IDL.Principal], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'setAdminPassword' : IDL.Func([IDL.Text], [], []),
   'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),
   'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
   'updateContentFilter' : IDL.Func(
@@ -293,21 +300,23 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const AdminDashboardMetrics = IDL.Record({
+    'totalUsersEverLoggedIn' : IDL.Nat,
+    'totalContentFiltersConfigured' : IDL.Nat,
+    'totalSchedulesConfigured' : IDL.Nat,
+    'activeSessionsEstimate' : IDL.Nat,
+    'totalAdmins' : IDL.Nat,
+    'totalPendingPairings' : IDL.Nat,
+    'totalDisabledAccounts' : IDL.Nat,
+    'totalParents' : IDL.Nat,
+    'totalChildren' : IDL.Nat,
+    'totalParentChildLinks' : IDL.Nat,
+  });
   const RSVP = IDL.Record({
     'name' : IDL.Text,
     'inviteCode' : IDL.Text,
     'timestamp' : Time,
     'attending' : IDL.Bool,
-  });
-  const AppRole = IDL.Variant({
-    'admin' : IDL.Null,
-    'child' : IDL.Null,
-    'parent' : IDL.Null,
-  });
-  const UserProfile = IDL.Record({
-    'name' : IDL.Text,
-    'role' : AppRole,
-    'phoneNumber' : IDL.Opt(IDL.Text),
   });
   const ActionType = IDL.Variant({
     'pendingRequestInitiated' : IDL.Null,
@@ -387,6 +396,16 @@ export const idlFactory = ({ IDL }) => {
     'details' : AuditLogDetails,
     'executor' : IDL.Principal,
   });
+  const AppRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'child' : IDL.Null,
+    'parent' : IDL.Null,
+  });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'role' : AppRole,
+    'phoneNumber' : IDL.Opt(IDL.Text),
+  });
   const InviteCode = IDL.Record({
     'created' : Time,
     'code' : IDL.Text,
@@ -403,10 +422,15 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'acceptPendingPairing' : IDL.Func([IDL.Nat], [PairWithParentResult], []),
     'addActivity' : IDL.Func([ActivityEntry], [], []),
+    'addAllowlistedAdmin' : IDL.Func([IDL.Text, IDL.Principal], [], []),
+    'addAllowlistedAdminPrincipal' : IDL.Func(
+        [IDL.Text, IDL.Principal],
+        [],
+        [],
+      ),
     'addLocation' : IDL.Func([LocationEntry], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'disableAccount' : IDL.Func([IDL.Principal, IDL.Text], [], []),
-    'enableAccount' : IDL.Func([IDL.Principal], [], []),
+    'changeAdminPassword' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'generateInviteCode' : IDL.Func([], [IDL.Text], []),
     'generatePairingCode' : IDL.Func([], [IDL.Opt(IDL.Text)], []),
     'getActivities' : IDL.Func(
@@ -414,22 +438,15 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(ActivityEntry)],
         ['query'],
       ),
-    'getAggregatedMetrics' : IDL.Func(
+    'getAdminDashboardMetrics' : IDL.Func(
         [],
-        [
-          IDL.Record({
-            'totalParents' : IDL.Nat,
-            'totalChildren' : IDL.Nat,
-            'totalUsers' : IDL.Nat,
-            'totalPairings' : IDL.Nat,
-          }),
-        ],
+        [AdminDashboardMetrics],
         ['query'],
       ),
     'getAllRSVPs' : IDL.Func([], [IDL.Vec(RSVP)], ['query']),
-    'getAllUsers' : IDL.Func(
+    'getAllowlistedAdminPrincipals' : IDL.Func(
         [],
-        [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+        [IDL.Vec(IDL.Principal)],
         ['query'],
       ),
     'getAuditLog' : IDL.Func(
@@ -457,11 +474,6 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getMyChildren' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getMyParent' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
-    'getParentChildLinks' : IDL.Func(
-        [],
-        [IDL.Vec(IDL.Tuple(IDL.Principal, IDL.Vec(IDL.Principal)))],
-        ['query'],
-      ),
     'getPendingPairingRequests' : IDL.Func(
         [],
         [IDL.Vec(PendingPairingRequest)],
@@ -477,17 +489,27 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
-    'isAccountDisabled' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isCallerAllowlistedAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'isPrincipalAllowlistedAdmin' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Bool],
+        ['query'],
+      ),
     'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
-    'pairWithParentViaPhone' : IDL.Func([IDL.Text], [PairWithParentResult], []),
+    'recordHeartbeat' : IDL.Func([], [], []),
+    'removeAllowlistedAdminPrincipal' : IDL.Func(
+        [IDL.Text, IDL.Principal],
+        [],
+        [],
+      ),
     'requestPairingWithParent' : IDL.Func(
         [IDL.Principal],
         [PairWithParentResult],
         [],
       ),
+    'revokeAllowlistedAdmin' : IDL.Func([IDL.Text, IDL.Principal], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'setAdminPassword' : IDL.Func([IDL.Text], [], []),
     'setLiveLocationSharing' : IDL.Func([IDL.Bool], [], []),
     'submitRSVP' : IDL.Func([IDL.Text, IDL.Bool, IDL.Text], [], []),
     'updateContentFilter' : IDL.Func(

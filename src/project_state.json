@@ -1,28 +1,43 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Parent/child tracking app with live location map; planning an in-app confirmation flow where a parent is notified and can confirm when a child registers the parent phone number.",
+  "summary": "Build a platform with user roles (PAI/MÃE, FILHO, and ADMINISTRADOR) including restricted admin access and an admin dashboard with usage metrics.",
   "architectural_notes": [
-    "Add backend-generated internal notifications and a parent-side UI alert/confirmation action triggered by child phone-number registration."
+    "Implement role-based access control (RBAC) with an ADMINISTRADOR role gated by an allowlist (specific emails/phone) plus a separate admin password check.",
+    "Admin dashboard requires tracking/aggregating user counts, parent-child link counts, login events, and active-session/online presence signals."
   ],
-  "known_issues": [
-    "Build/deploy generation failed when attempting to implement the in-app notification confirmation flow (\"The AI couldn't complete your request\")."
-  ],
+  "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-parent-facing-ui-alert-that-surfaces-pending-phone-confirmation-requests-and-allows-the-parent-to-confirm-with-one-click",
-      "title": "Add a parent-facing UI alert that surfaces pending phone confirmation requests and allows the PARENT to confirm with one click.",
+      "id": "feature-add-a-third-role-option-named-administrator-to-the-profile-creation-flow-alongside-parent-and-child-and-allow-selecting-it-only-when-the-user-provided-identifier-matches-the-leader-allowlist-email-tigguinrodrigues-gmail-com-or-tigguinclash-gmail-com-or-phone-number-91-980115950",
+      "title": "Add a third role option named “ADMINISTRATOR” to the profile creation flow, alongside Parent and Child, and allow selecting it only when the user-provided identifier matches the leader allowlist: email “tigguinrodrigues@gmail.com” or “tigguinclash@gmail.com”, or phone number “(91)980115950”.",
       "reqIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-child-phone-pairing-ui-flow-so-that-after-the-child-submits-the-parent-phone-number-the-ui-reflects-pending-parent-confirmation-state-instead-of-or-in-addition-to-the-current-otp-based-completion-step-and-keeps-polling-refetching-until-the-request-is-confirmed",
-      "title": "Update the child phone pairing UI flow so that after the CHILD submits the parent phone number, the UI reflects “pending parent confirmation” state instead of (or in addition to) the current OTP-based completion step, and keeps polling/refetching until the request is confirmed.",
+      "id": "feature-require-a-dedicated-administrator-access-step-in-the-ui-when-the-logged-in-user-is-recognized-as-admin-by-the-backend-show-an-admin-password-gate-screen-password-input-before-rendering-the-adminpanel-only-after-successful-verification-in-the-current-session-may-the-adminpanel-be-shown",
+      "title": "Require a dedicated ADMINISTRATOR access step in the UI: when the logged-in user is recognized as admin by the backend, show an admin password gate screen (password input) before rendering the AdminPanel; only after successful verification in the current session may the AdminPanel be shown.",
       "reqIds": [
-        "REQ-3"
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-expand-the-administrator-dashboard-metrics-to-include-total-parent-users-total-child-users-total-parent-child-link-count-how-many-child-logins-are-linked-to-a-parent-total-users-who-have-ever-logged-in-interpreted-as-total-saved-profiles-and-an-estimate-of-how-many-users-currently-have-the-platform-open-active-sessions-based-on-a-presence-heartbeat",
+      "title": "Expand the administrator dashboard metrics to include: total Parent users, total Child users, total Parent→Child link count (how many child logins are linked to a parent), total users who have ever logged in (interpreted as total saved profiles), and an estimate of how many users currently have the platform open (active sessions) based on a presence heartbeat.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-small-set-of-additional-admin-dashboard-metrics-that-are-fully-computable-from-current-on-chain-state-no-external-services-and-display-them-clearly-in-the-admin-dashboard",
+      "title": "Add a small set of additional admin dashboard metrics that are fully computable from current on-chain state (no external services), and display them clearly in the admin dashboard.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -30,20 +45,35 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement in-app confirmation flow: when the child enters the registered parent phone number, backend creates an internal notification; parent receives an alert and can confirm with one click.",
+      "summary": "Add a third login/access option named ADMINISTRADOR, restricted to leader accounts (allowlist emails/phone) protected by password.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Implement a persistent in-app notification/request flow for phone-based parent-child linking: when a CHILD submits a phone number that matches a PARENT’s registered phone number, create a pending confirmation request addressed to that parent, and block completion of the phone-based pairing until the PARENT confirms with one click.",
+      "summary": "Create an ADMINISTRADOR dashboard showing counts of PAI/MÃE and FILHO users, number of FILHO logins linked to PAI/MÃE, total users who logged in, currently active/open sessions, and additional platform metrics.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Implement backend enforcement for the ADMINISTRATOR role so that only leader-allowlisted accounts can save a profile with role #admin, and ensure non-allowlisted users cannot become admins even if they manipulate the frontend.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Set the admin password to “Liderdoprojetox1” and restrict admin-password changes so that only leader-allowlisted admins can change the admin password (other admins, if any, must not be able to change it).",
+      "reqIds": [
+        "REQ-3"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Add in-app parent confirmation notification when child submits parent phone number",
+  "gameProjectType": "none",
+  "projectName": "Parental Control",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
