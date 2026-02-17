@@ -1,37 +1,227 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Hide Administrator role option until allowlisted phone number is entered",
+  "title": "Parental Control — New admin dashboard with user lists, login analytics, and battery metrics (frontend-only)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Hide the Administrator role option by default and reveal it only when the phone number input normalizes to 91980115950 (digits-only match).",
+      "summary": "Replace AdminPanel UI with a new dashboard layout featuring a left sidebar and main content overview with metric cards and drill-down links similar in density to image-12.",
       "acceptanceCriteria": [
-        "When the phone number input is empty or does not normalize to 91980115950, the Administrator radio option is not rendered/visible in the role selection list.",
-        "When the phone number input normalizes to 91980115950 (e.g., entered as \"(91)980115950\" or \"91980115950\"), the Administrator option becomes visible without requiring a page refresh.",
-        "Phone matching is performed using digits-only comparison (ignore parentheses and any non-digits)."
+        "When an authenticated admin passes the AdminPasswordGate, the AdminPanel renders the new dashboard layout instead of the current metrics + placeholder management card.",
+        "The dashboard includes a visible sidebar navigation and a main overview section with metric cards and sections similar in density/structure to image-12 (not necessarily identical).",
+        "No changes are made to any frontend paths listed under `frontend.immutablePaths` in SYSTEM_CONTEXT."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Update the role selection UI to conditionally render the Administrator option only when the Phone Number input digits normalize to 91980115950, using digits-only comparison (e.g., via existing phone utils). Ensure the UI reacts immediately on input changes. This dialog is part of the authorization component’s profile/role setup flow; verify the component's usage instructions before implementing."
+          "description": "Replace the current layout (including AggregatedMetricsCards usage) with a two-column admin dashboard shell: left sidebar navigation + main content. Wire overview metric cards and drill-down actions to in-panel views (no new top-level routes). Use existing shadcn-ui components (Card/Button/etc.) for consistent styling; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminDashboardShell.tsx",
+          "operation": "create",
+          "description": "Create a reusable admin dashboard shell component that renders the sidebar navigation and main content header/sections, matching the overall structure/density of image-12. Use existing shadcn-ui components and Tailwind utility classes; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "operation": "create",
+          "description": "Implement the left sidebar navigation UI for admin sections (e.g., Overview, Users, Devices, Analytics) with active state and click handlers that switch the main content panel. Use existing shadcn-ui components where appropriate; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "operation": "create",
+          "description": "Create an overview cards component that renders the primary metric cards (including Parents/Children cards with drill-down links) in a grid similar in density to image-12. Use existing shadcn-ui Card and Skeleton components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
+          "operation": "modify",
+          "description": "Keep the existing metrics cards component intact for other potential uses, but adjust/export any needed helpers (if required) to avoid direct usage in AdminPanel after the redesign. Use existing shadcn-ui components only; verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Make phone number input available before role selection and keep role/admin verification actions consistent when the admin option re-hides.",
+      "summary": "Show parent/child user counts as clickable cards and display role-filtered user lists with key user info in an admin-only view inside the new AdminPanel.",
       "acceptanceCriteria": [
-        "The user can access the phone number input without first needing to select a specific role, so they can unlock the Administrator option.",
-        "If the user has selected the Administrator role and then edits the phone number so it no longer matches 91980115950, the UI automatically deselects Administrator (switch to a non-admin role) and hides the Administrator option again.",
-        "No backend calls to admin verification/allowlisting are possible unless the Administrator role is visible and selected."
+        "Admin dashboard shows a Parents count card and Children count card.",
+        "Clicking the Parents card opens a list/table showing only users with role Parent; clicking the Children card opens a list/table showing only users with role Child.",
+        "The list view supports loading/empty states and does not expose data to non-admin users (backend enforces admin-only access)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Reorder/adjust the form so the Phone Number input is always visible before the role RadioGroup. Add state management to prevent inconsistent selection: if the phone no longer matches, automatically switch away from 'admin', clear admin-password UI/state, and hide the admin option again. Add a submission guard so admin verification/allowlisting mutations can only run when the admin option is currently visible/unlocked and selected. This dialog is part of the authorization component’s role-based access flow; verify the component's usage instructions before implementing."
+          "description": "Add React Query hooks for admin user counts and role-filtered user lists using existing backend capabilities (parent/child counts and parent/child user list queries). Provide typed return shapes, caching, and safe enabled-conditions based on actor readiness."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "operation": "create",
+          "description": "Implement an in-admin-panel users list view that can show either Parents or Children. Render a table/list with at minimum: name, principal, role, and phone number (if present), plus loading/empty/error states. Use existing shadcn-ui Table/Card/Skeleton components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "operation": "modify",
+          "description": "Wire Parents and Children cards to open the corresponding user list panel (or dialog/drawer) and trigger the correct role-filtered query. Use existing shadcn-ui components for the clickable card interactions; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Wire the new users list panel into the AdminPanel’s section switching (from sidebar and from overview drill-down). Ensure the list panel is only reachable after the existing admin gate flow in App.tsx (no new auth added). Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement admin login analytics UI (day/month/year scope selector) and record login events from the frontend after successful authentication.",
+      "acceptanceCriteria": [
+        "Admin dashboard includes a 'Logins' analytics section with a control that allows selecting: a specific date, a month, or a year.",
+        "The backend provides an admin-only method that returns login counts corresponding to the chosen scope (day/month/year).",
+        "The frontend displays the returned counts clearly and updates when the selection changes.",
+        "Login events are recorded from the frontend after successful authentication (and do not require external services)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks to retrieve login counts for day/month/year scopes using existing backend capabilities, and add a mutation hook to record login events after authentication. Ensure queries are keyed by scope inputs and only enabled when actor is available."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "operation": "create",
+          "description": "Create an admin analytics panel that provides controls to select scope (day/month/year) and date inputs (date picker or inputs) and shows the returned login count with clear loading/error states. Use existing shadcn-ui components (Card, Tabs/Select, Input, Button); verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Wire the login analytics panel into the new AdminPanel main content area and sidebar navigation. Ensure the displayed count refetches/updates when the selection changes. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "After successful authentication (identity present), trigger a one-time-per-session login event recording via the new hook/mutation (e.g., using sessionStorage to avoid duplicate recordings on re-render). Include a simple device string (e.g., user agent) and handle failures gracefully without blocking rendering. Use the existing authorization pattern already in place; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Report each user’s latest battery percentage from the frontend when available and render an admin-only battery status list/distribution section in the new AdminPanel.",
+      "acceptanceCriteria": [
+        "Backend provides a method for an authenticated user to submit/update their current battery percentage (0–100) and a method for admins to view battery percentages for users.",
+        "Admin dashboard includes a battery-related card/section that surfaces battery percentage information for users (e.g., a list/table of users with last reported battery % and last updated time).",
+        "Non-admin users cannot query other users' battery information (backend traps/denies)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks for admin battery status viewing using existing backend capabilities and a mutation for updating the caller’s battery status. Include reasonable refetch behavior for admin overview (manual refresh and/or modest polling)."
+        },
+        {
+          "path": "frontend/src/hooks/useBatteryReporting.ts",
+          "operation": "create",
+          "description": "Implement a small hook that, for authenticated non-admin users, attempts to read battery percentage via the browser Battery Status API when available and submits updates via the mutation (with throttling/debouncing and minimal background activity). Fallback safely if the API is unavailable."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire battery reporting hook into the authenticated app lifecycle so devices can periodically/occasionally submit the caller’s battery percentage without affecting other pages. Ensure it does not run for anonymous users and avoids excessive calls."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+          "operation": "create",
+          "description": "Create an admin battery panel showing a table/list of users with last reported battery percentage and last updated timestamp, plus loading/empty/error states. Use existing shadcn-ui components (Card/Table/Skeleton/Badge); verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "operation": "modify",
+          "description": "Add a battery-related overview card/section entry consistent with image-12 density that drills into the battery status panel. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Wire the battery status panel into the AdminPanel’s sidebar/main content switching and ensure it’s accessible via overview drill-down. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Extend React Query hooks for new admin dashboard data and wire them into the redesigned AdminPanel with sane caching and refetch behavior.",
+      "acceptanceCriteria": [
+        "New admin queries are accessible via typed hooks in `useQueries.ts` and used by the AdminPanel components.",
+        "Queries handle loading and error states without breaking the AdminPanel rendering.",
+        "Refetch intervals (if any) are reasonable (e.g., manual refresh or periodic for overview) and do not cause excessive calls."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Implement/extend typed hooks used by the new AdminPanel sections: user lists by role, login analytics by scope, battery status views, and recording mutations (login event, battery updates). Ensure consistent query keys, enabled flags tied to actor readiness, and reasonable refetch defaults."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure all new admin dashboard components consume the new hooks, and the AdminPanel renders robust loading/error/empty states across sections without crashing. Use existing shadcn-ui components for skeletons and alerts; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "operation": "modify",
+          "description": "Integrate the new role-based user list hooks and ensure caching/refresh behavior (e.g., refetch on open, optional manual refresh button) is reasonable. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "operation": "modify",
+          "description": "Integrate the login analytics hooks with scope-driven query keys and ensure the UI updates immediately on scope/date changes. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+          "operation": "modify",
+          "description": "Integrate the battery status hooks and ensure loading/empty/error states plus modest refetch behavior. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add i18n keys (English and pt-BR) for all new/changed admin dashboard UI strings and ensure AdminPanel remains fully localized.",
+      "acceptanceCriteria": [
+        "All new labels/titles/buttons added for the new AdminPanel features are sourced via `useI18n()` translation keys.",
+        "English strings exist in `frontend/src/i18n/translations/en.ts` and Portuguese strings exist in `frontend/src/i18n/translations/pt-BR.ts` for the new keys.",
+        "The AdminPanel renders correctly in both languages when switching locales."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/i18n/translations/en.ts",
+          "operation": "modify",
+          "description": "Add new translation keys for the redesigned admin dashboard (sidebar section names, overview headings, drill-down link labels, user list headings/columns, login analytics labels/scope controls, battery labels, timestamps, empty/loading messages)."
+        },
+        {
+          "path": "frontend/src/i18n/translations/pt-BR.ts",
+          "operation": "modify",
+          "description": "Add Portuguese (pt-BR) equivalents for all new admin dashboard translation keys added to en.ts, matching meaning and keeping existing behavior intact."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Replace any new hardcoded strings introduced by the redesign with `useI18n()` keys, ensuring both locales render correctly. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "operation": "modify",
+          "description": "Ensure all sidebar labels and any accessibility text use `useI18n()` translation keys. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure table headers, empty-state text, and action labels are fully translated via `useI18n()`. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure all labels for scope selection, date/month/year inputs, and result display are translated via `useI18n()`. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure battery panel strings (labels, table headers, empty states, timestamp formatting labels) are translated via `useI18n()`. Use existing shadcn-ui components; verify the component's usage instructions before implementing."
         }
       ]
     }

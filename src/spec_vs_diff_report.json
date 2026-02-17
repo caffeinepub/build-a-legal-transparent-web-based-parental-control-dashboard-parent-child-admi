@@ -1,46 +1,61 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T18:20:55.904Z",
-  "summary": "Diff adds phone-number-based unlocking logic for the Administrator role in ProfileSetupDialog, including auto-deselect when the phone stops matching and a guard to prevent admin allowlist backend calls unless the admin option remains unlocked. However, the diff excerpt is truncated and does not provide direct evidence of the Administrator option being conditionally rendered/hidden in the role list or that the phone input is positioned/available at role-selection time. Diff also updates project metadata/summaries not requested.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Hide the \"Administrator\" role option by default and only reveal it when the phone number input normalizes (digits-only) to 91980115950; when not matched, the Administrator option is not rendered/visible in the role selection list.",
-      "reason": "The shown code implements an `isAdminOptionUnlocked` flag, but the truncated diff does not include the JSX where role options are rendered, so there is no direct evidence that the Administrator radio option is actually conditionally not rendered/hidden when locked.",
-      "evidence": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Ensure the phone number input is available to the user at the time they choose a role (so they can unlock Administrator).",
-      "reason": "The diff excerpt shows phone state and a change handler, but does not show the dialog layout/ordering; there is no direct evidence that the Phone Number input is presented before or alongside the role selection UI (i.e., available at the moment of role choice).",
-      "evidence": [
-        "frontend/src/components/auth/ProfileSetupDialog.tsx (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-17T20:24:32.126Z",
+  "summary": "Diff implements a new AdminPanel layout with sidebar navigation and new admin sections (overview cards, parents/children user lists, login analytics UI, battery status UI), adds battery reporting and login event recording in the app, and extends i18n with admin-related strings. Several unrelated features/behavior changes were also introduced (e.g., profile setup/admin role gating by phone number, added polling in parent views, pairing code clipboard behavior, admin password changes).",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Project bookkeeping updates (new_feature_requests/architectural_notes/status) unrelated to the requested UI behavior change.",
-      "reason": "BuildRequest did not ask to modify project tracking metadata.",
+      "description": "Profile setup changes: Administrator role hidden by default and only appears when a specific phone number is entered; includes password visibility toggle and other behavior not requested by the BuildRequest.",
+      "reason": "BuildRequest only asked to replace AdminPanel and add admin dashboard features (user lists, login analytics, battery reporting) and i18n; it did not request changing role-selection logic or gating admin role by a specific phone number.",
       "evidence": [
-        "project_state.json"
+        "frontend-file-summaries.txt (frontend/src/components/auth/ProfileSetupDialog.tsx summary mentions admin option shown only when phone number (91)980115950 is entered)"
       ]
     },
     {
-      "description": "Updated/expanded frontend file summaries documentation.",
-      "reason": "BuildRequest did not request documentation/summaries changes.",
+      "description": "Added/changed periodic polling (15-second intervals) in several parent/child views (ChildSummaryCard, ActivityView, LocationView) beyond the admin dashboard scope.",
+      "reason": "Non-goal/requirements did not request real-time/near-real-time polling for these views; requested admin dashboard changes only (and explicitly said no websockets/streaming for dashboards, not general app polling).",
       "evidence": [
-        "frontend-file-summaries.txt (truncated)"
+        "frontend-file-summaries.txt (summaries for frontend/src/components/parent/ChildSummaryCard.tsx, ActivityView.tsx, LocationView.tsx mention 15-second polling)"
+      ]
+    },
+    {
+      "description": "Pairing setup behavior change: generates 6-digit backend pairing codes and copies only the code (not a URL) to clipboard with updated toast messaging.",
+      "reason": "Not part of requested admin dashboard replacement, user lists, login analytics, battery reporting, queries, or i18n updates.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/parent/PairingSetup.tsx summary)"
+      ]
+    },
+    {
+      "description": "TransparencyPolicies modal content/translation overhaul and Tailwind class tweak.",
+      "reason": "Not requested by the BuildRequest; unrelated to admin dashboard replacement and metrics features.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/TransparencyPolicies.tsx summary)"
+      ]
+    },
+    {
+      "description": "Backend introduces a 'New Strict Admin Password' variable with a hard-coded value.",
+      "reason": "BuildRequest did not ask to add or change admin password semantics; it only required admin-only authorization checks for admin data and keeping backend as a single actor.",
+      "evidence": [
+        "backend/main.mo (shows comment 'New Strict Admin Password' and `var adminPassword : Text = \"Tigguindoprojetox1\";`)"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+    "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+    "frontend/src/components/admin/AdminOverviewCards.tsx",
+    "frontend/src/components/admin/AdminSidebarNav.tsx",
+    "frontend/src/components/admin/AdminUsersListPanel.tsx",
+    "frontend/src/hooks/useBatteryReporting.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/i18n/translations/en.ts",
+    "frontend/src/i18n/translations/pt-BR.ts",
+    "frontend/src/pages/admin/AdminPanel.tsx",
     "project_state.json"
   ]
 }

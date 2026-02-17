@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useInternetIdentity } from './useInternetIdentity';
-import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult, PendingPairingRequest, AdminDashboardMetrics } from '../backend';
+import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult, PendingPairingRequest, AdminDashboardMetrics, DeviceBatteryStatus } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 import { toast } from 'sonner';
 import { ExternalBlob } from '../backend';
@@ -78,12 +78,8 @@ export function useDeleteAccount() {
       await actor.deleteCallerAccount();
     },
     onSuccess: async () => {
-      // Clear all cached data
       queryClient.clear();
-      
-      // Log out the user
       await clear();
-      
       toast.success('Account deleted successfully');
     },
     onError: (error: Error) => {
@@ -128,7 +124,134 @@ export function useGetAdminDashboardMetrics() {
       return actor.getAdminDashboardMetrics();
     },
     enabled: !!actor && !isFetching,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
+  });
+}
+
+export function useGetParentUsersCount() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['parentUsersCount'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getParentUsersCount();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetChildUsersCount() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['childUsersCount'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getChildUsersCount();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetParentUsers() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[Principal, UserProfile]>>({
+    queryKey: ['parentUsers'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getParentUsers();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetChildUsers() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[Principal, UserProfile]>>({
+    queryKey: ['childUsers'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getChildUsers();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetLoginCountByDay(year: bigint, month: bigint, day: bigint) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['loginCountByDay', year.toString(), month.toString(), day.toString()],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getLoginCountByDay(year, month, day);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetLoginCountByMonth(year: bigint, month: bigint) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['loginCountByMonth', year.toString(), month.toString()],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getLoginCountByMonth(year, month);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetLoginCountByYear(year: bigint) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint>({
+    queryKey: ['loginCountByYear', year.toString()],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getLoginCountByYear(year);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useRecordLoginEvent() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (device: string) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.recordLoginEvent(device);
+    },
+  });
+}
+
+export function useUpdateDeviceBatteryStatus() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (status: DeviceBatteryStatus) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateDeviceBatteryStatus(status);
+    },
+  });
+}
+
+export function useGetAllDeviceBatteryStatuses() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[Principal, DeviceBatteryStatus]>>({
+    queryKey: ['allDeviceBatteryStatuses'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getAllDeviceBatteryStatuses();
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 60000,
   });
 }
 
@@ -448,7 +571,6 @@ export function useVerifyAdminPassword() {
   return useMutation({
     mutationFn: async (password: string) => {
       if (!actor) throw new Error('Actor not available');
-      // Ensure password is trimmed before sending to backend
       const trimmedPassword = password.trim();
       return actor.verifyAdminPassword(trimmedPassword);
     },
@@ -461,7 +583,6 @@ export function useChangeAdminPassword() {
   return useMutation({
     mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
       if (!actor) throw new Error('Actor not available');
-      // Ensure passwords are trimmed before sending to backend
       const trimmedOldPassword = oldPassword.trim();
       const trimmedNewPassword = newPassword.trim();
       await actor.changeAdminPassword(trimmedOldPassword, trimmedNewPassword);
@@ -482,7 +603,6 @@ export function useAddAllowlistedAdminPrincipal() {
   return useMutation({
     mutationFn: async ({ password, principal }: { password: string; principal: Principal }) => {
       if (!actor) throw new Error('Actor not available');
-      // Ensure password is trimmed before sending to backend
       const trimmedPassword = password.trim();
       await actor.addAllowlistedAdminPrincipal(trimmedPassword, principal);
     },

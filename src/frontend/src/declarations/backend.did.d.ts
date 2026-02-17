@@ -77,6 +77,10 @@ export interface DayTimeWindow {
   'dayOfWeek' : bigint,
   'startHour' : bigint,
 }
+export interface DeviceBatteryStatus {
+  'timestamp' : Time,
+  'batteryPercentage' : bigint,
+}
 export type ExternalBlob = Uint8Array;
 export interface FilterChangeDetails {
   'child' : Principal,
@@ -199,18 +203,29 @@ export interface _SERVICE {
   'generatePairingCode' : ActorMethod<[], [] | [string]>,
   'getActivities' : ActorMethod<[Principal], Array<ActivityEntry>>,
   'getAdminDashboardMetrics' : ActorMethod<[], AdminDashboardMetrics>,
+  'getAllDeviceBatteryStatuses' : ActorMethod<
+    [],
+    Array<[Principal, DeviceBatteryStatus]>
+  >,
   'getAllRSVPs' : ActorMethod<[], Array<RSVP>>,
   'getAllowlistedAdminPrincipals' : ActorMethod<[], Array<Principal>>,
   'getAuditLog' : ActorMethod<[Principal], Array<AuditLogEntry>>,
   'getCallerProfilePhoto' : ActorMethod<[], [] | [ExternalBlob]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getChildUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
+  'getChildUsersCount' : ActorMethod<[], bigint>,
   'getContentFilter' : ActorMethod<[Principal], [] | [ContentFilterConfig]>,
   'getInviteCodes' : ActorMethod<[], Array<InviteCode>>,
   'getLiveLocationSharingStatus' : ActorMethod<[Principal], boolean>,
   'getLocations' : ActorMethod<[Principal], Array<LocationEntry>>,
+  'getLoginCountByDay' : ActorMethod<[bigint, bigint, bigint], bigint>,
+  'getLoginCountByMonth' : ActorMethod<[bigint, bigint], bigint>,
+  'getLoginCountByYear' : ActorMethod<[bigint], bigint>,
   'getMyChildren' : ActorMethod<[], Array<Principal>>,
   'getMyParent' : ActorMethod<[], [] | [Principal]>,
+  'getParentUsers' : ActorMethod<[], Array<[Principal, UserProfile]>>,
+  'getParentUsersCount' : ActorMethod<[], bigint>,
   'getPendingPairingRequests' : ActorMethod<[], Array<PendingPairingRequest>>,
   'getSchedule' : ActorMethod<[Principal], [] | [ScheduleConfig]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
@@ -219,6 +234,7 @@ export interface _SERVICE {
   'isPrincipalAllowlistedAdmin' : ActorMethod<[Principal], boolean>,
   'pairWithParent' : ActorMethod<[string], PairWithParentResult>,
   'recordHeartbeat' : ActorMethod<[], undefined>,
+  'recordLoginEvent' : ActorMethod<[string], undefined>,
   'removeAllowlistedAdminPrincipal' : ActorMethod<
     [string, Principal],
     undefined
@@ -233,6 +249,7 @@ export interface _SERVICE {
     [Principal, ContentFilterConfig],
     undefined
   >,
+  'updateDeviceBatteryStatus' : ActorMethod<[DeviceBatteryStatus], undefined>,
   'updateSchedule' : ActorMethod<[Principal, ScheduleConfig], undefined>,
   'verifyAdminPassword' : ActorMethod<[string], boolean>,
 }

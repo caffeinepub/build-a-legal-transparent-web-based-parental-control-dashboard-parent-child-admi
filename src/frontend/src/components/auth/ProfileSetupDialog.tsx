@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Shield, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { AppRole } from '../../backend';
 import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber, normalizePhoneNumber } from '../../utils/phoneNumber';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -22,6 +22,7 @@ export default function ProfileSetupDialog() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const saveProfile = useSaveCallerUserProfile();
   const addAllowlistedAdmin = useAddAllowlistedAdminPrincipal();
   const { identity } = useInternetIdentity();
@@ -210,18 +211,32 @@ export default function ProfileSetupDialog() {
             {role === 'admin' && (
               <div className="space-y-2">
                 <Label htmlFor="adminPassword">{t('profileSetupAdminPasswordLabel')}</Label>
-                <Input
-                  id="adminPassword"
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => {
-                    setAdminPassword(e.target.value);
-                    setPasswordError('');
-                  }}
-                  placeholder={t('profileSetupAdminPasswordPlaceholder')}
-                  required
-                  className={passwordError ? 'border-destructive' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="adminPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    value={adminPassword}
+                    onChange={(e) => {
+                      setAdminPassword(e.target.value);
+                      setPasswordError('');
+                    }}
+                    placeholder={t('profileSetupAdminPasswordPlaceholder')}
+                    required
+                    className={passwordError ? 'border-destructive pr-10' : 'pr-10'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 {passwordError && (
                   <p className="text-xs text-destructive">{passwordError}</p>
                 )}

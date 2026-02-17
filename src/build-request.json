@@ -1,52 +1,123 @@
 {
   "kind": "build_request",
-  "title": "Hide Administrator role until a specific phone number is entered",
+  "title": "Replace AdminPanel with new admin dashboard: user lists, login analytics, and battery percentage metrics",
   "projectName": "Parental Control",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
+      "text": "Replace the existing admin dashboard UI in `frontend/src/pages/admin/AdminPanel.tsx` (including the current `AggregatedMetricsCards` usage) with a new dashboard layout that matches the overall structure shown in the uploaded example (image-12): a left navigation/sidebar area and a main content area with metric cards and drill-down links.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "faça com que a opção administrador fique oculta e só apareça quando for inserido o numero (91)980115950 na área Número de telefone"
+          "crie um dashboard que mostre os seguintes dados...",
+          "1"
         ]
       },
       "acceptanceCriteria": [
-        "When the phone number input is empty or does not normalize to 91980115950, the Administrator radio option is not rendered/visible in the role selection list.",
-        "When the phone number input normalizes to 91980115950 (e.g., entered as \"(91)980115950\" or \"91980115950\"), the Administrator option becomes visible without requiring a page refresh.",
-        "Phone matching is performed using digits-only comparison (ignore parentheses and any non-digits)."
+        "When an authenticated admin passes the AdminPasswordGate, the AdminPanel renders the new dashboard layout instead of the current metrics + placeholder management card.",
+        "The dashboard includes a visible sidebar navigation and a main overview section with metric cards and sections similar in density/structure to image-12 (not necessarily identical).",
+        "No changes are made to any frontend paths listed under `frontend.immutablePaths` in SYSTEM_CONTEXT."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
-      "target": "frontend",
+      "text": "Add backend support and frontend UI for 'Parent users count' and 'Child users count' where each count is clickable and opens a list of the corresponding users with their available information (at minimum: name, principal, role, and phone number if present).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "...na área Número de telefone"
+          "Quantidade de usuários PAI/MÃE (ao clicar deve abrir a lista com as informações), quantidade de usuários FILHO(ao clicar deve abrir a lista com as informações)"
         ]
       },
       "acceptanceCriteria": [
-        "The user can access the phone number input without first needing to select a specific role, so they can unlock the Administrator option.",
-        "If the user has selected the Administrator role and then edits the phone number so it no longer matches 91980115950, the UI automatically deselects Administrator (switch to a non-admin role) and hides the Administrator option again.",
-        "No backend calls to admin verification/allowlisting are possible unless the Administrator role is visible and selected."
+        "Admin dashboard shows a Parents count card and Children count card.",
+        "Clicking the Parents card opens a list/table showing only users with role Parent; clicking the Children card opens a list/table showing only users with role Child.",
+        "The list view supports loading/empty states and does not expose data to non-admin users (backend enforces admin-only access)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Implement login analytics: track login events per user and expose an admin-only query to retrieve the number of logins for a selected time scope (specific day, month, or year) and render this in the AdminPanel with controls to choose the date/month/year.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "quantidades de loguins no dia (com campo para personalizar a data 00/00/0000, mês ou ano)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin dashboard includes a 'Logins' analytics section with a control that allows selecting: a specific date, a month, or a year.",
+        "The backend provides an admin-only method that returns login counts corresponding to the chosen scope (day/month/year).",
+        "The frontend displays the returned counts clearly and updates when the selection changes.",
+        "Login events are recorded from the frontend after successful authentication (and do not require external services)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Implement device battery percentage reporting and admin visibility: add a way to store each user's most recent battery percentage and timestamp in the backend (admin-only read access), and show an admin dashboard metric/view for the battery percentage distribution/list based on the uploaded example image (image-12).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "o Loguin ADMINISTRADOR deve ter acesso para saber porcentagem do celular dos usuários, com base na segunda imagem"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend provides a method for an authenticated user to submit/update their current battery percentage (0–100) and a method for admins to view battery percentages for users.",
+        "Admin dashboard includes a battery-related card/section that surfaces battery percentage information for users (e.g., a list/table of users with last reported battery % and last updated time).",
+        "Non-admin users cannot query other users' battery information (backend traps/denies)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add/extend React Query hooks in `frontend/src/hooks/useQueries.ts` for the new admin dashboard data (user lists by role, login analytics by selected scope, and battery status views) and wire them into the new AdminPanel UI with appropriate caching and refetch behavior.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "New admin queries are accessible via typed hooks in `useQueries.ts` and used by the AdminPanel components.",
+        "Queries handle loading and error states without breaking the AdminPanel rendering.",
+        "Refetch intervals (if any) are reasonable (e.g., manual refresh or periodic for overview) and do not cause excessive calls."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Ensure all new/changed admin dashboard UI strings are available via the existing i18n system (English and pt-BR), keeping current behavior intact for the rest of the app.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All new labels/titles/buttons added for the new AdminPanel features are sourced via `useI18n()` translation keys.",
+        "English strings exist in `frontend/src/i18n/translations/en.ts` and Portuguese strings exist in `frontend/src/i18n/translations/pt-BR.ts` for the new keys.",
+        "The AdminPanel renders correctly in both languages when switching locales."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (shadcn components) or any other paths listed as immutable in SYSTEM_CONTEXT."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not edit files under `frontend/src/components/ui` or any paths listed in `frontend.immutablePaths`.",
+    "All admin-only data must be protected by backend authorization checks (do not rely on frontend gating only)."
   ],
   "nonGoals": [
-    "Do not change the backend admin password/allowlist logic.",
-    "Do not add new authentication providers or change the Internet Identity flow."
+    "Implementing third-party authentication providers (only Internet Identity is supported).",
+    "Integrating external analytics providers or external databases.",
+    "Real-time streaming dashboards via websockets/push (periodic polling/manual refresh is sufficient)."
   ],
   "imageRequirements": {
     "required": [],

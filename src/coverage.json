@@ -1,45 +1,152 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T18:20:55.907Z",
+  "generatedAt": "2026-02-17T20:24:32.130Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 6,
+    "implemented": 6,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
+        "summary": "Replace the existing admin dashboard UI in `frontend/src/pages/admin/AdminPanel.tsx` (including the current `AggregatedMetricsCards` usage) with a new dashboard layout that matches the overall structure shown in the uploaded example (image-12): a left navigation/sidebar area and a main content area with metric cards and drill-down links.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminDashboardShell.tsx",
+          "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "frontend/src/components/admin/AggregatedMetricsCards.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
+        "summary": "Add backend support and frontend UI for 'Parent users count' and 'Child users count' where each count is clickable and opens a list of the corresponding users with their available information (at minimum: name, principal, role, and phone number if present).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement login analytics: track login events per user and expose an admin-only query to retrieve the number of logins for a selected time scope (specific day, month, or year) and render this in the AdminPanel with controls to choose the date/month/year.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Implement device battery percentage reporting and admin visibility: add a way to store each user's most recent battery percentage and timestamp in the backend (admin-only read access), and show an admin dashboard metric/view for the battery percentage distribution/list based on the uploaded example image (image-12).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/useBatteryReporting.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/hooks/useBatteryReporting.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+          "frontend/src/components/admin/AdminOverviewCards.tsx",
+          "frontend/src/pages/admin/AdminPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add/extend React Query hooks in `frontend/src/hooks/useQueries.ts` for the new admin dashboard data (user lists by role, login analytics by selected scope, and battery status views) and wire them into the new AdminPanel UI with appropriate caching and refetch behavior.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Ensure all new/changed admin dashboard UI strings are available via the existing i18n system (English and pt-BR), keeping current behavior intact for the rest of the app.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/i18n/translations/en.ts",
+          "frontend/src/i18n/translations/pt-BR.ts",
+          "frontend/src/pages/admin/AdminPanel.tsx",
+          "frontend/src/components/admin/AdminSidebarNav.tsx",
+          "frontend/src/components/admin/AdminUsersListPanel.tsx",
+          "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+          "frontend/src/components/admin/AdminBatteryStatusPanel.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
+    "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
+    "frontend/src/components/admin/AdminOverviewCards.tsx",
+    "frontend/src/components/admin/AdminSidebarNav.tsx",
+    "frontend/src/components/admin/AdminUsersListPanel.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useBatteryReporting.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/i18n/translations/en.ts",
+    "frontend/src/i18n/translations/pt-BR.ts",
+    "frontend/src/pages/admin/AdminPanel.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,26 +1,63 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "Project now includes an Admin dashboard overhaul (replacing existing admin dashboard) to display user counts, login analytics, and device battery percentage metrics for administrators.",
   "architectural_notes": [
-    "Controle de exibição da opção Administrador condicionado ao valor do campo 'Número de telefone' (exibir apenas se for (91)980115950)."
+    "Admin: replace existing Admin dashboard layout (existing “AggregatedMetricsCards”) with new dashboard (option 1 selected).",
+    "Dashboard cards should support click-through to filtered user lists (Parents and Children).",
+    "Login analytics should support filtering by specific date, month, or year.",
+    "Battery percentage metrics are restricted to ADMINISTRATOR login."
   ],
-  "known_issues": [],
+  "known_issues": [
+    "Build/deployment attempts for the new dashboard have been failing intermittently (AI hiccup / unable to implement)."
+  ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-the-profile-setup-dialog-hide-the-administrator-role-option-by-default-and-only-reveal-it-when-the-user-enters-the-phone-number-91-980115950-in-the-phone-number-input-matching-by-digits-ignoring-formatting-characters",
-      "title": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
+      "id": "feature-replace-the-existing-admin-dashboard-ui-in-frontend-src-pages-admin-adminpanel-tsx-including-the-current-aggregatedmetricscards-usage-with-a-new-dashboard-layout-that-matches-the-overall-structure-shown-in-the-uploaded-example-image-12-a-left-navigation-sidebar-area-and-a-main-content-area-with-metric-cards-and-drill-down-links",
+      "title": "Replace the existing admin dashboard UI in `frontend/src/pages/admin/AdminPanel.tsx` (including the current `AggregatedMetricsCards` usage) with a new dashboard layout that matches the overall structure shown in the uploaded example (image-12): a left navigation/sidebar area and a main content area with metric cards and drill-down links.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-phone-number-input-is-available-to-the-user-at-the-time-they-choose-a-role-so-they-can-unlock-the-administrator-option-and-prevent-inconsistent-state-when-the-administrator-option-becomes-hidden-again",
-      "title": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
+      "id": "feature-add-backend-support-and-frontend-ui-for-parent-users-count-and-child-users-count-where-each-count-is-clickable-and-opens-a-list-of-the-corresponding-users-with-their-available-information-at-minimum-name-principal-role-and-phone-number-if-present",
+      "title": "Add backend support and frontend UI for 'Parent users count' and 'Child users count' where each count is clickable and opens a list of the corresponding users with their available information (at minimum: name, principal, role, and phone number if present).",
       "reqIds": [
         "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-login-analytics-track-login-events-per-user-and-expose-an-admin-only-query-to-retrieve-the-number-of-logins-for-a-selected-time-scope-specific-day-month-or-year-and-render-this-in-the-adminpanel-with-controls-to-choose-the-date-month-year",
+      "title": "Implement login analytics: track login events per user and expose an admin-only query to retrieve the number of logins for a selected time scope (specific day, month, or year) and render this in the AdminPanel with controls to choose the date/month/year.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-device-battery-percentage-reporting-and-admin-visibility-add-a-way-to-store-each-user-s-most-recent-battery-percentage-and-timestamp-in-the-backend-admin-only-read-access-and-show-an-admin-dashboard-metric-view-for-the-battery-percentage-distribution-list-based-on-the-uploaded-example-image-image-12",
+      "title": "Implement device battery percentage reporting and admin visibility: add a way to store each user's most recent battery percentage and timestamp in the backend (admin-only read access), and show an admin dashboard metric/view for the battery percentage distribution/list based on the uploaded example image (image-12).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-extend-react-query-hooks-in-frontend-src-hooks-usequeries-ts-for-the-new-admin-dashboard-data-user-lists-by-role-login-analytics-by-selected-scope-and-battery-status-views-and-wire-them-into-the-new-adminpanel-ui-with-appropriate-caching-and-refetch-behavior",
+      "title": "Add/extend React Query hooks in `frontend/src/hooks/useQueries.ts` for the new admin dashboard data (user lists by role, login analytics by selected scope, and battery status views) and wire them into the new AdminPanel UI with appropriate caching and refetch behavior.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-all-new-changed-admin-dashboard-ui-strings-are-available-via-the-existing-i18n-system-english-and-pt-br-keeping-current-behavior-intact-for-the-rest-of-the-app",
+      "title": "Ensure all new/changed admin dashboard UI strings are available via the existing i18n system (English and pt-BR), keeping current behavior intact for the rest of the app.",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -28,9 +65,9 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Ocultar a opção Administrador e exibi-la apenas quando o número de telefone (91)980115950 for inserido no campo 'Número de telefone'.",
+      "summary": "Replace existing Admin dashboard with new dashboard showing: parent user count (click to open list), child user count (click to open list), logins analytics with date/month/year selector, and admin-only view of users' phone battery percentage (per provided image).",
       "reqIds": [],
-      "status": "pending"
+      "status": "in_progress"
     }
   ],
   "projectName": "Parental Control",

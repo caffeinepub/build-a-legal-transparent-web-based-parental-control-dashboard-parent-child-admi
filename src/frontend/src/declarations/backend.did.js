@@ -69,6 +69,10 @@ export const AdminDashboardMetrics = IDL.Record({
   'totalChildren' : IDL.Nat,
   'totalParentChildLinks' : IDL.Nat,
 });
+export const DeviceBatteryStatus = IDL.Record({
+  'timestamp' : Time,
+  'batteryPercentage' : IDL.Nat,
+});
 export const RSVP = IDL.Record({
   'name' : IDL.Text,
   'inviteCode' : IDL.Text,
@@ -227,6 +231,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAdminDashboardMetrics' : IDL.Func([], [AdminDashboardMetrics], ['query']),
+  'getAllDeviceBatteryStatuses' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, DeviceBatteryStatus))],
+      ['query'],
+    ),
   'getAllRSVPs' : IDL.Func([], [IDL.Vec(RSVP)], ['query']),
   'getAllowlistedAdminPrincipals' : IDL.Func(
       [],
@@ -241,6 +250,12 @@ export const idlService = IDL.Service({
   'getCallerProfilePhoto' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getChildUsers' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+      ['query'],
+    ),
+  'getChildUsersCount' : IDL.Func([], [IDL.Nat], ['query']),
   'getContentFilter' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(ContentFilterConfig)],
@@ -257,8 +272,21 @@ export const idlService = IDL.Service({
       [IDL.Vec(LocationEntry)],
       ['query'],
     ),
+  'getLoginCountByDay' : IDL.Func(
+      [IDL.Nat, IDL.Nat, IDL.Nat],
+      [IDL.Nat],
+      ['query'],
+    ),
+  'getLoginCountByMonth' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Nat], ['query']),
+  'getLoginCountByYear' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
   'getMyChildren' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'getMyParent' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
+  'getParentUsers' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+      ['query'],
+    ),
+  'getParentUsersCount' : IDL.Func([], [IDL.Nat], ['query']),
   'getPendingPairingRequests' : IDL.Func(
       [],
       [IDL.Vec(PendingPairingRequest)],
@@ -283,6 +311,7 @@ export const idlService = IDL.Service({
     ),
   'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
   'recordHeartbeat' : IDL.Func([], [], []),
+  'recordLoginEvent' : IDL.Func([IDL.Text], [], []),
   'removeAllowlistedAdminPrincipal' : IDL.Func(
       [IDL.Text, IDL.Principal],
       [],
@@ -303,6 +332,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'updateDeviceBatteryStatus' : IDL.Func([DeviceBatteryStatus], [], []),
   'updateSchedule' : IDL.Func([IDL.Principal, ScheduleConfig], [], []),
   'verifyAdminPassword' : IDL.Func([IDL.Text], [IDL.Bool], []),
 });
@@ -370,6 +400,10 @@ export const idlFactory = ({ IDL }) => {
     'totalParents' : IDL.Nat,
     'totalChildren' : IDL.Nat,
     'totalParentChildLinks' : IDL.Nat,
+  });
+  const DeviceBatteryStatus = IDL.Record({
+    'timestamp' : Time,
+    'batteryPercentage' : IDL.Nat,
   });
   const RSVP = IDL.Record({
     'name' : IDL.Text,
@@ -537,6 +571,11 @@ export const idlFactory = ({ IDL }) => {
         [AdminDashboardMetrics],
         ['query'],
       ),
+    'getAllDeviceBatteryStatuses' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, DeviceBatteryStatus))],
+        ['query'],
+      ),
     'getAllRSVPs' : IDL.Func([], [IDL.Vec(RSVP)], ['query']),
     'getAllowlistedAdminPrincipals' : IDL.Func(
         [],
@@ -551,6 +590,12 @@ export const idlFactory = ({ IDL }) => {
     'getCallerProfilePhoto' : IDL.Func([], [IDL.Opt(ExternalBlob)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getChildUsers' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+        ['query'],
+      ),
+    'getChildUsersCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getContentFilter' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(ContentFilterConfig)],
@@ -567,8 +612,21 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(LocationEntry)],
         ['query'],
       ),
+    'getLoginCountByDay' : IDL.Func(
+        [IDL.Nat, IDL.Nat, IDL.Nat],
+        [IDL.Nat],
+        ['query'],
+      ),
+    'getLoginCountByMonth' : IDL.Func([IDL.Nat, IDL.Nat], [IDL.Nat], ['query']),
+    'getLoginCountByYear' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
     'getMyChildren' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'getMyParent' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
+    'getParentUsers' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Principal, UserProfile))],
+        ['query'],
+      ),
+    'getParentUsersCount' : IDL.Func([], [IDL.Nat], ['query']),
     'getPendingPairingRequests' : IDL.Func(
         [],
         [IDL.Vec(PendingPairingRequest)],
@@ -593,6 +651,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'pairWithParent' : IDL.Func([IDL.Text], [PairWithParentResult], []),
     'recordHeartbeat' : IDL.Func([], [], []),
+    'recordLoginEvent' : IDL.Func([IDL.Text], [], []),
     'removeAllowlistedAdminPrincipal' : IDL.Func(
         [IDL.Text, IDL.Principal],
         [],
@@ -613,6 +672,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'updateDeviceBatteryStatus' : IDL.Func([DeviceBatteryStatus], [], []),
     'updateSchedule' : IDL.Func([IDL.Principal, ScheduleConfig], [], []),
     'verifyAdminPassword' : IDL.Func([IDL.Text], [IDL.Bool], []),
   });

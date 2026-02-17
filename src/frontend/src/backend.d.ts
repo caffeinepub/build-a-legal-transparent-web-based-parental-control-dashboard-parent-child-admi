@@ -126,6 +126,10 @@ export interface FilterChangeDetails {
     child: Principal;
     newConfig: ContentFilterConfig;
 }
+export interface DeviceBatteryStatus {
+    timestamp: Time;
+    batteryPercentage: bigint;
+}
 export interface AdminDashboardMetrics {
     totalUsersEverLoggedIn: bigint;
     totalContentFiltersConfigured: bigint;
@@ -206,18 +210,26 @@ export interface backendInterface {
     generatePairingCode(): Promise<string | null>;
     getActivities(childId: Principal): Promise<Array<ActivityEntry>>;
     getAdminDashboardMetrics(): Promise<AdminDashboardMetrics>;
+    getAllDeviceBatteryStatuses(): Promise<Array<[Principal, DeviceBatteryStatus]>>;
     getAllRSVPs(): Promise<Array<RSVP>>;
     getAllowlistedAdminPrincipals(): Promise<Array<Principal>>;
     getAuditLog(childId: Principal): Promise<Array<AuditLogEntry>>;
     getCallerProfilePhoto(): Promise<ExternalBlob | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getChildUsers(): Promise<Array<[Principal, UserProfile]>>;
+    getChildUsersCount(): Promise<bigint>;
     getContentFilter(childId: Principal): Promise<ContentFilterConfig | null>;
     getInviteCodes(): Promise<Array<InviteCode>>;
     getLiveLocationSharingStatus(childId: Principal): Promise<boolean>;
     getLocations(childId: Principal): Promise<Array<LocationEntry>>;
+    getLoginCountByDay(year: bigint, month: bigint, day: bigint): Promise<bigint>;
+    getLoginCountByMonth(year: bigint, month: bigint): Promise<bigint>;
+    getLoginCountByYear(year: bigint): Promise<bigint>;
     getMyChildren(): Promise<Array<Principal>>;
     getMyParent(): Promise<Principal | null>;
+    getParentUsers(): Promise<Array<[Principal, UserProfile]>>;
+    getParentUsersCount(): Promise<bigint>;
     getPendingPairingRequests(): Promise<Array<PendingPairingRequest>>;
     getSchedule(childId: Principal): Promise<ScheduleConfig | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -226,6 +238,7 @@ export interface backendInterface {
     isPrincipalAllowlistedAdmin(principal: Principal): Promise<boolean>;
     pairWithParent(code: string): Promise<PairWithParentResult>;
     recordHeartbeat(): Promise<void>;
+    recordLoginEvent(_device: string): Promise<void>;
     removeAllowlistedAdminPrincipal(adminPasswordAttempt: string, principal: Principal): Promise<void>;
     requestPairingWithParent(parentId: Principal): Promise<PairWithParentResult>;
     revokeAllowlistedAdmin(adminPasswordAttempt: string, principal: Principal): Promise<void>;
@@ -234,6 +247,7 @@ export interface backendInterface {
     setLiveLocationSharing(enabled: boolean): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;
+    updateDeviceBatteryStatus(status: DeviceBatteryStatus): Promise<void>;
     updateSchedule(childId: Principal, newConfig: ScheduleConfig): Promise<void>;
     verifyAdminPassword(password: string): Promise<boolean>;
 }
