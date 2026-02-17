@@ -11,7 +11,7 @@ import { I18nProvider } from './i18n/I18nProvider';
 import AppHeader from './components/layout/AppHeader';
 import AppFooter from './components/layout/AppFooter';
 import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
-import AdminPasswordGate from './components/admin/AdminPasswordGate';
+import AdminAccessScreen from './components/admin/AdminAccessScreen';
 import ParentDashboard from './pages/parent/ParentDashboard';
 import ChildHome from './pages/child/ChildHome';
 import AdminPanel from './pages/admin/AdminPanel';
@@ -110,14 +110,10 @@ function AppContent() {
 
   if (isAdmin && !isGatePassed) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <AppHeader onShowPolicies={() => setShowPolicies(true)} />
-        <main className="flex-1 flex items-center justify-center p-4">
-          <AdminPasswordGate />
-        </main>
-        <AppFooter onShowPolicies={() => setShowPolicies(true)} />
+      <>
+        <AdminAccessScreen />
         {showPolicies && <TransparencyPolicies onClose={() => setShowPolicies(false)} />}
-      </div>
+      </>
     );
   }
 

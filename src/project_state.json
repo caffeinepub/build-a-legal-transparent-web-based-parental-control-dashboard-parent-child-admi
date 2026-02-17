@@ -1,63 +1,24 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project now includes an Admin dashboard overhaul (replacing existing admin dashboard) to display user counts, login analytics, and device battery percentage metrics for administrators.",
-  "architectural_notes": [
-    "Admin: replace existing Admin dashboard layout (existing “AggregatedMetricsCards”) with new dashboard (option 1 selected).",
-    "Dashboard cards should support click-through to filtered user lists (Parents and Children).",
-    "Login analytics should support filtering by specific date, month, or year.",
-    "Battery percentage metrics are restricted to ADMINISTRATOR login."
-  ],
-  "known_issues": [
-    "Build/deployment attempts for the new dashboard have been failing intermittently (AI hiccup / unable to implement)."
-  ],
+  "summary": "Implement an Administrator login with a distinct layout from Parent/Child users, and an Admin Dashboard with user metrics, drill-down lists, login analytics by date range, and mobile/phone percentage reporting.",
+  "architectural_notes": [],
+  "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-replace-the-existing-admin-dashboard-ui-in-frontend-src-pages-admin-adminpanel-tsx-including-the-current-aggregatedmetricscards-usage-with-a-new-dashboard-layout-that-matches-the-overall-structure-shown-in-the-uploaded-example-image-12-a-left-navigation-sidebar-area-and-a-main-content-area-with-metric-cards-and-drill-down-links",
-      "title": "Replace the existing admin dashboard UI in `frontend/src/pages/admin/AdminPanel.tsx` (including the current `AggregatedMetricsCards` usage) with a new dashboard layout that matches the overall structure shown in the uploaded example (image-12): a left navigation/sidebar area and a main content area with metric cards and drill-down links.",
+      "id": "feature-create-a-distinct-administrator-login-access-screen-layout-separate-from-parent-child-user-flows-for-the-admin-password-gate-step-shown-when-an-authenticated-admin-has-not-yet-passed-the-gate",
+      "title": "Create a distinct Administrator login/access screen layout (separate from Parent/Child user flows) for the admin password gate step shown when an authenticated admin has not yet passed the gate.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-backend-support-and-frontend-ui-for-parent-users-count-and-child-users-count-where-each-count-is-clickable-and-opens-a-list-of-the-corresponding-users-with-their-available-information-at-minimum-name-principal-role-and-phone-number-if-present",
-      "title": "Add backend support and frontend UI for 'Parent users count' and 'Child users count' where each count is clickable and opens a list of the corresponding users with their available information (at minimum: name, principal, role, and phone number if present).",
+      "id": "feature-ensure-all-user-facing-text-added-changed-for-the-administrator-login-access-screen-is-sourced-via-the-existing-i18n-system-and-has-english-strings-and-pt-br-equivalents-where-the-app-already-supports-both",
+      "title": "Ensure all user-facing text added/changed for the Administrator login/access screen is sourced via the existing i18n system and has English strings (and pt-BR equivalents where the app already supports both).",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-login-analytics-track-login-events-per-user-and-expose-an-admin-only-query-to-retrieve-the-number-of-logins-for-a-selected-time-scope-specific-day-month-or-year-and-render-this-in-the-adminpanel-with-controls-to-choose-the-date-month-year",
-      "title": "Implement login analytics: track login events per user and expose an admin-only query to retrieve the number of logins for a selected time scope (specific day, month, or year) and render this in the AdminPanel with controls to choose the date/month/year.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-device-battery-percentage-reporting-and-admin-visibility-add-a-way-to-store-each-user-s-most-recent-battery-percentage-and-timestamp-in-the-backend-admin-only-read-access-and-show-an-admin-dashboard-metric-view-for-the-battery-percentage-distribution-list-based-on-the-uploaded-example-image-image-12",
-      "title": "Implement device battery percentage reporting and admin visibility: add a way to store each user's most recent battery percentage and timestamp in the backend (admin-only read access), and show an admin dashboard metric/view for the battery percentage distribution/list based on the uploaded example image (image-12).",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-extend-react-query-hooks-in-frontend-src-hooks-usequeries-ts-for-the-new-admin-dashboard-data-user-lists-by-role-login-analytics-by-selected-scope-and-battery-status-views-and-wire-them-into-the-new-adminpanel-ui-with-appropriate-caching-and-refetch-behavior",
-      "title": "Add/extend React Query hooks in `frontend/src/hooks/useQueries.ts` for the new admin dashboard data (user lists by role, login analytics by selected scope, and battery status views) and wire them into the new AdminPanel UI with appropriate caching and refetch behavior.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-all-new-changed-admin-dashboard-ui-strings-are-available-via-the-existing-i18n-system-english-and-pt-br-keeping-current-behavior-intact-for-the-rest-of-the-app",
-      "title": "Ensure all new/changed admin dashboard UI strings are available via the existing i18n system (English and pt-BR), keeping current behavior intact for the rest of the app.",
-      "reqIds": [
-        "REQ-6"
       ],
       "version": 1
     }
@@ -65,9 +26,27 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Replace existing Admin dashboard with new dashboard showing: parent user count (click to open list), child user count (click to open list), logins analytics with date/month/year selector, and admin-only view of users' phone battery percentage (per provided image).",
+      "summary": "Create a separate Administrator login flow with a new layout distinct from Parent/Child login",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Admin Dashboard: show counts of Parent users and Child users; clicking each opens a list with user information",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Admin Dashboard: show number of logins per day with configurable filter (specific date, month, or year)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Admin Dashboard: provide reporting on percentage related to users' cellphones (e.g., mobile usage/phone-related percentage)",
+      "reqIds": [],
+      "status": "pending"
     }
   ],
   "projectName": "Parental Control",

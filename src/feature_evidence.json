@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-the-existing-admin-dashboard-ui-in-frontend-src-pages-admin-adminpanel-tsx-including-the-current-aggregatedmetricscards-usage-with-a-new-dashboard-layout-that-matches-the-overall-structure-shown-in-the-uploaded-example-image-12-a-left-navigation-sidebar-area-and-a-main-content-area-with-metric-cards-and-drill-down-links",
-      "featureTitle": "Replace the existing admin dashboard UI in `frontend/src/pages/admin/AdminPanel.tsx` (including the current `AggregatedMetricsCards` usage) with a new dashboard layout that matches the overall structure shown in the uploaded example (image-12): a left navigation/sidebar area and a main content area with metric cards and drill-down links.",
+      "featureId": "feature-create-a-distinct-administrator-login-access-screen-layout-separate-from-parent-child-user-flows-for-the-admin-password-gate-step-shown-when-an-authenticated-admin-has-not-yet-passed-the-gate",
+      "featureTitle": "Create a distinct Administrator login/access screen layout (separate from Parent/Child user flows) for the admin password gate step shown when an authenticated admin has not yet passed the gate.",
       "files": [
-        "frontend/src/components/admin/AdminOverviewCards.tsx",
-        "frontend/src/components/admin/AdminSidebarNav.tsx",
-        "frontend/src/pages/admin/AdminPanel.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/admin/AdminAccessScreen.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -26,13 +25,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-backend-support-and-frontend-ui-for-parent-users-count-and-child-users-count-where-each-count-is-clickable-and-opens-a-list-of-the-corresponding-users-with-their-available-information-at-minimum-name-principal-role-and-phone-number-if-present",
-      "featureTitle": "Add backend support and frontend UI for 'Parent users count' and 'Child users count' where each count is clickable and opens a list of the corresponding users with their available information (at minimum: name, principal, role, and phone number if present).",
+      "featureId": "feature-ensure-all-user-facing-text-added-changed-for-the-administrator-login-access-screen-is-sourced-via-the-existing-i18n-system-and-has-english-strings-and-pt-br-equivalents-where-the-app-already-supports-both",
+      "featureTitle": "Ensure all user-facing text added/changed for the Administrator login/access screen is sourced via the existing i18n system and has English strings (and pt-BR equivalents where the app already supports both).",
       "files": [
-        "frontend/src/components/admin/AdminOverviewCards.tsx",
-        "frontend/src/components/admin/AdminUsersListPanel.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminPanel.tsx"
+        "frontend/src/components/admin/AdminPasswordGate.tsx",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -47,112 +45,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-login-analytics-track-login-events-per-user-and-expose-an-admin-only-query-to-retrieve-the-number-of-logins-for-a-selected-time-scope-specific-day-month-or-year-and-render-this-in-the-adminpanel-with-controls-to-choose-the-date-month-year",
-      "featureTitle": "Implement login analytics: track login events per user and expose an admin-only query to retrieve the number of logins for a selected time scope (specific day, month, or year) and render this in the AdminPanel with controls to choose the date/month/year.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-device-battery-percentage-reporting-and-admin-visibility-add-a-way-to-store-each-user-s-most-recent-battery-percentage-and-timestamp-in-the-backend-admin-only-read-access-and-show-an-admin-dashboard-metric-view-for-the-battery-percentage-distribution-list-based-on-the-uploaded-example-image-image-12",
-      "featureTitle": "Implement device battery percentage reporting and admin visibility: add a way to store each user's most recent battery percentage and timestamp in the backend (admin-only read access), and show an admin dashboard metric/view for the battery percentage distribution/list based on the uploaded example image (image-12).",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
-        "frontend/src/components/admin/AdminOverviewCards.tsx",
-        "frontend/src/hooks/useBatteryReporting.ts",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-extend-react-query-hooks-in-frontend-src-hooks-usequeries-ts-for-the-new-admin-dashboard-data-user-lists-by-role-login-analytics-by-selected-scope-and-battery-status-views-and-wire-them-into-the-new-adminpanel-ui-with-appropriate-caching-and-refetch-behavior",
-      "featureTitle": "Add/extend React Query hooks in `frontend/src/hooks/useQueries.ts` for the new admin dashboard data (user lists by role, login analytics by selected scope, and battery status views) and wire them into the new AdminPanel UI with appropriate caching and refetch behavior.",
-      "files": [
-        "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
-        "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
-        "frontend/src/components/admin/AdminUsersListPanel.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/admin/AdminPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-all-new-changed-admin-dashboard-ui-strings-are-available-via-the-existing-i18n-system-english-and-pt-br-keeping-current-behavior-intact-for-the-rest-of-the-app",
-      "featureTitle": "Ensure all new/changed admin dashboard UI strings are available via the existing i18n system (English and pt-BR), keeping current behavior intact for the rest of the app.",
-      "files": [
-        "frontend/src/components/admin/AdminBatteryStatusPanel.tsx",
-        "frontend/src/components/admin/AdminLoginAnalyticsPanel.tsx",
-        "frontend/src/components/admin/AdminSidebarNav.tsx",
-        "frontend/src/components/admin/AdminUsersListPanel.tsx",
-        "frontend/src/i18n/translations/en.ts",
-        "frontend/src/i18n/translations/pt-BR.ts",
-        "frontend/src/pages/admin/AdminPanel.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "invite-links@3.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-6"
       ],
       "confidence": "high"
     }
