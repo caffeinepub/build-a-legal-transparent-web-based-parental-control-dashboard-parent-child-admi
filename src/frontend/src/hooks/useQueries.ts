@@ -4,6 +4,7 @@ import { useInternetIdentity } from './useInternetIdentity';
 import type { UserProfile, AppRole, ActivityEntry, LocationEntry, ScheduleConfig, ContentFilterConfig, AuditLogEntry, PairWithParentResult, PendingPairingRequest, AdminDashboardMetrics } from '../backend';
 import { Principal } from '@icp-sdk/core/principal';
 import { toast } from 'sonner';
+import { ExternalBlob } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -42,6 +43,51 @@ export function useSaveCallerUserProfile() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to save profile: ${error.message}`);
+    },
+  });
+}
+
+export function useSaveProfilePhoto() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (blob: ExternalBlob) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.saveProfilePhoto(blob);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['callerProfilePhoto'] });
+      toast.success('Profile photo updated successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update photo: ${error.message}`);
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  const { clear } = useInternetIdentity();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.deleteCallerAccount();
+    },
+    onSuccess: async () => {
+      // Clear all cached data
+      queryClient.clear();
+      
+      // Log out the user
+      await clear();
+      
+      toast.success('Account deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete account: ${error.message}`);
     },
   });
 }

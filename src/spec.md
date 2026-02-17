@@ -1,14 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Add a restricted ADMINISTRATOR role with a password-gated admin dashboard, and expand the dashboard with additional on-chain metrics including presence-based active users.
+**Goal:** Add an account dropdown menu to the header user identity area, enabling profile photo changes, Internet Identity password management guidance, and end-to-end account deletion.
 
 **Planned changes:**
-- Add an “ADMINISTRATOR” role option to profile creation, enabled only when the entered identifier matches the leader allowlist (specific emails or phone number), with clear UI messaging when restricted.
-- Enforce ADMINISTRATOR role restrictions on the backend so non-allowlisted users cannot save or become admins even if manipulating the frontend.
-- Set the default admin password to “Liderdoprojetox1” and restrict admin password changes to leader-allowlisted admin accounts only.
-- Add an ADMINISTRATOR access step: when backend recognizes the caller as admin, require a session-based password gate before showing the AdminPanel.
-- Expand admin dashboard metrics to show totals for Parent users, Child users, Parent→Child link count, total saved profiles (ever logged in), and “users currently with the platform open” via a lightweight heartbeat presence mechanism.
-- Add at least 3 additional admin metrics computed from existing on-chain state (aggregated only), and display them in the admin dashboard without exposing individual child records.
+- Make the header “{user name} • {role}” identity area clickable to open an anchored, keyboard-accessible dropdown (open via Enter/Space, close via Esc/outside click), and hide the trigger when no user profile exists.
+- Implement dropdown menu items (i18n translated) including exactly: “Change profile photo”, “Change password”, “Delete account”, plus at least two additional non-admin-only useful actions (role-aware).
+- “Change profile photo”: add a dialog with file picker, preview, save/remove support; update the header avatar immediately on success and persist the photo for the user.
+- “Change password”: show an explanatory dialog that passwords are managed by Internet Identity, with a button to open the Internet Identity management page in a new tab.
+- “Delete account”: add a destructive confirmation flow in the UI and a backend method to delete the caller’s profile and associated stored data; on success, clear/invalidate relevant cached queries and return to logged-out/onboarding state.
+- Update Motoko data model and frontend types to store an optional profile photo on the user profile, including safe state migration if needed.
+- Add/extend React Query mutations for saving profile photo and deleting account, with appropriate query invalidation so dependent UI updates correctly.
 
-**User-visible outcome:** Users can create an ADMINISTRATOR profile only with leader-allowlisted identifiers; admins must pass a password gate to access the dashboard, where they can view expanded platform-wide aggregated metrics including active/open users and additional computed counts.
+**User-visible outcome:** Clicking the user name/role in the header opens an account menu where the user can change their profile photo (with preview and persistence), be guided to Internet Identity for password changes, and delete their account with a clear confirmation step; the UI updates immediately after actions.

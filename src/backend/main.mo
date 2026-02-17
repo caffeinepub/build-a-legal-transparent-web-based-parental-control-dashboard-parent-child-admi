@@ -9,6 +9,8 @@ import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Random "mo:core/Random";
 import Set "mo:core/Set";
+import MixinStorage "blob-storage/Mixin";
+import Storage "blob-storage/Storage";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
@@ -21,6 +23,7 @@ actor {
   let allowlistedAdminPrincipals = Set.empty<Principal>();
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
+  include MixinStorage();
 
   // New Strict Admin Password (cannot be changed except by allowlisted principal)
   var adminPassword : Text = "Liderdoprojetox1";
@@ -50,6 +53,7 @@ actor {
     name : Text;
     role : AppRole;
     phoneNumber : ?Text;
+    photo : ?Storage.ExternalBlob;
   };
 
   public type AppRole = {
@@ -118,6 +122,7 @@ actor {
     #phonePairingCompleted;
     #pendingRequestInitiated;
     #pendingRequestCompleted;
+    #accountDeleted;
   };
 
   public type AuditLogDetails = {
@@ -129,6 +134,7 @@ actor {
     #phonePairingCompleted : PhonePairingCompletedDetails;
     #pendingRequestInitiated : PendingRequestInitiatedDetails;
     #pendingRequestCompleted : PendingRequestCompletedDetails;
+    #accountDeleted : AccountDeletedDetails;
   };
 
   public type PairingDetails = {
@@ -171,6 +177,11 @@ actor {
     childName : Text;
     childPrincipal : Principal;
     successful : Bool;
+  };
+
+  public type AccountDeletedDetails = {
+    account : Principal;
+    role : AppRole;
   };
 
   public type PairingCodeData = {
@@ -368,15 +379,127 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
-    
+
     // CRITICAL: Only allowlisted principals can set admin role
     if (profile.role == #admin) {
       if (not allowlistedAdminPrincipals.contains(caller)) {
         Runtime.trap("Unauthorized: Only allowlisted leaders can set admin role");
       };
     };
-    
+
     userProfiles.add(caller, profile);
+  };
+
+  public shared ({ caller }) func saveProfilePhoto(blob : Storage.ExternalBlob) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profile photos");
+    };
+
+    // Add photo to existing or new user profile
+    let newProfile = switch (userProfiles.get(caller)) {
+      case (?existingProfile) {
+        {
+          name = existingProfile.name;
+          role = existingProfile.role;
+          phoneNumber = existingProfile.phoneNumber;
+          photo = ?blob;
+        };
+      };
+      case (null) {
+        {
+          name = "";
+          role = #parent;
+          phoneNumber = null;
+          photo = ?blob;
+        };
+      };
+    };
+    userProfiles.add(caller, newProfile);
+  };
+
+  public query ({ caller }) func getCallerProfilePhoto() : async ?Storage.ExternalBlob {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profile photos");
+    };
+    switch (userProfiles.get(caller)) {
+      case (?profile) { profile.photo };
+      case (null) { null };
+    };
+  };
+
+  // Delete Account - NEW FUNCTION
+  public shared ({ caller }) func deleteCallerAccount() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete their own account");
+    };
+
+    // Get user profile before deletion for audit log
+    let userRole = switch (userProfiles.get(caller)) {
+      case (?profile) { profile.role };
+      case (null) { #parent }; // Default fallback
+    };
+
+    // If user is a parent, remove all parent-child links
+    switch (parentChildLinks.get(caller)) {
+      case (?children) {
+        for (child in children.values()) {
+          childParentLinks.remove(child);
+        };
+        parentChildLinks.remove(caller);
+      };
+      case (null) {};
+    };
+
+    // If user is a child, remove child-parent link
+    switch (childParentLinks.get(caller)) {
+      case (?parent) {
+        childParentLinks.remove(caller);
+        // Remove from parent's children list
+        switch (parentChildLinks.get(parent)) {
+          case (?children) {
+            let updatedChildren = children.filter(func(child : Principal) : Bool { child != caller });
+            parentChildLinks.add(parent, updatedChildren);
+          };
+          case (null) {};
+        };
+      };
+      case (null) {};
+    };
+
+    // Create audit log entry before deletion
+    let auditEntry : AuditLogEntry = {
+      action = #accountDeleted;
+      executor = caller;
+      timestamp = Time.now();
+      details = #accountDeleted({
+        account = caller;
+        role = userRole;
+      });
+    };
+    addAuditLogEntry(caller, auditEntry);
+
+    // Delete all user data
+    userProfiles.remove(caller);
+    schedules.remove(caller);
+    contentFilters.remove(caller);
+    activities.remove(caller);
+    locations.remove(caller);
+    liveLocationSharing.remove(caller);
+    heartbeatTimestamps.remove(caller);
+    disabledAccounts.remove(caller);
+
+    // Remove from pending pairings
+    var pairingsToRemove : List.List<Nat> = List.empty<Nat>();
+    for ((id, request) in pendingPairings.entries()) {
+      if (request.parent == caller or request.child == caller) {
+        pairingsToRemove.add(id);
+      };
+    };
+    for (id in pairingsToRemove.values()) {
+      pendingPairings.remove(id);
+    };
+
+    // Note: Audit logs are kept for compliance/historical purposes
   };
 
   // Allowlisting Logic

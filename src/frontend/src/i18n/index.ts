@@ -1,7 +1,9 @@
-import { en, type TranslationKey } from './translations/en';
+import { en } from './translations/en';
 import { ptBR } from './translations/pt-BR';
 
 export type Locale = 'en' | 'pt-BR';
+
+export type TranslationKey = keyof typeof en;
 
 export const translations: Record<Locale, Record<TranslationKey, string>> = {
   'en': en,
@@ -10,4 +12,4 @@ export const translations: Record<Locale, Record<TranslationKey, string>> = {
 
 export const supportedLocales: Locale[] = ['en', 'pt-BR'];
 
-export type { TranslationKey };
+export type { TranslationKey as default };

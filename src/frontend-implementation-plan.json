@@ -1,140 +1,187 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Restricted ADMINISTRATOR role + admin gate + expanded admin dashboard metrics (frontend)",
+  "title": "Account dropdown menu in header with profile photo, password guidance, and delete account",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Add ADMINISTRATOR role option to profile setup UI and restrict selection to leader allowlist based on entered name/email or normalized phone.",
+      "summary": "Make the header user identity line clickable to open an anchored, accessible account dropdown when a user profile exists.",
       "acceptanceCriteria": [
-        "Profile setup screen shows three role options: Parent, Child, ADMINISTRATOR.",
-        "ADMINISTRATOR can only be selected when the user has entered either one of the allowed emails in the Name field OR the allowed phone number in the phone field (normalized to the app’s phone format).",
-        "If the identifier is not allowlisted, the ADMINISTRATOR option is disabled and the UI explains that access is restricted to the leader account."
+        "When the current user is logged in and a profile exists, clicking the \"name • role\" line in the header opens a dropdown menu anchored to that area.",
+        "The dropdown is keyboard accessible (Enter/Space to open, Esc to close) and closes when clicking outside.",
+        "When no userProfile exists (not logged in / not set up), the dropdown trigger is not shown."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
+          "path": "frontend/src/components/layout/AppHeader.tsx",
           "operation": "modify",
-          "description": "Add a third role option labeled “ADMINISTRATOR” (mapped to AppRole.admin) in the role RadioGroup. Implement allowlist checks against the entered name (case-insensitive match for “tigguinrodrigues@gmail.com” and “tigguinclash@gmail.com”) and phone input normalized via existing phone utilities; disable the ADMINISTRATOR option when not allowlisted and render a clear “restricted to leader account” explanation. Ensure phone input is available/usable for allowlist matching even before selecting ADMINISTRATOR. Use the authorization component’s profile-setup/RBAC approach (via existing profile save flow). Verify the component's usage instructions before implementing."
+          "description": "Replace the static \"name • role\" text with an interactive trigger and wire it to a new AccountDropdown component; ensure it only renders when userProfile exists; render the user avatar/photo next to the header identity area with initials fallback. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/utils/phoneNumber.ts",
+          "path": "frontend/src/components/account/AccountDropdown.tsx",
+          "operation": "create",
+          "description": "Create an account dropdown anchored to the header identity area using composed (read-only) shadcn/ui primitives (e.g., DropdownMenu) to ensure keyboard accessibility and outside-click/Esc close behavior. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/account/UserAvatar.tsx",
+          "operation": "create",
+          "description": "Create a small avatar component that displays the current user's photo when available and falls back to initials/placeholder when not. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Populate the header dropdown with required account actions plus additional useful actions, all translated via i18n and role-appropriate.",
+      "acceptanceCriteria": [
+        "Dropdown includes menu items labeled exactly (in English): \"Change profile photo\", \"Change password\", \"Delete account\".",
+        "At least 2 additional useful account actions are included, and none of them are admin-only unless the current user is an admin.",
+        "All menu labels are translated via the existing i18n system (new keys added to translation files)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/account/AccountDropdown.tsx",
           "operation": "modify",
-          "description": "Add/adjust a helper usage pattern (no breaking changes) to ensure the admin allowlist phone comparison can reliably normalize “(91)980115950” to the same digits-only format used by the app, and to produce the backend-stored format when saving. Verify the component's usage instructions before implementing."
+          "description": "Add menu items for: Change profile photo, Change password, Delete account, plus at least two additional useful actions (e.g., Edit profile, View transparency & policies, Logout). Ensure any admin-only action is conditionally rendered only when the current user is an admin. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Add/update translation strings for the ADMINISTRATOR role label and the restricted-access helper message shown when the option is disabled. Verify the component's usage instructions before implementing."
+          "description": "Add new translation keys for all dropdown labels and related dialog titles/descriptions/buttons; ensure the English labels match acceptance criteria exactly. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/i18n/translations/pt-BR.ts",
           "operation": "modify",
-          "description": "Add/update Portuguese translation strings for the ADMINISTRATOR role label and the restricted-access helper message shown when the option is disabled. Verify the component's usage instructions before implementing."
+          "description": "Add Brazilian Portuguese translations for the new account dropdown and dialog keys added to English. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement Change profile photo flow: pick image, preview, save, and show updated photo in header with persistence and fallback to initials.",
+      "acceptanceCriteria": [
+        "Clicking \"Change profile photo\" opens a dialog with file picker and preview.",
+        "After saving, the header shows the new profile photo for the current user without requiring a full page refresh.",
+        "If the user clears/removes the photo, the header falls back to an initials/avatar placeholder.",
+        "The saved photo is persisted for the user (survives reload and new sessions)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
+          "operation": "create",
+          "description": "Create a dialog opened from the dropdown that supports image file selection, client-side preview, remove/clear action, and save action. Use the blob-storage component's ExternalBlob (e.g., create from bytes and display via direct URL) for photo handling and persistence. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query mutations/queries needed for profile photo: a mutation to save the selected photo (using the backend capability for saving a photo) and optional query to fetch the caller's profile photo; on success, invalidate currentUserProfile and any photo-related cached data so AppHeader updates immediately. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/account/UserAvatar.tsx",
+          "operation": "modify",
+          "description": "Update avatar rendering to use ExternalBlob direct URL when a photo exists (from profile or dedicated query), and fall back to initials when absent or cleared. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/account/AccountDropdown.tsx",
+          "operation": "modify",
+          "description": "Wire the \"Change profile photo\" menu item to open ChangeProfilePhotoDialog and pass needed handlers/state (including current photo). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/layout/AppHeader.tsx",
+          "operation": "modify",
+          "description": "Ensure header photo display reacts to React Query updates (no full refresh) by using the profile/photo query data as the single source of truth for UserAvatar. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Add an in-session admin password gate UI that blocks AdminPanel until verified when backend recognizes the caller as admin.",
+      "summary": "Implement Change password action as Internet Identity guidance: explain and link to Internet Identity in a new tab.",
       "acceptanceCriteria": [
-        "When isCallerAdmin is true and the session gate is not passed, the app shows the AdminPasswordGate component instead of AdminPanel.",
-        "After entering the correct admin password, the session is marked as passed (using the existing sessionStorage gate), and the AdminPanel becomes visible.",
-        "Logging out clears the admin gate session (existing behavior remains)."
+        "Clicking \"Change password\" opens a dialog or confirm step that explains password changes are handled via Internet Identity.",
+        "The UI provides a button that opens the Internet Identity page in a new tab/window.",
+        "No attempt is made to store or change a separate app password in the canister for regular users."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the dedicated admin access step: when isCallerAdmin is true, render AdminPasswordGate until useAdminGate().isGatePassed is true; only then render AdminPanel. Keep non-admin routing unchanged. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/account/ChangePasswordDialog.tsx",
+          "operation": "create",
+          "description": "Create a dialog explaining that password/credentials are managed by Internet Identity and provide a button to open the Internet Identity management page in a new tab. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "path": "frontend/src/components/account/AccountDropdown.tsx",
           "operation": "modify",
-          "description": "Ensure the gate calls passGate() on successful password verification and provides clear error feedback on failure (existing behavior), and optionally hide/disable the password-change tab unless the backend indicates the caller is allowlisted admin (via a new query hook). This supports the restricted admin-password change rule while keeping backend enforcement authoritative. Verify the component's usage instructions before implementing."
+          "description": "Wire the \"Change password\" menu item to open ChangePasswordDialog. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/i18n/translations/en.ts",
           "operation": "modify",
-          "description": "Add a query hook to fetch whether the current admin is leader-allowlisted (wrap backend capability isCallerAllowlistedAdmin) for AdminPasswordGate UI decisions, and ensure existing isCallerAdmin remains used for gating. Use patterns consistent with the authorization component guidance. Verify the component's usage instructions before implementing."
+          "description": "Add translation keys for Change password dialog copy and buttons (including Internet Identity link button). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/i18n/translations/pt-BR.ts",
+          "operation": "modify",
+          "description": "Add Brazilian Portuguese translation keys for the Change password dialog copy and buttons. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-5",
-      "summary": "Display expanded admin dashboard metrics and implement a lightweight presence heartbeat from the frontend to support an active-sessions estimate.",
+      "summary": "Implement Delete account confirmation dialog and UI-side flow calling existing backend delete capability, clearing cached state and returning to logged-out/onboarding state.",
       "acceptanceCriteria": [
-        "Backend exposes an admin-only query (either extending getAggregatedMetrics or adding a new metrics query) that returns all requested counts.",
-        "“Total users who have ever logged in” is computed from stored user profiles (not from Internet Identity email, and not from external systems).",
-        "Frontend AdminPanel displays these metrics in the existing metrics cards section (AggregatedMetricsCards) or an equivalent admin metrics component.",
-        "The app implements a lightweight presence mechanism: the frontend periodically calls a backend method to record last-seen timestamps for the current principal; “users with platform open” is computed as users seen within a defined recent window (e.g., last 2–5 minutes) and is visible in the admin dashboard."
+        "Clicking \"Delete account\" opens a destructive confirmation dialog (cannot be triggered accidentally).",
+        "On confirmation, the frontend calls a backend method that removes the caller’s profile and all associated stored records (including links, schedules, filters, activities, locations, audit logs, and disabled flags where applicable).",
+        "After successful deletion, the UI clears relevant cached queries and returns the user to a logged-out / onboarding state.",
+        "If deletion fails, the user sees a clear error message and no partial UI state is shown as successful."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/account/DeleteAccountDialog.tsx",
+          "operation": "create",
+          "description": "Create a destructive confirmation dialog requiring explicit confirmation (e.g., typed phrase or secondary confirm step) before proceeding; on confirm, trigger the delete account mutation and show pending/success/error states. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a React Query mutation for deleting the current account (calling the backend capability) and on success clear/invalidate all profile-dependent queries and cached app data (at minimum: currentUserProfile, myChildren, myParent, schedule, contentFilter, activities, locations, auditLog, liveLocationSharing, pendingPairingRequests). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/account/AccountDropdown.tsx",
+          "operation": "modify",
+          "description": "Wire the \"Delete account\" menu item to open DeleteAccountDialog. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/account/DeleteAccountDialog.tsx",
+          "operation": "modify",
+          "description": "After successful deletion, trigger Internet Identity logout via the existing auth hook and clear React Query cache so the UI returns to logged-out/onboarding state; ensure failures surface a clear error message without showing success state. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/i18n/translations/en.ts",
+          "operation": "modify",
+          "description": "Add translation keys for delete account dialog title, warning text, confirmation instructions, buttons, and error messages. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/i18n/translations/pt-BR.ts",
+          "operation": "modify",
+          "description": "Add Brazilian Portuguese translations for the delete account dialog keys. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Add/extend React Query hooks for account actions (save profile photo, delete account) and invalidate dependent queries to update header and app state correctly.",
+      "acceptanceCriteria": [
+        "A mutation exists for deleting the current account and invalidates/clears relevant queries (at minimum: currentUserProfile, myChildren, myParent, schedule/contentFilter/activities/locations where applicable).",
+        "A mutation exists for updating/saving the profile (including the photo) and the header updates immediately after success."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a query hook to fetch admin dashboard metrics (wrap backend capability getAdminDashboardMetrics) and a mutation/helper to call recordHeartbeat. Configure reasonable refetching for the metrics on the admin screen (e.g., periodic refetch) without excessive polling. Verify the component's usage instructions before implementing."
+          "description": "Implement/extend account-focused hooks: mutation for saving profile photo and mutation for deleting caller account; ensure appropriate invalidation/clearing of dependent queries and that header-related queries update immediately after success. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/usePresenceHeartbeat.ts",
-          "operation": "create",
-          "description": "Create a small hook that, when authenticated (actor available), periodically calls the backend capability recordHeartbeat and also triggers on tab focus/visibility changes. Keep it best-effort and lightweight. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/components/layout/AppHeader.tsx",
           "operation": "modify",
-          "description": "Start the presence heartbeat for authenticated users by wiring usePresenceHeartbeat into AppContent (or another always-mounted authenticated container) so active session estimates can work. Ensure it stops naturally on logout/identity clear. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Switch the admin dashboard metrics source to the admin metrics query (getAdminDashboardMetrics via a new hook) and pass the returned metrics into the metrics cards component. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-          "operation": "modify",
-          "description": "Expand the metrics card UI to render: total Parents, total Children, total Parent→Child link count, total saved profiles (totalUsersEverLoggedIn), and activeSessionsEstimate. Update labels to use i18n and ensure bigint values are safely displayed as numbers/strings. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/i18n/translations/en.ts",
-          "operation": "modify",
-          "description": "Add i18n labels/descriptions for the new admin metrics (parents, children, links, total profiles, active sessions). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/i18n/translations/pt-BR.ts",
-          "operation": "modify",
-          "description": "Add i18n labels/descriptions for the new admin metrics (pais, filhos, vínculos, total de perfis, sessões ativas). Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Add and display at least 3 additional admin metrics computed from on-chain state, rendered clearly without exposing individual child records.",
-      "acceptanceCriteria": [
-        "At least 3 additional metrics are implemented and displayed, chosen from available state such as: number of disabled accounts, number of pending pairing requests, number of parents with zero children, number of children not paired to any parent, total count of activity entries across all children (aggregated only), total count of location entries across all children (aggregated only).",
-        "All additional metrics are available via an admin-only backend query and are rendered on the admin dashboard.",
-        "No admin UI exposes individual child activity/location records (only aggregated counts), preserving existing privacy behavior."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-          "operation": "modify",
-          "description": "Add at least 3 additional metric cards sourced from the admin metrics object (e.g., totalDisabledAccounts, totalPendingPairings, totalContentFiltersConfigured, totalSchedulesConfigured, totalAdmins). Ensure these are displayed as aggregated counts only (no per-child drilldown). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Ensure the expanded aggregated metrics section is displayed prominently on the admin dashboard and continues to show only aggregated values. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/i18n/translations/en.ts",
-          "operation": "modify",
-          "description": "Add i18n labels for the chosen additional metrics (e.g., disabled accounts, pending pairings, filters configured, schedules configured, total admins). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/i18n/translations/pt-BR.ts",
-          "operation": "modify",
-          "description": "Add i18n labels for the chosen additional metrics (e.g., contas desativadas, pareamentos pendentes, filtros configurados, agendas configuradas, total de admins). Verify the component's usage instructions before implementing."
+          "description": "Consume updated queries/hooks so the header reacts immediately to profile updates (including photo) without full refresh. Verify the component's usage instructions before implementing."
         }
       ]
     }

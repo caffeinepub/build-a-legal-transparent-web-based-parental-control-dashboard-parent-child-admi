@@ -7,6 +7,47 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export class ExternalBlob {
+    getBytes(): Promise<Uint8Array<ArrayBuffer>>;
+    getDirectURL(): string;
+    static fromURL(url: string): ExternalBlob;
+    static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
+    withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
+}
+export interface UserProfile {
+    name: string;
+    role: AppRole;
+    photo?: ExternalBlob;
+    phoneNumber?: string;
+}
+export interface ScheduleChangeDetails {
+    child: Principal;
+    newConfig: ScheduleConfig;
+}
+export interface AccountDisabledDetails {
+    account: Principal;
+    reason: string;
+}
+export type Time = bigint;
+export interface ScheduleConfig {
+    allowedHours: Array<DayTimeWindow>;
+    dailyLimitMinutes: bigint;
+}
+export interface InviteCode {
+    created: Time;
+    code: string;
+    used: boolean;
+}
+export interface PendingPairingRequest {
+    id: bigint;
+    pending: boolean;
+    child: Principal;
+    parent: Principal;
+}
+export interface ContentCategory {
+    name: string;
+    enabled: boolean;
+}
 export interface PendingRequestCompletedDetails {
     childPrincipal: Principal;
     childName: string;
@@ -17,23 +58,14 @@ export interface PhonePairingInitiatedDetails {
     phoneNumber: string;
     parentId: Principal;
 }
-export interface ScheduleChangeDetails {
-    child: Principal;
-    newConfig: ScheduleConfig;
-}
-export type Time = bigint;
 export interface DayTimeWindow {
     endHour: bigint;
     dayOfWeek: bigint;
     startHour: bigint;
 }
-export interface ContentCategory {
-    name: string;
-    enabled: boolean;
-}
-export interface ScheduleConfig {
-    allowedHours: Array<DayTimeWindow>;
-    dailyLimitMinutes: bigint;
+export interface AccountDeletedDetails {
+    role: AppRole;
+    account: Principal;
 }
 export interface AuditLogEntry {
     action: ActionType;
@@ -66,6 +98,9 @@ export type AuditLogDetails = {
     __kind__: "pairingCreated";
     pairingCreated: PairingDetails;
 } | {
+    __kind__: "accountDeleted";
+    accountDeleted: AccountDeletedDetails;
+} | {
     __kind__: "filterChanged";
     filterChanged: FilterChangeDetails;
 } | {
@@ -87,18 +122,9 @@ export interface RSVP {
     timestamp: Time;
     attending: boolean;
 }
-export interface InviteCode {
-    created: Time;
-    code: string;
-    used: boolean;
-}
 export interface FilterChangeDetails {
     child: Principal;
     newConfig: ContentFilterConfig;
-}
-export interface AccountDisabledDetails {
-    account: Principal;
-    reason: string;
 }
 export interface AdminDashboardMetrics {
     totalUsersEverLoggedIn: bigint;
@@ -112,12 +138,6 @@ export interface AdminDashboardMetrics {
     totalChildren: bigint;
     totalParentChildLinks: bigint;
 }
-export interface PendingPairingRequest {
-    id: bigint;
-    pending: boolean;
-    child: Principal;
-    parent: Principal;
-}
 export interface ActivityEntry {
     appSite: string;
     childId: Principal;
@@ -129,11 +149,6 @@ export interface PairingDetails {
     child: Principal;
     parent: Principal;
 }
-export interface UserProfile {
-    name: string;
-    role: AppRole;
-    phoneNumber?: string;
-}
 export interface PhonePairingCompletedDetails {
     childId: Principal;
     parentId: Principal;
@@ -144,6 +159,7 @@ export enum ActionType {
     pendingRequestCompleted = "pendingRequestCompleted",
     phonePairingCompleted = "phonePairingCompleted",
     pairingCreated = "pairingCreated",
+    accountDeleted = "accountDeleted",
     filterChanged = "filterChanged",
     accountDisabled = "accountDisabled",
     scheduleChanged = "scheduleChanged"
@@ -185,6 +201,7 @@ export interface backendInterface {
     addLocation(entry: LocationEntry): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     changeAdminPassword(oldPassword: string, newPassword: string): Promise<void>;
+    deleteCallerAccount(): Promise<void>;
     generateInviteCode(): Promise<string>;
     generatePairingCode(): Promise<string | null>;
     getActivities(childId: Principal): Promise<Array<ActivityEntry>>;
@@ -192,6 +209,7 @@ export interface backendInterface {
     getAllRSVPs(): Promise<Array<RSVP>>;
     getAllowlistedAdminPrincipals(): Promise<Array<Principal>>;
     getAuditLog(childId: Principal): Promise<Array<AuditLogEntry>>;
+    getCallerProfilePhoto(): Promise<ExternalBlob | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getContentFilter(childId: Principal): Promise<ContentFilterConfig | null>;
@@ -212,6 +230,7 @@ export interface backendInterface {
     requestPairingWithParent(parentId: Principal): Promise<PairWithParentResult>;
     revokeAllowlistedAdmin(adminPasswordAttempt: string, principal: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    saveProfilePhoto(blob: ExternalBlob): Promise<void>;
     setLiveLocationSharing(enabled: boolean): Promise<void>;
     submitRSVP(name: string, attending: boolean, inviteCode: string): Promise<void>;
     updateContentFilter(childId: Principal, newConfig: ContentFilterConfig): Promise<void>;

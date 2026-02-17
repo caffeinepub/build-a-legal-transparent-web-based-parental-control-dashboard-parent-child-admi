@@ -1,130 +1,140 @@
 {
   "kind": "build_request",
-  "title": "Add restricted ADMINISTRATOR role and expand admin dashboard metrics",
+  "title": "Add account dropdown menu on profile header with profile photo, password, and delete account actions",
   "projectName": "Parental Control",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a third role option named “ADMINISTRATOR” to the profile creation flow, alongside Parent and Child, and allow selecting it only when the user-provided identifier matches the leader allowlist: email “tigguinrodrigues@gmail.com” or “tigguinclash@gmail.com”, or phone number “(91)980115950”.",
+      "text": "Make the user identity area in the app header (the row showing \"{user name} • {role}\") clickable and open a dropdown menu (suspended list) matching the UI shown in the provided screenshot.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "crie uma terceira opção com o nome ADMINISTRADOR, que pode ser acessada apenas pelo usuário Líder tigguinrodrigues@gmail.com e tigguinclash@gmail.com, e também pelo número (91)980115950"
+          "faça com que ao clicar no campo na imagem abra abra a lista sustensa com as seguintes opções: Mudar (foto de perfil), Mudar Senha, Excluir conta e mais opções que você achar útil de colocar, crie oque conseguir de melhor"
         ]
       },
       "acceptanceCriteria": [
-        "Profile setup screen shows three role options: Parent, Child, ADMINISTRATOR.",
-        "ADMINISTRATOR can only be selected when the user has entered either one of the allowed emails in the Name field OR the allowed phone number in the phone field (normalized to the app’s phone format).",
-        "If the identifier is not allowlisted, the ADMINISTRATOR option is disabled and the UI explains that access is restricted to the leader account."
+        "When the current user is logged in and a profile exists, clicking the \"name • role\" line in the header opens a dropdown menu anchored to that area.",
+        "The dropdown is keyboard accessible (Enter/Space to open, Esc to close) and closes when clicking outside.",
+        "When no userProfile exists (not logged in / not set up), the dropdown trigger is not shown."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Implement backend enforcement for the ADMINISTRATOR role so that only leader-allowlisted accounts can save a profile with role #admin, and ensure non-allowlisted users cannot become admins even if they manipulate the frontend.",
-      "target": "backend",
+      "text": "Populate the header dropdown menu with at least these items (English labels): \"Change profile photo\", \"Change password\", and \"Delete account\"; also add additional useful account actions that fit the app (for example: \"Edit profile\", \"Manage phone number\", \"View transparency & policies\", \"Logout\").",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "que pode ser acessada apenas pelo usuário Líder tigguinrodrigues@gmail.com e tigguinclash@gmail.com, e também pelo número (91)980115950"
+          "Mudar (foto de perfil), Mudar Senha, Excluir conta e mais opções que você achar útil de colocar"
         ]
       },
       "acceptanceCriteria": [
-        "If a non-allowlisted caller attempts to save a profile with role #admin, the backend rejects the call (traps) and the profile is not stored as admin.",
-        "If an allowlisted caller saves a profile with role #admin, the profile is stored and admin-only endpoints become accessible for that caller.",
-        "Leader allowlist matching supports: (a) profile.name equals either allowlisted email; (b) profile.phoneNumber equals “(91)980115950” (after normalization to the same stored format)."
+        "Dropdown includes menu items labeled exactly (in English): \"Change profile photo\", \"Change password\", \"Delete account\".",
+        "At least 2 additional useful account actions are included, and none of them are admin-only unless the current user is an admin.",
+        "All menu labels are translated via the existing i18n system (new keys added to translation files)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Set the admin password to “Liderdoprojetox1” and restrict admin-password changes so that only leader-allowlisted admins can change the admin password (other admins, if any, must not be able to change it).",
-      "target": "backend",
+      "text": "Implement \"Change profile photo\": allow the user to pick an image file, preview it, and save it as the user’s profile photo so it displays in the header next to the app logo/user info (fallback to initials if no photo).",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "com a senha: Liderdoprojetox1"
+          "Mudar (foto de perfil)"
         ]
       },
       "acceptanceCriteria": [
-        "Default admin password is “Liderdoprojetox1”.",
-        "verifyAdminPassword returns true only for the correct password.",
-        "setAdminPassword is allowed only for allowlisted leader admin accounts; other callers are rejected."
+        "Clicking \"Change profile photo\" opens a dialog with file picker and preview.",
+        "After saving, the header shows the new profile photo for the current user without requiring a full page refresh.",
+        "If the user clears/removes the photo, the header falls back to an initials/avatar placeholder.",
+        "The saved photo is persisted for the user (survives reload and new sessions)."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Require a dedicated ADMINISTRATOR access step in the UI: when the logged-in user is recognized as admin by the backend, show an admin password gate screen (password input) before rendering the AdminPanel; only after successful verification in the current session may the AdminPanel be shown.",
+      "text": "Implement \"Change password\" in a way that matches Internet Identity authentication: the menu action should guide the user to change their Internet Identity settings (open the Internet Identity management page in a new tab) and explain that passwords are managed by Internet Identity.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "com a senha: Liderdoprojetox1. faça com que ao acessar como ADMINISTRADOR, o Líder possa ter acesso ao Dashboard"
+          "Mudar Senha"
         ]
       },
       "acceptanceCriteria": [
-        "When isCallerAdmin is true and the session gate is not passed, the app shows the AdminPasswordGate component instead of AdminPanel.",
-        "After entering the correct admin password, the session is marked as passed (using the existing sessionStorage gate), and the AdminPanel becomes visible.",
-        "Logging out clears the admin gate session (existing behavior remains)."
+        "Clicking \"Change password\" opens a dialog or confirm step that explains password changes are handled via Internet Identity.",
+        "The UI provides a button that opens the Internet Identity page in a new tab/window.",
+        "No attempt is made to store or change a separate app password in the canister for regular users."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Expand the administrator dashboard metrics to include: total Parent users, total Child users, total Parent→Child link count (how many child logins are linked to a parent), total users who have ever logged in (interpreted as total saved profiles), and an estimate of how many users currently have the platform open (active sessions) based on a presence heartbeat.",
+      "text": "Implement \"Delete account\" end-to-end: add a backend method to delete the caller’s account and associated data, and add a frontend confirmation dialog that requires explicit confirmation before deletion.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-user-1"
         ],
         "quotes": [
-          "Dashboard das quantidades de usuários PAI/MÃE e FILHO na plataforma, quantos loguin FILHO estão vinculados ao PAI/MÃE, quantos usuários fizeram loguin na plataforma, quantos estão com a plataforma aberta"
+          "Excluir conta"
         ]
       },
       "acceptanceCriteria": [
-        "Backend exposes an admin-only query (either extending getAggregatedMetrics or adding a new metrics query) that returns all requested counts.",
-        "“Total users who have ever logged in” is computed from stored user profiles (not from Internet Identity email, and not from external systems).",
-        "Frontend AdminPanel displays these metrics in the existing metrics cards section (AggregatedMetricsCards) or an equivalent admin metrics component.",
-        "The app implements a lightweight presence mechanism: the frontend periodically calls a backend method to record last-seen timestamps for the current principal; “users with platform open” is computed as users seen within a defined recent window (e.g., last 2–5 minutes) and is visible in the admin dashboard."
+        "Clicking \"Delete account\" opens a destructive confirmation dialog (cannot be triggered accidentally).",
+        "On confirmation, the frontend calls a backend method that removes the caller’s profile and all associated stored records (including links, schedules, filters, activities, locations, audit logs, and disabled flags where applicable).",
+        "After successful deletion, the UI clears relevant cached queries and returns the user to a logged-out / onboarding state.",
+        "If deletion fails, the user sees a clear error message and no partial UI state is shown as successful."
       ]
     },
     {
       "id": "REQ-6",
-      "text": "Add a small set of additional admin dashboard metrics that are fully computable from current on-chain state (no external services), and display them clearly in the admin dashboard.",
-      "target": "both",
+      "text": "Update the Motoko data model and frontend types to support storing an optional profile photo for the user (e.g., an optional field on UserProfile), and perform any required state migration safely according to the project’s migration policy.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "crie mais algumas informações pala ser disponibilizadas no dashboard"
+          "msg-user-1"
         ]
       },
       "acceptanceCriteria": [
-        "At least 3 additional metrics are implemented and displayed, chosen from available state such as: number of disabled accounts, number of pending pairing requests, number of parents with zero children, number of children not paired to any parent, total count of activity entries across all children (aggregated only), total count of location entries across all children (aggregated only).",
-        "All additional metrics are available via an admin-only backend query and are rendered on the admin dashboard.",
-        "No admin UI exposes individual child activity/location records (only aggregated counts), preserving existing privacy behavior."
+        "Backend compiles with the updated UserProfile type including an optional profile photo field.",
+        "Existing users without a photo remain valid and can still load their profile.",
+        "If stable state requires upgrading, a migration is provided so existing state can be upgraded without data loss."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Add/extend React Query hooks needed for the new account actions (save profile photo, delete account) and ensure queries that depend on the current profile are invalidated appropriately after each action.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A mutation exists for deleting the current account and invalidates/clears relevant queries (at minimum: currentUserProfile, myChildren, myParent, schedule/contentFilter/activities/locations where applicable).",
+        "A mutation exists for updating/saving the profile (including the photo) and the header updates immediately after success."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (shadcn components); compose them instead.",
-    "Do not edit frontend immutable paths listed by the system (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo if stable-state upgrades are required.",
-    "Do not rely on third-party authentication or external databases/services; Internet Identity is the only auth mechanism.",
-    "Because Internet Identity does not provide verified email addresses, the allowlist must be enforced using data the app actually collects (profile name string and/or stored phone number)."
+    "Do not edit files under frontend/src/components/ui (read-only shadcn components); compose them from feature components instead.",
+    "Keep all Motoko logic in the single actor in backend/main.mo; do not introduce additional canisters/services.",
+    "Do not implement third-party authentication or password storage; regular user authentication remains Internet Identity."
   ],
   "nonGoals": [
-    "Implementing real email/password authentication or verifying ownership of the provided email addresses via external email systems.",
-    "Using SMS/telephony providers to verify the leader phone number outside the app’s existing on-chain mechanisms.",
-    "Real-time presence via WebSockets or push notifications (presence is best-effort via periodic polling/heartbeat)."
+    "Implementing real-time menu updates via WebSockets or push notifications.",
+    "Adding external image hosting; profile photos must be stored within existing app storage constraints.",
+    "Building a full admin accounts management UI (unrelated to the dropdown request)."
   ],
   "imageRequirements": {
     "required": [],

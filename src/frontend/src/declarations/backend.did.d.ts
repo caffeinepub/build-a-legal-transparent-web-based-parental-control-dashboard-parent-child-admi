@@ -10,6 +10,10 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AccountDeletedDetails {
+  'role' : AppRole,
+  'account' : Principal,
+}
 export interface AccountDisabledDetails {
   'account' : Principal,
   'reason' : string,
@@ -19,6 +23,7 @@ export type ActionType = { 'pendingRequestInitiated' : null } |
   { 'pendingRequestCompleted' : null } |
   { 'phonePairingCompleted' : null } |
   { 'pairingCreated' : null } |
+  { 'accountDeleted' : null } |
   { 'filterChanged' : null } |
   { 'accountDisabled' : null } |
   { 'scheduleChanged' : null };
@@ -51,6 +56,7 @@ export type AuditLogDetails = {
   { 'pendingRequestCompleted' : PendingRequestCompletedDetails } |
   { 'phonePairingCompleted' : PhonePairingCompletedDetails } |
   { 'pairingCreated' : PairingDetails } |
+  { 'accountDeleted' : AccountDeletedDetails } |
   { 'filterChanged' : FilterChangeDetails } |
   { 'accountDisabled' : AccountDisabledDetails } |
   { 'scheduleChanged' : ScheduleChangeDetails };
@@ -71,6 +77,7 @@ export interface DayTimeWindow {
   'dayOfWeek' : bigint,
   'startHour' : bigint,
 }
+export type ExternalBlob = Uint8Array;
 export interface FilterChangeDetails {
   'child' : Principal,
   'newConfig' : ContentFilterConfig,
@@ -146,12 +153,39 @@ export type Time = bigint;
 export interface UserProfile {
   'name' : string,
   'role' : AppRole,
+  'photo' : [] | [ExternalBlob],
   'phoneNumber' : [] | [string],
 }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'acceptPendingPairing' : ActorMethod<[bigint], PairWithParentResult>,
   'addActivity' : ActorMethod<[ActivityEntry], undefined>,
@@ -160,6 +194,7 @@ export interface _SERVICE {
   'addLocation' : ActorMethod<[LocationEntry], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'changeAdminPassword' : ActorMethod<[string, string], undefined>,
+  'deleteCallerAccount' : ActorMethod<[], undefined>,
   'generateInviteCode' : ActorMethod<[], string>,
   'generatePairingCode' : ActorMethod<[], [] | [string]>,
   'getActivities' : ActorMethod<[Principal], Array<ActivityEntry>>,
@@ -167,6 +202,7 @@ export interface _SERVICE {
   'getAllRSVPs' : ActorMethod<[], Array<RSVP>>,
   'getAllowlistedAdminPrincipals' : ActorMethod<[], Array<Principal>>,
   'getAuditLog' : ActorMethod<[Principal], Array<AuditLogEntry>>,
+  'getCallerProfilePhoto' : ActorMethod<[], [] | [ExternalBlob]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getContentFilter' : ActorMethod<[Principal], [] | [ContentFilterConfig]>,
@@ -190,6 +226,7 @@ export interface _SERVICE {
   'requestPairingWithParent' : ActorMethod<[Principal], PairWithParentResult>,
   'revokeAllowlistedAdmin' : ActorMethod<[string, Principal], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveProfilePhoto' : ActorMethod<[ExternalBlob], undefined>,
   'setLiveLocationSharing' : ActorMethod<[boolean], undefined>,
   'submitRSVP' : ActorMethod<[string, boolean, string], undefined>,
   'updateContentFilter' : ActorMethod<

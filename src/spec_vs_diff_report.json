@@ -1,98 +1,77 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T16:09:08.278Z",
-  "summary": "Diff implements major parts of the requested ADMINISTRATOR role and expanded admin dashboard: new #admin role type on backend, default admin password string, new AdminPasswordGate UI, presence heartbeat hook, and expanded admin metrics cards. However, key backend enforcement details (leader allowlist checks by profile name/phone normalization, trapping on unauthorized admin saves, and restricting admin password changes to allowlisted leader admins) are not verifiable from the provided truncated backend diff summary. Several unrelated UI/feature changes (pairing UX, live location UI, polling tweaks, transparency page edits) appear outside the BuildRequest scope.",
+  "generatedAt": "2026-02-17T17:14:22.286Z",
+  "summary": "Implements a header account dropdown, dialogs for change photo/password/delete account, adds i18n keys, adds optional `photo` field to `UserProfile`, and adds React Query mutations. However, several acceptance criteria and backend endpoints/data-deletion scope are not evidenced in the diff, and there are multiple unrelated changes/features added.",
   "missing_requirements": [
     {
       "id": "REQ-2",
-      "requirement": "Backend must enforce that only leader-allowlisted accounts can save a profile with role #admin (trap/reject for non-allowlisted), and allowlist matching must support profile.name equals either allowlisted email and profile.phoneNumber equals “(91)980115950” after normalization.",
-      "reason": "The diff shows the new role variant (#admin) and new allowlistedAdminPrincipals state, but does not include (in the visible/truncated portion) the saveCallerUserProfile implementation or the explicit allowlist matching logic against profile.name / profile.phoneNumber with the specified normalization and trap behavior.",
+      "requirement": "Include at least 2 additional useful account actions beyond the required three, with labels translated via i18n.",
+      "reason": "Dropdown includes the three required items plus only one additional action (\"View transparency & policies\"); other suggested/required additional actions like Edit profile / Manage phone number / Logout are not present as menu items.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "backend/migration.mo"
+        "frontend/src/components/account/AccountDropdown.tsx",
+        "frontend/src/i18n/translations/en.ts",
+        "frontend/src/i18n/translations/pt-BR.ts"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Restrict admin-password changes so that only leader-allowlisted admins can change the admin password; other callers must be rejected; verifyAdminPassword must only return true for the correct password.",
-      "reason": "The default password value is visible, and the frontend includes a change-password UI gated by an allowlist query, but the backend methods (verifyAdminPassword / setAdminPassword) and their authorization checks are not shown in the truncated backend diff, so backend enforcement cannot be confirmed.",
+      "requirement": "Support clearing/removing the profile photo by saving a null/removed state so the header falls back to initials/avatar placeholder.",
+      "reason": "The remove flow appears to upload an empty blob (`ExternalBlob.fromBytes(new Uint8Array(0))`) rather than persisting `null`/absence; diff does not show backend logic interpreting this as removal, so persistence of 'no photo' state is not evidenced.",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/components/admin/AdminPasswordGate.tsx (truncated)",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "frontend/src/components/account/ChangeProfilePhotoDialog.tsx"
       ]
     },
     {
       "id": "REQ-5",
-      "requirement": "Backend must expose an admin-only metrics query returning all requested counts including active sessions estimate computed from heartbeat timestamps within a recent window.",
-      "reason": "Frontend calls actor.getAdminDashboardMetrics() and sends actor.recordHeartbeat(), but the backend implementations for these methods, the admin-only restriction, and the windowed computation for “active sessions” are not visible in the truncated backend diff summary.",
+      "requirement": "Backend method deletes the caller’s account and all associated stored records (links, schedules, filters, activities, locations, audit logs, disabled flags, etc.).",
+      "reason": "Frontend calls `actor.deleteCallerAccount()`, but the diff summary for `backend/main.mo` is truncated before any `deleteCallerAccount` implementation and does not evidence deletion of the full set of associated records.",
       "evidence": [
-        "frontend/src/hooks/usePresenceHeartbeat.ts",
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "backend/main.mo (truncated)"
+        "frontend/src/hooks/useQueries.ts",
+        "backend/main.mo"
       ]
     },
     {
-      "id": "REQ-6",
-      "requirement": "All additional admin dashboard metrics must be available via an admin-only backend query and rendered on the admin dashboard, without exposing individual child activity/location records (aggregated only).",
-      "reason": "Frontend renders multiple additional metrics (e.g., pending pairings, disabled accounts, schedules/filters configured), but the backend-side admin-only query shape and any guarantees about aggregation-only (no individual record exposure) are not visible in the truncated backend diff summary.",
+      "id": "REQ-3",
+      "requirement": "Persist profile photo end-to-end (backend method to save photo) and have the header show it without refresh.",
+      "reason": "Frontend calls `actor.saveProfilePhoto(blob)` and invalidates `currentUserProfile`, but the diff summary for `backend/main.mo` is truncated and does not show any `saveProfilePhoto` method or storage/persistence logic for the uploaded photo.",
       "evidence": [
-        "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-        "backend/main.mo (truncated)"
+        "frontend/src/hooks/useQueries.ts",
+        "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Multiple unrelated UX/feature changes to child pairing flow (phone-based pairing steps, pending state polling, URL pairingCode handling) beyond adding ADMINISTRATOR role and admin metrics.",
-      "reason": "BuildRequest focuses on restricted ADMINISTRATOR role, admin password gate, presence heartbeat, and admin metrics; it does not request changes to child-parent pairing UX or related polling behaviors.",
+      "description": "Introduces a \"New Strict Admin Password\" with a hardcoded value in the backend actor state.",
+      "reason": "BuildRequest explicitly focuses on account dropdown actions and forbids third-party auth/password storage; adding an app-level admin password is not requested and is unrelated to the dropdown requirements.",
       "evidence": [
-        "frontend/src/components/child/PairWithParentCard.tsx (truncated)",
-        "frontend-file-summaries.txt (PairWithParentCard, ChildHome, ParentDashboard entries)"
+        "backend/main.mo"
       ]
     },
     {
-      "description": "Live location UI enhancements (badges, stale detection, Google Maps link, polling cadence changes) beyond admin-role/dashboard work.",
-      "reason": "Not requested by the BuildRequest; scope is admin access control and dashboard metrics.",
+      "description": "Adds/changes multiple unrelated frontend behaviors (automatic polling/real-time-ish updates across parent/child views, pairing code clipboard behavior, admin panel layout changes).",
+      "reason": "Non-goals include real-time menu updates, and the BuildRequest does not request broader dashboard polling or admin panel changes.",
       "evidence": [
-        "frontend/src/components/parent/LiveLocationMap.tsx (truncated)",
-        "frontend-file-summaries.txt (LocationView, LiveLocationMap entries)"
-      ]
-    },
-    {
-      "description": "General polling/refresh tweaks for parent/child activity and history components (15-second polling, etc.) outside the admin/dashboard requirements.",
-      "reason": "Not part of requested ADMINISTRATOR role additions or admin metrics expansion.",
-      "evidence": [
-        "frontend-file-summaries.txt (ActivityView, ChildSummaryCard, ActivityHistoryList, LocationHistoryList entries)"
-      ]
-    },
-    {
-      "description": "Edits to TransparencyPolicies content/translation and minor Tailwind class changes unrelated to admin role/metrics.",
-      "reason": "Not requested in BuildRequest.",
-      "evidence": [
-        "frontend-file-summaries.txt (TransparencyPolicies entry)"
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.72,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/admin/AccountsTable.tsx",
-    "frontend/src/components/admin/AdminPasswordGate.tsx",
-    "frontend/src/components/admin/AggregatedMetricsCards.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/components/child/PairWithParentCard.tsx",
-    "frontend/src/components/parent/LiveLocationMap.tsx",
-    "frontend/src/hooks/usePresenceHeartbeat.ts",
+    "frontend/src/components/account/AccountDropdown.tsx",
+    "frontend/src/components/account/ChangePasswordDialog.tsx",
+    "frontend/src/components/account/ChangeProfilePhotoDialog.tsx",
+    "frontend/src/components/account/DeleteAccountDialog.tsx",
+    "frontend/src/components/account/UserAvatar.tsx",
+    "frontend/src/components/layout/AppHeader.tsx",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/i18n/index.ts",
     "frontend/src/i18n/translations/en.ts",
     "frontend/src/i18n/translations/pt-BR.ts",
-    "frontend/src/pages/admin/AdminPanel.tsx",
-    "frontend/src/utils/phoneNumber.ts",
     "project_state.json"
   ]
 }

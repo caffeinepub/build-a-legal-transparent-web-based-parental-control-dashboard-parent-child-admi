@@ -2,34 +2,19 @@ import { useGetCallerUserProfile } from '../../hooks/useQueries';
 import { useI18n } from '../../hooks/useI18n';
 import LoginButton from '../auth/LoginButton';
 import LanguageSelector from '../i18n/LanguageSelector';
-import { Shield, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { AppRole } from '../../backend';
 import type { TranslationKey } from '../../i18n';
+import AccountDropdown from '../account/AccountDropdown';
+import UserAvatar from '../account/UserAvatar';
 
 interface AppHeaderProps {
   onShowPolicies: () => void;
 }
 
-const getRoleLabel = (
-  role: AppRole,
-  t: (key: TranslationKey, params?: Record<string, string | number>) => string
-): string => {
-  switch (role) {
-    case AppRole.parent:
-      return t('headerRoleParent');
-    case AppRole.child:
-      return t('headerRoleChild');
-    case AppRole.admin:
-      return t('headerRoleAdmin');
-    default:
-      return t('headerRoleUser');
-  }
-};
-
 export default function AppHeader({ onShowPolicies }: AppHeaderProps) {
-  const { data: userProfile } = useGetCallerUserProfile();
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const { theme, setTheme } = useTheme();
   const { t } = useI18n();
 
@@ -41,13 +26,14 @@ export default function AppHeader({ onShowPolicies }: AppHeaderProps) {
           <div>
             <h1 className="text-xl font-bold font-brand text-foreground">{t('appName')}</h1>
             {userProfile && (
-              <p className="text-xs text-muted-foreground">
-                {userProfile.name} • {getRoleLabel(userProfile.role, t)}
-              </p>
+              <AccountDropdown userProfile={userProfile} />
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {userProfile && (
+            <UserAvatar userProfile={userProfile} size="sm" className="hidden sm:flex" />
+          )}
           <Button
             variant="ghost"
             size="sm"
