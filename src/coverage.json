@@ -1,70 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-17T18:07:44.645Z",
+  "generatedAt": "2026-02-17T18:20:55.907Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 1,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
+        "summary": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/AdminPasswordGate.tsx",
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/AdminPasswordGate.tsx",
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/components/auth/ProfileSetupDialog.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/admin/AdminPasswordGate.tsx",
     "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,102 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Fix leader/admin password validation so 'Liderdoprojetox1' grants access",
+  "title": "Hide Administrator role until a specific phone number is entered",
   "projectName": "Parental Control",
-  "priority": "high",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
-      "target": "backend",
+      "text": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-5"
         ],
         "quotes": [
-          "A senha ainda está dando incorreta mesmo estando certa, certifiquese que ao inserir a senha Liderdoprojetox1 o app abre para o lider"
+          "faça com que a opção administrador fique oculta e só apareça quando for inserido o numero (91)980115950 na área Número de telefone"
         ]
       },
       "acceptanceCriteria": [
-        "Calling backend.verifyAdminPassword(\"Liderdoprojetox1\") as an authenticated user returns true.",
-        "The previous incorrect behavior (returning false for \"Liderdoprojetox1\") no longer occurs."
+        "When the phone number input is empty or does not normalize to 91980115950, the Administrator radio option is not rendered/visible in the role selection list.",
+        "When the phone number input normalizes to 91980115950 (e.g., entered as \"(91)980115950\" or \"91980115950\"), the Administrator option becomes visible without requiring a page refresh.",
+        "Phone matching is performed using digits-only comparison (ignore parentheses and any non-digits)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In backend/main.mo, the adminPassword default value is exactly \"Liderdoprojetox1\" (no trailing punctuation).",
-        "A fresh deploy with empty state allows admin/leader access using \"Liderdoprojetox1\"."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Submitting the admin/leader password \"Liderdoprojetox1\" via the existing profile setup admin flow results in the caller principal being allowlisted and able to save role=#admin without an Unauthorized error."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Upgrading a canister whose stored admin password equals \"Liderdoprojetox1;\" results in the stored admin password becoming exactly \"Liderdoprojetox1\" after upgrade.",
-        "Upgrading a canister whose stored admin password is already \"Liderdoprojetox1\" leaves it unchanged.",
-        "Allowlisted admin principals remain intact across the upgrade."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
+      "text": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-5"
         ],
         "quotes": [
-          "...ao inserir a senha Liderdoprojetox1 o app abre para o lider"
+          "...na área Número de telefone"
         ]
       },
       "acceptanceCriteria": [
-        "In the AdminPasswordGate screen, entering \"Liderdoprojetox1\" and submitting results in the success state (gate passed) rather than the \"incorrect password\" error.",
-        "In the ProfileSetupDialog admin role flow, entering \"Liderdoprojetox1\" allows completion of the flow without showing an \"incorrect password\" error."
+        "The user can access the phone number input without first needing to select a specific role, so they can unlock the Administrator option.",
+        "If the user has selected the Administrator role and then edits the phone number so it no longer matches 91980115950, the UI automatically deselects Administrator (switch to a non-admin role) and hides the Administrator option again.",
+        "No backend calls to admin verification/allowlisting are possible unless the Administrator role is visible and selected."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (compose them instead).",
-    "Do not modify any frontend paths listed as immutable in SYSTEM_CONTEXT."
+    "Do not modify files under frontend/src/components/ui (shadcn components) or any other paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Adding new authentication providers or third-party auth (only Internet Identity remains).",
-    "Implementing any new admin dashboard features beyond fixing the password validation/access flow."
+    "Do not change the backend admin password/allowlist logic.",
+    "Do not add new authentication providers or change the Internet Identity flow."
   ],
   "imageRequirements": {
     "required": [],

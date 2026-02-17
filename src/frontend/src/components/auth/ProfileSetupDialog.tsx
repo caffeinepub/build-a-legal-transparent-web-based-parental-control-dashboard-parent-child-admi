@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Shield, AlertCircle } from 'lucide-react';
 import { AppRole } from '../../backend';
-import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber } from '../../utils/phoneNumber';
+import { formatPhoneNumber, parsePhoneNumberInput, isValidPhoneNumber, normalizePhoneNumber } from '../../utils/phoneNumber';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+
+const ADMIN_UNLOCK_PHONE = '91980115950';
 
 export default function ProfileSetupDialog() {
   const [name, setName] = useState('');
@@ -25,9 +27,25 @@ export default function ProfileSetupDialog() {
   const { identity } = useInternetIdentity();
   const { t } = useI18n();
 
+  // Check if admin option should be visible based on phone number
+  const isAdminOptionUnlocked = useMemo(() => {
+    const normalized = normalizePhoneNumber(phoneNumber);
+    return normalized === ADMIN_UNLOCK_PHONE;
+  }, [phoneNumber]);
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const parsed = parsePhoneNumberInput(e.target.value);
     setPhoneNumber(parsed);
+    
+    // If admin was selected but phone no longer matches, switch to parent
+    if (role === 'admin') {
+      const normalized = normalizePhoneNumber(parsed);
+      if (normalized !== ADMIN_UNLOCK_PHONE) {
+        setRole('parent');
+        setAdminPassword('');
+        setPasswordError('');
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,6 +57,13 @@ export default function ProfileSetupDialog() {
 
     // If admin role is selected, validate and verify password first
     if (role === 'admin') {
+      // Double-check that admin option is still unlocked
+      if (!isAdminOptionUnlocked) {
+        toast.error('Admin option not available');
+        setRole('parent');
+        return;
+      }
+
       // Trim whitespace from password before validation
       const trimmedPassword = adminPassword.trim();
       
@@ -127,23 +152,21 @@ export default function ProfileSetupDialog() {
               />
             </div>
 
-            {role === 'parent' && (
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">{t('profileSetupPhoneLabel')}</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  inputMode="numeric"
-                  value={formatPhoneNumber(phoneNumber)}
-                  onChange={handlePhoneChange}
-                  placeholder={t('profileSetupPhonePlaceholder')}
-                  className="font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('profileSetupPhoneHelp')}
-                </p>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">{t('profileSetupPhoneLabel')}</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                inputMode="numeric"
+                value={formatPhoneNumber(phoneNumber)}
+                onChange={handlePhoneChange}
+                placeholder={t('profileSetupPhonePlaceholder')}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('profileSetupPhoneHelp')}
+              </p>
+            </div>
 
             <div className="space-y-3">
               <Label>{t('profileSetupRoleLabel')}</Label>
@@ -170,15 +193,17 @@ export default function ProfileSetupDialog() {
                     </div>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer">
-                  <RadioGroupItem value="admin" id="admin" />
-                  <Label htmlFor="admin" className="flex-1 cursor-pointer">
-                    <div className="font-semibold">{t('profileSetupAdminTitle')}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {t('profileSetupAdminDesc')}
-                    </div>
-                  </Label>
-                </div>
+                {isAdminOptionUnlocked && (
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin" className="flex-1 cursor-pointer">
+                      <div className="font-semibold">{t('profileSetupAdminTitle')}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {t('profileSetupAdminDesc')}
+                      </div>
+                    </Label>
+                  </div>
+                )}
               </RadioGroup>
             </div>
 

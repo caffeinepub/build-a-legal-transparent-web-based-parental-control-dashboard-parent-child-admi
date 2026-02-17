@@ -3,18 +3,24 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [
-    "Role-based access/login: when role 'ADMINISTRADOR' (and/or leader) is selected, app should validate password and open the correct role view (leader access expected for password 'Liderdoprojetox1')."
+    "Controle de exibição da opção Administrador condicionado ao valor do campo 'Número de telefone' (exibir apenas se for (91)980115950)."
   ],
-  "known_issues": [
-    "Login/auth: password validation reports 'incorrect' even when the correct password is entered (expected: entering 'Liderdoprojetox1' should open the app for the leader)."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-frontend-admin-password-submission-s-to-treat-liderdoprojetox1-as-the-correct-password-and-ensure-successful-verification-grants-access-i-e-passing-the-admin-gate-opening-the-leader-experience-when-the-backend-confirms-the-password-is-valid",
-      "title": "Update the frontend admin password submission(s) to treat \"Liderdoprojetox1\" as the correct password and ensure successful verification grants access (i.e., passing the admin gate / opening the leader experience) when the backend confirms the password is valid.",
+      "id": "feature-in-the-profile-setup-dialog-hide-the-administrator-role-option-by-default-and-only-reveal-it-when-the-user-enters-the-phone-number-91-980115950-in-the-phone-number-input-matching-by-digits-ignoring-formatting-characters",
+      "title": "In the profile setup dialog, hide the \"Administrator\" role option by default and only reveal it when the user enters the phone number (91)980115950 in the \"Phone Number\" input (matching by digits, ignoring formatting characters).",
       "reqIds": [
-        "REQ-5"
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-phone-number-input-is-available-to-the-user-at-the-time-they-choose-a-role-so-they-can-unlock-the-administrator-option-and-prevent-inconsistent-state-when-the-administrator-option-becomes-hidden-again",
+      "title": "Ensure the \"Phone Number\" input is available to the user at the time they choose a role (so they can unlock the Administrator option), and prevent inconsistent state when the Administrator option becomes hidden again.",
+      "reqIds": [
+        "REQ-2"
       ],
       "version": 1
     }
@@ -22,34 +28,8 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update the backend admin password verification so that entering the password string \"Liderdoprojetox1\" is accepted as correct and returns true from verifyAdminPassword.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Fix the backend stored/default admin password value so it matches the expected leader password \"Liderdoprojetox1\" (remove the trailing semicolon currently present in backend/main.mo).",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Update any backend allowlisting/admin-grant functions that compare password text (e.g., addAllowlistedAdminPrincipal/addAllowlistedAdmin/removeAllowlistedAdminPrincipal/revokeAllowlistedAdmin) so that the leader password \"Liderdoprojetox1\" successfully allowlists the caller principal when used from the profile setup admin flow.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Add/adjust a conditional canister state migration so that existing deployed state with the old admin password value \"Liderdoprojetox1;\" is updated to the new expected value \"Liderdoprojetox1\" without affecting any other persisted state (including allowlisted admin principals).",
-      "reqIds": [
-        "REQ-4"
-      ],
+      "summary": "Ocultar a opção Administrador e exibi-la apenas quando o número de telefone (91)980115950 for inserido no campo 'Número de telefone'.",
+      "reqIds": [],
       "status": "pending"
     }
   ],

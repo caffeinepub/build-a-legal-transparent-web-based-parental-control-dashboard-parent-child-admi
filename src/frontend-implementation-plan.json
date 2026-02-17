@@ -1,30 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix frontend admin password submissions to accept Liderdoprojetox1 after backend verification",
+  "title": "Hide Administrator role option until allowlisted phone number is entered",
   "requirements": [
     {
-      "id": "REQ-5",
-      "summary": "Ensure admin password submissions pass the gate and admin profile setup when the backend confirms \"Liderdoprojetox1\" is valid.",
+      "id": "REQ-1",
+      "summary": "Hide the Administrator role option by default and reveal it only when the phone number input normalizes to 91980115950 (digits-only match).",
       "acceptanceCriteria": [
-        "In the AdminPasswordGate screen, entering \"Liderdoprojetox1\" and submitting results in the success state (gate passed) rather than the \"incorrect password\" error.",
-        "In the ProfileSetupDialog admin role flow, entering \"Liderdoprojetox1\" allows completion of the flow without showing an \"incorrect password\" error."
+        "When the phone number input is empty or does not normalize to 91980115950, the Administrator radio option is not rendered/visible in the role selection list.",
+        "When the phone number input normalizes to 91980115950 (e.g., entered as \"(91)980115950\" or \"91980115950\"), the Administrator option becomes visible without requiring a page refresh.",
+        "Phone matching is performed using digits-only comparison (ignore parentheses and any non-digits)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/AdminPasswordGate.tsx",
+          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
           "operation": "modify",
-          "description": "Harden the password submission flow so the exact user-entered password is sent to the backend consistently (e.g., trim accidental leading/trailing whitespace before calling useVerifyAdminPassword), and ensure the UI reliably transitions to the passed-gate success state (useAdminGate.passGate) when the backend returns true. Verify the component's usage instructions before implementing."
-        },
+          "description": "Update the role selection UI to conditionally render the Administrator option only when the Phone Number input digits normalize to 91980115950, using digits-only comparison (e.g., via existing phone utils). Ensure the UI reacts immediately on input changes. This dialog is part of the authorization component’s profile/role setup flow; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Make phone number input available before role selection and keep role/admin verification actions consistent when the admin option re-hides.",
+      "acceptanceCriteria": [
+        "The user can access the phone number input without first needing to select a specific role, so they can unlock the Administrator option.",
+        "If the user has selected the Administrator role and then edits the phone number so it no longer matches 91980115950, the UI automatically deselects Administrator (switch to a non-admin role) and hides the Administrator option again.",
+        "No backend calls to admin verification/allowlisting are possible unless the Administrator role is visible and selected."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
           "operation": "modify",
-          "description": "Normalize the admin password input prior to submission (e.g., trim whitespace) when calling useAddAllowlistedAdminPrincipal, and refine error handling so backend-confirmed success proceeds to saving the admin profile while only genuine authorization/password failures show the 'incorrect password' messaging. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Adjust the admin-related mutations’ error handling (useVerifyAdminPassword / useAddAllowlistedAdminPrincipal consumers) to consistently surface authorization/password failures versus transient/system errors (without hardcoding any password value), supporting the corrected leader password flow once the backend confirms validity. Verify the component's usage instructions before implementing."
+          "description": "Reorder/adjust the form so the Phone Number input is always visible before the role RadioGroup. Add state management to prevent inconsistent selection: if the phone no longer matches, automatically switch away from 'admin', clear admin-password UI/state, and hide the admin option again. Add a submission guard so admin verification/allowlisting mutations can only run when the admin option is currently visible/unlocked and selected. This dialog is part of the authorization component’s role-based access flow; verify the component's usage instructions before implementing."
         }
       ]
     }

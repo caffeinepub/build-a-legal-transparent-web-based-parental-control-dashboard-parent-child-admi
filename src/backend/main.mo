@@ -11,7 +11,7 @@ import Random "mo:core/Random";
 import Set "mo:core/Set";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
-import Migration "migration";
+
 
 
 import MixinAuthorization "authorization/MixinAuthorization";
@@ -19,7 +19,7 @@ import AccessControl "authorization/access-control";
 import InviteLinksModule "invite-links/invite-links-module";
 
 // Persistent state managed by separate migration module
-(with migration = Migration.run)
+
 actor {
   // State (persisted with migration)
   let allowlistedAdminPrincipals = Set.empty<Principal>();
